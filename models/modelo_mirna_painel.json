@@ -1,0 +1,125 @@
+{
+  "type": "logistic_regression_binary_panel",
+  "positive_class": "1 = doente",
+  "negative_class": "0 = saudavel",
+  "source_dataset": "C:\\Users\\ACS INFO PC\\Downloads\\miRNA\\data\\processed\\dataset_mirna_balanceado_colunas_comuns.csv",
+  "panel_dataset": "C:\\Users\\ACS INFO PC\\Downloads\\miRNA\\data\\processed\\dataset_mirna_painel_12_disponiveis.csv",
+  "transform": "mean across mapped precursor columns, then log1p, then training-set standardization",
+  "markers": [
+    {
+      "marker": "let-7b-5p",
+      "expected": "downregulated em doente",
+      "source_columns": [
+        "hsa-let-7b"
+      ],
+      "mean": 10.010777059133263,
+      "std": 0.775864422517209,
+      "weight": 0.3372850542637688
+    },
+    {
+      "marker": "miR-106a-5p",
+      "expected": "upregulated em doente",
+      "source_columns": [
+        "hsa-mir-106a"
+      ],
+      "mean": 1.3967333664760417,
+      "std": 1.557972747268199,
+      "weight": 2.1967177863279588
+    },
+    {
+      "marker": "miR-19a-3p",
+      "expected": "upregulated em doente",
+      "source_columns": [
+        "hsa-mir-19a"
+      ],
+      "mean": 3.3564155568820917,
+      "std": 1.175840435658725,
+      "weight": -0.28470585864656445
+    },
+    {
+      "marker": "miR-19b-3p",
+      "expected": "upregulated em doente",
+      "source_columns": [
+        "hsa-mir-19b-1",
+        "hsa-mir-19b-2"
+      ],
+      "mean": 4.631658680500419,
+      "std": 1.075589135782063,
+      "weight": -1.0622051094614806
+    },
+    {
+      "marker": "miR-20a-5p",
+      "expected": "excecao no compartimento extracelular",
+      "source_columns": [
+        "hsa-mir-20a"
+      ],
+      "mean": 5.229562825776963,
+      "std": 1.02727034209528,
+      "weight": 0.2885415064739523
+    },
+    {
+      "marker": "miR-25-3p",
+      "expected": "upregulated em doente",
+      "source_columns": [
+        "hsa-mir-25"
+      ],
+      "mean": 8.43310027628907,
+      "std": 1.031753203898084,
+      "weight": 0.7739076841574485
+    },
+    {
+      "marker": "miR-92a-3p",
+      "expected": "upregulated em doente",
+      "source_columns": [
+        "hsa-mir-92a-1",
+        "hsa-mir-92a-2"
+      ],
+      "mean": 8.521784759685573,
+      "std": 1.0843718880983486,
+      "weight": -0.9776831421850316
+    },
+    {
+      "marker": "miR-93-5p",
+      "expected": "upregulated em doente",
+      "source_columns": [
+        "hsa-mir-93"
+      ],
+      "mean": 7.37900872641147,
+      "std": 1.2361076948156668,
+      "weight": 1.703572913370593
+    }
+  ],
+  "missing_markers": [
+    {
+      "marker": "miR-223-3p",
+      "expected": "excecao no compartimento extracelular",
+      "desired_columns": [
+        "hsa-mir-223"
+      ]
+    },
+    {
+      "marker": "miR-425-5p",
+      "expected": "upregulated em doente",
+      "desired_columns": [
+        "hsa-mir-425"
+      ]
+    },
+    {
+      "marker": "miR-451a",
+      "expected": "upregulated em exossomos",
+      "desired_columns": [
+        "hsa-mir-451a"
+      ]
+    },
+    {
+      "marker": "miR-16-5p",
+      "expected": "upregulated em doente",
+      "desired_columns": [
+        "hsa-mir-16-1",
+        "hsa-mir-16-2"
+      ]
+    }
+  ],
+  "bias": 0.2088361037137262,
+  "threshold": 0.5
+}

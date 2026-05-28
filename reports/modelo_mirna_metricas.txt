@@ -1,0 +1,71 @@
+Dataset: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+Amostras totais: 2678
+Features usadas: 371
+Treino: 2142
+Teste: 536
+Classe positiva: 1 = doente
+Classe negativa: 0 = saudavel
+
+Metricas no treino:
+accuracy=100.00%
+precision=100.00%
+recall/sensibilidade=100.00%
+specificity=100.00%
+f1=100.00%
+auc=1.0000
+confusion_matrix tn=1071 fp=0 fn=0 tp=1071
+
+Metricas no teste:
+accuracy=100.00%
+precision=100.00%
+recall/sensibilidade=100.00%
+specificity=100.00%
+f1=100.00%
+auc=1.0000
+confusion_matrix tn=268 fp=0 fn=0 tp=268
+
+Top 20 miRNAs que mais puxam para doente, pelo peso positivo:
+hsa-let-7c	0.095136
+hsa-let-7f-2	0.094119
+hsa-let-7f-1	0.094083
+hsa-mir-34a	0.093869
+hsa-mir-181b-2	0.093344
+hsa-mir-181b-1	0.093211
+hsa-mir-497	0.093144
+hsa-mir-186	0.093129
+hsa-mir-106b	0.092987
+hsa-mir-181a-1	0.092961
+hsa-let-7a-3	0.092515
+hsa-let-7a-1	0.092511
+hsa-let-7a-2	0.092493
+hsa-mir-103a-2	0.091107
+hsa-mir-103a-1	0.091099
+hsa-mir-17	0.090767
+hsa-mir-30d	0.090097
+hsa-mir-30c-1	0.089772
+hsa-mir-182	0.088657
+hsa-mir-32	0.088124
+
+Top 20 miRNAs que mais puxam para saudavel, pelo peso negativo:
+hsa-mir-24-1	-0.082050
+hsa-mir-24-2	-0.081609
+hsa-let-7i	-0.078986
+hsa-mir-26a-1	-0.076054
+hsa-mir-26a-2	-0.076052
+hsa-mir-99a	-0.074551
+hsa-let-7g	-0.073477
+hsa-mir-148b	-0.072547
+hsa-mir-1-1	-0.072331
+hsa-mir-1-2	-0.072255
+hsa-mir-328	-0.072134
+hsa-mir-128-2	-0.068878
+hsa-mir-652	-0.068778
+hsa-mir-95	-0.067685
+hsa-mir-3909	-0.066818
+hsa-mir-128-1	-0.066600
+hsa-mir-1180	-0.065681
+hsa-mir-339	-0.065139
+hsa-mir-378a	-0.064787
+hsa-mir-27a	-0.064370
+
+Nota: este e um baseline. Como doentes e saudaveis vieram de fontes diferentes, metricas altas podem refletir diferenca de lote/fonte, nao necessariamente sinal biologico da doenca.

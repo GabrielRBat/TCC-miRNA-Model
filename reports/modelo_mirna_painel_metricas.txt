@@ -1,0 +1,54 @@
+Dataset base: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+Dataset do painel gerado: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_painel_12_disponiveis.csv
+Amostras totais: 2678
+Marcadores solicitados: 12
+Marcadores usados: 8
+Marcadores ausentes: 4
+Treino: 2142
+Teste: 536
+
+Marcadores usados e colunas fonte:
+let-7b-5p	hsa-let-7b	downregulated em doente
+miR-106a-5p	hsa-mir-106a	upregulated em doente
+miR-19a-3p	hsa-mir-19a	upregulated em doente
+miR-19b-3p	hsa-mir-19b-1, hsa-mir-19b-2	upregulated em doente
+miR-20a-5p	hsa-mir-20a	excecao no compartimento extracelular
+miR-25-3p	hsa-mir-25	upregulated em doente
+miR-92a-3p	hsa-mir-92a-1, hsa-mir-92a-2	upregulated em doente
+miR-93-5p	hsa-mir-93	upregulated em doente
+
+Marcadores ausentes na versao com colunas comuns:
+miR-223-3p	colunas desejadas: hsa-mir-223
+miR-425-5p	colunas desejadas: hsa-mir-425
+miR-451a	colunas desejadas: hsa-mir-451a
+miR-16-5p	colunas desejadas: hsa-mir-16-1, hsa-mir-16-2
+
+Metricas no treino:
+accuracy=99.49%
+precision=99.53%
+recall/sensibilidade=99.44%
+specificity=99.53%
+f1=99.49%
+auc=0.9994
+confusion_matrix tn=1066 fp=5 fn=6 tp=1065
+
+Metricas no teste:
+accuracy=99.44%
+precision=100.00%
+recall/sensibilidade=98.88%
+specificity=100.00%
+f1=99.44%
+auc=1.0000
+confusion_matrix tn=268 fp=0 fn=3 tp=265
+
+Pesos aprendidos, positivo puxa para doente e negativo puxa para saudavel:
+miR-106a-5p	2.196718	upregulated em doente
+miR-93-5p	1.703573	upregulated em doente
+miR-19b-3p	-1.062205	upregulated em doente
+miR-92a-3p	-0.977683	upregulated em doente
+miR-25-3p	0.773908	upregulated em doente
+let-7b-5p	0.337285	downregulated em doente
+miR-20a-5p	0.288542	excecao no compartimento extracelular
+miR-19a-3p	-0.284706	upregulated em doente
+
+Nota: usar apenas os marcadores disponiveis e biologicamente relevantes reduz ruido, mas ainda existe risco de vies de lote/fonte entre doentes e saudaveis.
