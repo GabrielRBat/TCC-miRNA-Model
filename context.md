@@ -120,6 +120,49 @@ miRNA/
 └── context.md
 ```
 
+## Estado de Versionamento e GitHub
+
+O projeto foi publicado no GitHub com sucesso.
+
+Repositório remoto:
+
+```text
+https://github.com/GabrielRBat/TCC-miRNA-Model.git
+```
+
+Remoto local:
+
+```text
+origin
+```
+
+Branch local:
+
+```text
+master
+```
+
+Upstream configurado:
+
+```text
+origin/master
+```
+
+Comandos normais a partir de agora:
+
+```powershell
+git pull
+git push
+```
+
+Situação que foi resolvida:
+
+- `git pull` falhava porque a branch `master` não tinha tracking remoto.
+- O repositório remoto parecia vazio.
+- O comando correto era `git push -u origin master`.
+- Antes do push, o raw saudável de 144 MB foi substituído no commit por um subset de aproximadamente 13 MB, porque GitHub rejeita arquivos acima de 100 MB.
+- O push final foi realizado com sucesso e `master` passou a rastrear `origin/master`.
+
 ## Arquivos Originais
 
 ### `data/raw/dataset_mirna_raw (doentes).csv`

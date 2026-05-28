@@ -51,6 +51,35 @@ miRNA/
 └── README.md
 ```
 
+## Estado de Versionamento
+
+O projeto foi publicado no GitHub:
+
+```text
+https://github.com/GabrielRBat/TCC-miRNA-Model.git
+```
+
+Branch local atual:
+
+```text
+master
+```
+
+Upstream configurado:
+
+```text
+origin/master
+```
+
+Comandos normais a partir de agora:
+
+```powershell
+git pull
+git push
+```
+
+Observação: o raw saudável completo de 144 MB não foi enviado ao GitHub. O arquivo versionado é um subset de aproximadamente 13 MB com 1500 amostras saudáveis não usadas no dataset balanceado inicial.
+
 ## Dados Originais
 
 ### `data/raw/dataset_mirna_raw (doentes).csv`
