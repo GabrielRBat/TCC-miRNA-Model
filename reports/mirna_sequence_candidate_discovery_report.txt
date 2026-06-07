@@ -1,0 +1,126 @@
+Descoberta computacional de candidatos por padroes sequenciais de miRNA
+
+FASTA de referencia: C:\Users\ACS INFO PC\Downloads\miRNA\data\external\mirbase_mature.fa
+CSV de biomarcadores positivos: C:\Users\ACS INFO PC\Downloads\miRNA\data\external\breast_cancer_mirna_positive_markers.csv
+Dataset usado para limitar candidatos aos miRNAs presentes na base: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+Biomarcadores positivos solicitados: 43
+Biomarcadores positivos com sequencia encontrada: 43
+Candidatos humanos avaliados: 221
+
+Biomarcadores positivos analisados:
+let-7b-5p -> let-7b-5p	MIMAT0000063	direcao=downregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=GAGGUAG	seq=UGAGGUAGUAGGUUGUGUGGUU
+miR-106a-5p -> mir-106a-5p	MIMAT0000103	direcao=upregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=AAAGUGC	seq=AAAAGUGCUUACAGUGCAGGUAG
+miR-19b-3p -> mir-19b-3p	MIMAT0000074	direcao=upregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=GUGCAAA	seq=UGUGCAAAUCCAUGCAAAACUGA
+miR-20a-5p -> mir-20a-5p	MIMAT0000075	direcao=variavel	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=AAAGUGC	seq=UAAAGUGCUUAUAGUGCAGGUAG
+miR-223-3p -> mir-223-3p	MIMAT0000280	direcao=variavel	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=GUCAGUU	seq=UGUCAGUUUGUCAAAUACCCCA
+miR-25-3p -> mir-25-3p	MIMAT0000081	direcao=upregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=AUUGCAC	seq=CAUUGCACUUGUCUCGGUCUGA
+miR-425-5p -> mir-425-5p	MIMAT0003393	direcao=upregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=AUGACAC	seq=AAUGACACGAUCACUCCCGUUGA
+miR-451a -> mir-451a	MIMAT0001631	direcao=upregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=AACCGUU	seq=AAACCGUUACCAUUACUGAGUU
+miR-92a-3p -> mir-92a-3p	MIMAT0000092	direcao=upregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=AUUGCAC	seq=UAUUGCACUUGUCCCGGCCUGU
+miR-93-5p -> mir-93-5p	MIMAT0000093	direcao=upregulated	recorrencia=painel_inicial	fontes=nao_informado	peso=2	fonte=painel_inicial_do_projeto	resolucao=exact	seed=AAAGUGC	seq=CAAAGUGCUGUUCGUGCAGGUAG
+let-7a -> let-7a-5p	MIMAT0000062	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=GAGGUAG	seq=UGAGGUAGUAGGUUGUAUAGUU
+miR-1 -> mir-1-3p	MIMAT0000416	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Miranda et al.	resolucao=exact	seed=GGAAUGU	seq=UGGAAUGUAAAGAAGUAUGUAU
+miR-10b -> mir-10b-5p	MIMAT0000254	direcao=nao_informada	recorrencia=alta	fontes=4	peso=3	fonte=Ali et al.; Mar-Aguilar et al.; Miranda et al.; Turkoglu et al.	resolucao=exact	seed=ACCCUGU	seq=UACCCUGUAGAACCGAAUUUGUG
+miR-1246 -> mir-1246	MIMAT0005898	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Shimomura et al.	resolucao=exact	seed=AUGGAUU	seq=AAUGGAUUUUUGGAGCAGG
+miR-125a -> mir-125a-5p	MIMAT0000443	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=CCCUGAG	seq=UCCCUGAGACCCUUUAACCUGUGA
+miR-125b -> mir-125b-5p	MIMAT0000423	direcao=nao_informada	recorrencia=alta	fontes=3	peso=3	fonte=Han et al.; Mar-Aguilar et al.; Turkoglu et al.	resolucao=exact	seed=CCCUGAG	seq=UCCCUGAGACCCUAACUUGUGA
+miR-1307-3p -> mir-1307-3p	MIMAT0005951	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Shimomura et al.	resolucao=exact	seed=CUCGGCG	seq=ACUCGGCGUGGCGUCGGUCGUG
+miR-139-5p -> mir-139-5p	MIMAT0000250	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=CUACAGU	seq=UCUACAGUGCACGUGUCUCCAGU
+miR-145 -> mir-145-5p	MIMAT0000437	direcao=nao_informada	recorrencia=alta	fontes=4	peso=3	fonte=Han et al.; Mar-Aguilar et al.; Turkoglu et al.; Zhu et al.	resolucao=exact	seed=UCCAGUU	seq=GUCCAGUUUUCCCAGGAAUCCCU
+miR-155 -> mir-155-5p	MIMAT0000646	direcao=nao_informada	recorrencia=alta	fontes=7	peso=3	fonte=Han et al.; Mar-Aguilar et al.; Sochor et al.; Sun et al.; Turkoglu et al.; Wang et al.; Zhu et al.	resolucao=exact	seed=UAAUGCU	seq=UUAAUGCUAAUCGUGAUAGGGGUU
+miR-16 -> mir-16-5p	MIMAT0000069	direcao=upregulated	recorrencia=media	fontes=2	peso=2	fonte=Miranda et al.; Zhu et al.; painel_inicial_do_projeto	resolucao=exact	seed=AGCAGCA	seq=UAGCAGCACGUAAAUAUUGGCG
+miR-17-5p -> mir-17-5p	MIMAT0000070	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=AAAGUGC	seq=CAAAGUGCUUACAGUGCAGGUAG
+miR-181b -> mir-181b-5p	MIMAT0000257	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Sochor et al.	resolucao=exact	seed=ACAUUCA	seq=AACAUUCAUUGCUGUCGGUGGGU
+miR-191 -> mir-191-5p	MIMAT0000440	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Mar-Aguilar et al.	resolucao=exact	seed=AACGGAA	seq=CAACGGAAUCCCAAAAGCAGCUG
+miR-195 -> mir-195-5p	MIMAT0000461	direcao=nao_informada	recorrencia=alta	fontes=3	peso=3	fonte=Miranda et al.; Turkoglu et al.; Zhao et al. / Zhu et al. summarized in miR-195 reviews	resolucao=exact	seed=AGCAGCA	seq=UAGCAGCACAGAAAUAUUGGC
+miR-19a -> mir-19a-3p	MIMAT0000073	direcao=upregulated	recorrencia=exploratoria	fontes=1	peso=1	fonte=Sochor et al.; painel_inicial_do_projeto	resolucao=exact	seed=GUGCAAA	seq=UGUGCAAAUCUAUGCAAAACUGA
+miR-200a -> mir-200a-3p	MIMAT0000682	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=AACACUG	seq=UAACACUGUCUGGUAACGAUGU
+miR-205 -> mir-205-5p	MIMAT0000266	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=CCUUCAU	seq=UCCUUCAUUCCACCGGAGUCUG
+miR-206 -> mir-206	MIMAT0000462	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=GGAAUGU	seq=UGGAAUGUAAGGAAGUGUGUGG
+miR-21 -> mir-21-5p	MIMAT0000076	direcao=nao_informada	recorrencia=alta	fontes=7	peso=3	fonte=Ali et al.; Gao et al.; Han et al.; Mar-Aguilar et al.; Miranda et al.; Toraih et al.; Turkoglu et al.	resolucao=exact	seed=AGCUUAU	seq=UAGCUUAUCAGACUGAUGUUGA
+miR-210 -> mir-210-3p	MIMAT0000267	direcao=nao_informada	recorrencia=media	fontes=2	peso=2	fonte=Miranda et al.; Turkoglu et al.	resolucao=exact	seed=UGUGCGU	seq=CUGUGCGUGUGACAGCGGCUGA
+miR-24 -> mir-24-3p	MIMAT0000080	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Sochor et al.	resolucao=exact	seed=GGCUCAG	seq=UGGCUCAGUUCAGCAGGAACAG
+miR-31 -> mir-31-5p	MIMAT0000089	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=GGCAAGA	seq=AGGCAAGAUGCUGGCAUAGCU
+miR-34a -> mir-34a-5p	MIMAT0000255	direcao=nao_informada	recorrencia=media	fontes=2	peso=2	fonte=Miranda et al.; Turkoglu et al.	resolucao=exact	seed=GGCAGUG	seq=UGGCAGUGUCUUAGCUGGUUGU
+miR-365 -> mir-365a-3p	MIMAT0000710	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Han et al.	resolucao=exact	seed=AAUGCCC	seq=UAAUGCCCCUAAAAAUCCUUAU
+miR-373 -> mir-373-3p	MIMAT0000726	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=AAGUGCU	seq=GAAGUGCUUCGAUUUUGGGGUGU
+miR-382 -> mir-382-5p	MIMAT0000737	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Mar-Aguilar et al.	resolucao=exact	seed=AAGUUGU	seq=GAAGUUGUUCGUGGUGGAUUCG
+miR-4634 -> mir-4634	MIMAT0019691	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Shimomura et al.	resolucao=exact	seed=GGCGCGA	seq=CGGCGCGACCGGCCCGGGG
+miR-497 -> mir-497-5p	MIMAT0002820	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=AGCAGCA	seq=CAGCAGCACACUGUGGUUUGU
+miR-520c -> mir-520c-3p	MIMAT0002846	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=AAGUGCU	seq=AAAGUGCUUCCUUUUAGAGGGU
+miR-6861-5p -> mir-6861-5p	MIMAT0027623	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Shimomura et al.	resolucao=exact	seed=CUGGGUA	seq=ACUGGGUAGGUGGGGCUCCAGG
+miR-6875-5p -> mir-6875-5p	MIMAT0027650	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Shimomura et al.	resolucao=exact	seed=GAGGGAC	seq=UGAGGGACCCAGGACAGGAGA
+miR-99a -> mir-99a-5p	MIMAT0000097	direcao=nao_informada	recorrencia=exploratoria	fontes=1	peso=1	fonte=Turkoglu et al.	resolucao=exact	seed=ACCCGUA	seq=AACCCGUAGAUCCGAUCUUGUG
+
+Biomarcadores sem sequencia encontrada no FASTA:
+nenhum
+
+Principais motifs/k-mers enriquecidos nos marcadores:
+UAACU	peso_marcadores=3.00	background=1/264	enriquecimento_log2=3.164
+UUAAU	peso_marcadores=3.00	background=1/264	enriquecimento_log2=3.164
+CGUGA	peso_marcadores=3.00	background=1/264	enriquecimento_log2=3.164
+AAAUA	peso_marcadores=7.00	background=3/264	enriquecimento_log2=3.041
+ACCCU	peso_marcadores=7.00	background=4/264	enriquecimento_log2=2.678
+ACCCC	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+AUGAC	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+CACGA	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+GAUCA	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+CGUUA	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+GUUAC	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+ACGUA	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+CGUAA	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+GUGCG	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+GCGGC	peso_marcadores=2.00	background=1/264	enriquecimento_log2=2.678
+
+Pares de marcadores com maior similaridade de k-mers:
+mir-106a-5p + mir-17-5p	similaridade=0.9690
+mir-19b-3p + mir-19a-3p	similaridade=0.9035
+mir-106a-5p + mir-20a-5p	similaridade=0.8550
+mir-20a-5p + mir-17-5p	similaridade=0.8463
+mir-125a-5p + mir-125b-5p	similaridade=0.8457
+let-7b-5p + let-7a-5p	similaridade=0.8420
+mir-16-5p + mir-195-5p	similaridade=0.8019
+mir-93-5p + mir-17-5p	similaridade=0.7974
+mir-106a-5p + mir-93-5p	similaridade=0.7751
+mir-20a-5p + mir-93-5p	similaridade=0.7452
+
+Novos microRNAs candidatos sugeridos:
+1. mir-449a	score=0.6500	mais_proximos=mir-34a-5p:0.836, let-7b-5p:0.598, mir-93-5p:0.547	motifs=nenhum_top_motif	features=hsa-mir-449a
+2. mir-20b-5p	score=0.6381	mais_proximos=mir-20a-5p:0.846, mir-17-5p:0.844, mir-106a-5p:0.814	motifs=nenhum_top_motif	features=hsa-mir-20b
+3. let-7i-5p	score=0.6316	mais_proximos=let-7b-5p:0.803, let-7a-5p:0.790, mir-93-5p:0.654	motifs=nenhum_top_motif	features=hsa-let-7i
+4. let-7c-5p	score=0.6297	mais_proximos=let-7a-5p:0.914, let-7b-5p:0.898, mir-34a-5p:0.550	motifs=nenhum_top_motif	features=hsa-let-7c
+5. mir-526b-3p	score=0.6270	mais_proximos=mir-520c-3p:0.926, mir-373-3p:0.571, mir-106a-5p:0.549	motifs=nenhum_top_motif	features=hsa-mir-526b
+6. let-7e-5p	score=0.6229	mais_proximos=let-7a-5p:0.920, let-7b-5p:0.798, mir-20a-5p:0.555	motifs=nenhum_top_motif	features=hsa-let-7e
+7. mir-15a-5p	score=0.6197	mais_proximos=mir-497-5p:0.767, mir-195-5p:0.654, mir-16-5p:0.617	motifs=nenhum_top_motif	features=hsa-mir-15a
+8. let-7f-5p	score=0.6179	mais_proximos=let-7a-5p:0.906, let-7b-5p:0.710, mir-20a-5p:0.603	motifs=nenhum_top_motif	features=hsa-let-7f-1, hsa-let-7f-2
+9. mir-106b-5p	score=0.6134	mais_proximos=mir-106a-5p:0.753, mir-17-5p:0.750, mir-20a-5p:0.689	motifs=nenhum_top_motif	features=hsa-mir-106b
+10. mir-302a-3p	score=0.6122	mais_proximos=mir-373-3p:0.703, mir-520c-3p:0.616, mir-382-5p:0.542	motifs=nenhum_top_motif	features=hsa-mir-302a
+11. mir-34c-5p	score=0.6095	mais_proximos=mir-34a-5p:0.687, let-7a-5p:0.596, mir-20a-5p:0.588	motifs=nenhum_top_motif	features=hsa-mir-34c
+12. mir-520f-3p	score=0.6088	mais_proximos=mir-520c-3p:0.964, mir-373-3p:0.633, mir-20a-5p:0.522	motifs=nenhum_top_motif	features=hsa-mir-520f
+13. let-7g-5p	score=0.6087	mais_proximos=let-7a-5p:0.841, let-7b-5p:0.736, mir-17-5p:0.559	motifs=nenhum_top_motif	features=hsa-let-7g
+14. let-7d-5p	score=0.6083	mais_proximos=let-7a-5p:0.879, let-7b-5p:0.758, mir-20a-5p:0.628	motifs=nenhum_top_motif	features=hsa-let-7d
+15. mir-519b-3p	score=0.6062	mais_proximos=mir-520c-3p:0.819, mir-106a-5p:0.573, mir-20a-5p:0.569	motifs=nenhum_top_motif	features=hsa-mir-519b
+16. mir-519a-3p	score=0.6001	mais_proximos=mir-520c-3p:0.759, mir-106a-5p:0.608, mir-20a-5p:0.603	motifs=nenhum_top_motif	features=hsa-mir-519a-1, hsa-mir-519a-2
+17. mir-520a-3p	score=0.5973	mais_proximos=mir-520c-3p:0.679, mir-373-3p:0.609, mir-125a-5p:0.552	motifs=nenhum_top_motif	features=hsa-mir-520a
+18. mir-302d-3p	score=0.5936	mais_proximos=mir-373-3p:0.620, mir-520c-3p:0.584, mir-93-5p:0.583	motifs=nenhum_top_motif	features=hsa-mir-302d
+19. mir-302b-3p	score=0.5890	mais_proximos=mir-520c-3p:0.685, mir-20a-5p:0.636, mir-17-5p:0.573	motifs=nenhum_top_motif	features=hsa-mir-302b
+20. mir-365b-3p	score=0.5881	mais_proximos=mir-365a-3p:1.000, mir-19a-3p:0.479, mir-19b-3p:0.476	motifs=nenhum_top_motif	features=hsa-mir-365b
+21. mir-181a-5p	score=0.5792	mais_proximos=mir-181b-5p:0.726, mir-200a-3p:0.496, mir-25-3p:0.472	motifs=nenhum_top_motif	features=hsa-mir-181a-1, hsa-mir-181a-2
+22. mir-520d-3p	score=0.5776	mais_proximos=mir-373-3p:0.703, mir-520c-3p:0.653, mir-34a-5p:0.555	motifs=nenhum_top_motif	features=hsa-mir-520d
+23. mir-18a-5p	score=0.5671	mais_proximos=mir-20a-5p:0.703, mir-17-5p:0.635, mir-106a-5p:0.622	motifs=nenhum_top_motif	features=hsa-mir-18a
+24. mir-138-5p	score=0.5633	mais_proximos=mir-34a-5p:0.646, mir-210-3p:0.581, let-7b-5p:0.562	motifs=nenhum_top_motif	features=hsa-mir-138-1, hsa-mir-138-2
+25. mir-519e-3p	score=0.5623	mais_proximos=mir-520c-3p:0.753, mir-373-3p:0.529, mir-20a-5p:0.513	motifs=nenhum_top_motif	features=hsa-mir-519e
+26. mir-301a-3p	score=0.5589	mais_proximos=mir-17-5p:0.643, mir-20a-5p:0.625, mir-106a-5p:0.614	motifs=nenhum_top_motif	features=hsa-mir-301a
+27. mir-519c-3p	score=0.5573	mais_proximos=mir-520c-3p:0.734, mir-1246:0.556, mir-20a-5p:0.515	motifs=nenhum_top_motif	features=hsa-mir-519c
+28. mir-29b-3p	score=0.5531	mais_proximos=mir-195-5p:0.543, mir-223-3p:0.524, mir-497-5p:0.506	motifs=nenhum_top_motif	features=hsa-mir-29b-1
+29. mir-323b-5p	score=0.5512	mais_proximos=mir-382-5p:0.702, let-7b-5p:0.670, mir-34a-5p:0.584	motifs=nenhum_top_motif	features=hsa-mir-323b
+30. mir-499a-5p	score=0.5484	mais_proximos=mir-21-5p:0.610, mir-34a-5p:0.497, mir-373-3p:0.489	motifs=nenhum_top_motif	features=hsa-mir-499a
+
+Como interpretar:
+O score combina similaridade de k-mers com o perfil medio ponderado dos biomarcadores positivos, similaridade com o marcador mais proximo, cobertura de motifs enriquecidos e similaridade da regiao seed.
+Pesos usados no perfil positivo: alta=3, media=2, painel_inicial=2, exploratoria=1.
+Valores mais altos indicam maior proximidade sequencial aos biomarcadores positivos conhecidos, nao uma probabilidade real de cancer de mama.
+Os pesos do modelo baseline de expressao aparecem no CSV apenas como evidencia auxiliar; eles nao entram no score sequencial.
+
+Aviso cientifico:
+Os candidatos acima sao possiveis candidatos e hipoteses computacionais. Eles nao devem ser tratados como diagnostico definitivo, biomarcador validado ou evidencia clinica sem validacao biologica/laboratorial independente.

@@ -904,3 +904,557 @@ Documentação principal:
 README.md
 context.md
 ```
+
+## Atualizacao: Descoberta de Candidatos por Padroes Sequenciais
+
+### Contexto do Problema
+
+O projeto funcionava principalmente como um pipeline de expressao de miRNAs:
+
+- transformar dados saudaveis e doentes para uma estrutura comum;
+- treinar um baseline com 371 miRNAs comuns;
+- treinar um modelo principal guiado por um painel biologico de 12 marcadores conhecidos;
+- predizer probabilidade de doenca em amostras novas.
+
+Essa abordagem e util para classificacao, mas o modelo do painel usa marcadores ja definidos pela literatura. Ele confirma e operacionaliza marcadores conhecidos, mas nao descobre novos miRNAs candidatos.
+
+O novo objetivo cientifico/computacional e adicionar uma camada de descoberta:
+
+```text
+Aprender padroes estruturais/sequenciais presentes nos 12 marcadores conhecidos e ranquear outros miRNAs humanos que compartilham esses padroes.
+```
+
+O resultado deve ser tratado como hipotese computacional, nao como diagnostico ou biomarcador validado.
+
+### Como os Marcadores Estavam Representados Antes
+
+Antes desta alteracao, os 12 marcadores estavam representados de tres formas:
+
+1. Como nomes de marcador no script:
+
+```text
+scripts/train_mirna_panel_model.js
+```
+
+2. Como colunas precursoras ou agregacoes de colunas no dataset de expressao:
+
+```text
+data/processed/dataset_mirna_painel_12_disponiveis.csv
+```
+
+3. Como pesos de regressao logistica no modelo do painel:
+
+```text
+models/modelo_mirna_painel.json
+```
+
+Nao havia sequencias nos CSVs processados. Os arquivos de expressao guardavam valores por amostra, nao a sequencia biologica de cada miRNA.
+
+### O Que Foi Alterado
+
+Foi criada uma nova etapa independente, sem remover a funcionalidade atual.
+
+Novo arquivo externo:
+
+```text
+data/external/mirbase_mature.fa
+data/external/mirbase_hairpin.fa
+```
+
+O `mirbase_mature.fa` contem sequencias maduras do miRBase e foi adicionado porque o projeto nao tinha sequencias internas. O `mirbase_hairpin.fa` contem sequencias precursoras/stem-loop e foi baixado depois como universo complementar, mais proximo do nivel de varias colunas do CSV, como `hsa-mir-106a`.
+
+Estado atual:
+
+```text
+scripts/discover_mirna_sequence_candidates.js usa mirbase_mature.fa
+mirbase_hairpin.fa esta disponivel para evolucao futura com padroes de precursores
+```
+
+Novo script:
+
+```text
+scripts/discover_mirna_sequence_candidates.js
+```
+
+Novas saidas:
+
+```text
+data/processed/mirna_sequence_candidate_ranking.csv
+models/modelo_mirna_sequence_patterns.json
+reports/mirna_sequence_candidate_discovery_report.txt
+```
+
+Comando:
+
+```powershell
+node scripts\discover_mirna_sequence_candidates.js
+```
+
+Resultado da execucao validada:
+
+```text
+Biomarcadores positivos solicitados: 43
+Biomarcadores positivos com sequencia encontrada: 43
+Candidatos humanos avaliados: 221
+```
+
+Top 5 candidatos da execucao atual:
+
+```text
+mir-449a       score=0.6500
+mir-20b-5p     score=0.6381
+let-7i-5p      score=0.6316
+let-7c-5p      score=0.6297
+mir-526b-3p    score=0.6270
+```
+
+### Logica de Extracao de Padroes
+
+O script localiza no FASTA as sequencias maduras dos biomarcadores positivos carregados de:
+
+```text
+data/external/breast_cancer_mirna_positive_markers.csv
+```
+
+Depois extrai k-mers de tamanho:
+
+```text
+k = 2, 3, 4, 5
+```
+
+K-mers sao subsequencias contiguas. Por exemplo, para uma sequencia contendo `AUGCU`, k-mers de tamanho 3 incluem `AUG`, `UGC` e `GCU`.
+
+Motifs recorrentes sao identificados como k-mers presentes em mais de um marcador e enriquecidos em relacao ao conjunto de miRNAs humanos avaliados.
+
+Exemplos de motifs enriquecidos encontrados na execucao atual:
+
+```text
+AAAAC
+AAAUA
+AUGCA
+CCGUU
+CAAAU
+GCAGG
+CAGGU
+UUGUC
+```
+
+### Logica de Vetorizacao
+
+Cada sequencia e transformada em um vetor esparso de frequencias normalizadas de k-mers.
+
+Motivo:
+
+- nomes como `miR-20a` ou `miR-20b` nao devem ser a feature principal;
+- a representacao por k-mers permite comparar padroes internos da sequencia;
+- a similaridade passa a depender da composicao sequencial, nao apenas do identificador.
+
+O script calcula um centroide dos biomarcadores positivos, ou seja, o vetor medio das sequencias usadas como referencia.
+
+### Logica de Similaridade e Score
+
+Para cada candidato, o script calcula:
+
+- similaridade cosseno com o centroide dos marcadores;
+- maior similaridade cosseno com um marcador individual;
+- cobertura dos motifs enriquecidos;
+- similaridade da regiao seed, usando posicoes 2 a 8 da sequencia madura;
+- evidencia auxiliar do modelo baseline de expressao, apenas informativa.
+
+Formula do score:
+
+```text
+0.50 * similaridade com centroide dos marcadores
++ 0.25 * similaridade com marcador mais proximo
++ 0.15 * cobertura de motifs enriquecidos
++ 0.10 * similaridade da regiao seed
+```
+
+O score e chamado de `score_hipotese` no CSV porque nao e probabilidade clinica.
+
+### Relatorio Final
+
+Relatorio gerado:
+
+```text
+reports/mirna_sequence_candidate_discovery_report.txt
+```
+
+Ele contem:
+
+- os biomarcadores positivos usados como referencia;
+- accession miRBase, sequencia e seed de cada marcador;
+- motifs/k-mers enriquecidos;
+- pares de marcadores com maior similaridade;
+- novos candidatos ranqueados;
+- score de cada candidato;
+- marcadores mais proximos;
+- motifs compartilhados;
+- aviso cientifico.
+
+CSV detalhado:
+
+```text
+data/processed/mirna_sequence_candidate_ranking.csv
+```
+
+Modelo/artefato do perfil sequencial:
+
+```text
+models/modelo_mirna_sequence_patterns.json
+```
+
+### Observacao Sobre a Base de Candidatos
+
+O FASTA do miRBase contem muitas sequencias humanas. Para manter coerencia com o projeto atual, o script so ranqueia candidatos que podem ser associados a features presentes em:
+
+```text
+data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+```
+
+Como o dataset de expressao usa muitas colunas em nivel de precursor e o FASTA usa miRNAs maduros, o script faz mapeamento por nome-base/familia:
+
+```text
+hsa-miR-20b-5p -> hsa-mir-20b
+hsa-let-7a-5p -> hsa-let-7a
+```
+
+Foi corrigido um cuidado importante na normalizacao: remover apenas sufixos reais de braco maduro `-5p` e `-3p`. Isso evita mapear indevidamente nomes como `miR-548p` para uma familia generica incorreta.
+
+### Limitacoes da Nova Abordagem
+
+- A nova etapa aprende similaridade sequencial, nao associacao causal com cancer de mama.
+- O ranking e one-class/prototipico: usa positivos conhecidos, mas nao tem um conjunto confiavel de negativos biologicos.
+- Candidatos da mesma familia dos marcadores tendem a subir no ranking por similaridade natural.
+- O score nao substitui expressao diferencial, validacao experimental, coorte externa ou revisao biologica.
+- O arquivo de expressao e o FASTA usam niveis biologicos diferentes, precursor versus miRNA maduro.
+- Os pesos do baseline aparecem como evidencia auxiliar, mas nao entram no score final.
+
+### Proximos Passos Recomendados para Esta Camada
+
+1. Validar os candidatos ranqueados contra literatura e bancos de alvos de miRNA.
+2. Combinar score sequencial com analise de expressao diferencial entre saudaveis e doentes.
+3. Verificar alvos e vias biologicas relacionadas a cancer de mama.
+4. Testar a lista em coorte externa independente.
+5. Se houver exemplos confiaveis de miRNAs nao associados, treinar modelo supervisionado em vez de usar apenas perfil one-class.
+6. Considerar sequencias precursoras/hairpin alem de sequencias maduras, se a pergunta biologica exigir estrutura secundaria.
+
+### Estado Atual Apos a Alteracao
+
+Pipeline antigo preservado:
+
+```text
+scripts/train_mirna_panel_model.js
+scripts/predict_mirna_panel_model.js
+models/modelo_mirna_painel.json
+```
+
+Nova camada adicionada:
+
+```text
+scripts/discover_mirna_sequence_candidates.js
+data/external/mirbase_mature.fa
+data/processed/mirna_sequence_candidate_ranking.csv
+models/modelo_mirna_sequence_patterns.json
+reports/mirna_sequence_candidate_discovery_report.txt
+```
+
+Comando principal da nova camada:
+
+```powershell
+node scripts\discover_mirna_sequence_candidates.js
+```
+
+### Atualizacao Consolidada: Universo miRBase e Lista Curada Serum/Soro
+
+Foi baixado tambem:
+
+```text
+data/external/mirbase_hairpin.fa
+```
+
+Estado das referencias externas de sequencia:
+
+```text
+data/external/mirbase_mature.fa   -> universo de miRNAs maduros
+data/external/mirbase_hairpin.fa  -> universo de precursores/stem-loop
+```
+
+Uso atual:
+
+- `scripts/discover_mirna_sequence_candidates.js` usa `mirbase_mature.fa`.
+- `mirbase_hairpin.fa` esta disponivel para evoluir a descoberta para padroes de precursor.
+
+Arquivo curado atual de biomarcadores positivos/candidatos:
+
+```text
+data/external/breast_cancer_mirna_positive_markers.csv
+```
+
+Esse arquivo contem:
+
+- marcadores do painel inicial do projeto;
+- lista consolidada de miRNAs encontrados em serum/soro;
+- classificacao em alta, media ou exploratoria por recorrencia bibliografica.
+
+Regra de interpretacao da classificacao:
+
+```text
+alta recorrencia: miRNAs encontrados em 3 ou mais fontes
+media recorrencia: miRNAs encontrados em 2 fontes
+exploratoria: miRNAs encontrados em 1 fonte
+```
+
+Essa classificacao nao representa diagnostico definitivo, validacao clinica, maior tamanho amostral ou melhor desempenho clinico. Ela serve apenas para organizar a lista inicial do projeto e priorizar a analise computacional.
+
+Alta recorrencia bibliografica:
+
+```text
+miR-10b
+miR-125b
+miR-145
+miR-155
+miR-195
+miR-21
+```
+
+Media recorrencia bibliografica:
+
+```text
+miR-16
+miR-210
+miR-34a
+```
+
+Exploratorios:
+
+```text
+let-7a
+miR-1
+miR-1246
+miR-125a
+miR-1307-3p
+miR-139-5p
+miR-17-5p
+miR-181b
+miR-191
+miR-19a
+miR-200a
+miR-205
+miR-206
+miR-24
+miR-31
+miR-365
+miR-373
+miR-382
+miR-4634
+miR-497
+miR-520c
+miR-6861-5p
+miR-6875-5p
+miR-99a
+```
+
+O CSV usa colunas adicionais para documentar a revisao:
+
+```text
+numero_fontes
+recorrencia_bibliografica
+prioridade_projeto
+urls
+```
+
+O script `scripts/discover_mirna_sequence_candidates.js` carrega esse CSV automaticamente. Assim, novas evidencias de literatura devem ser adicionadas ao CSV, nao diretamente no codigo.
+
+Execucao validada apos essa alteracao:
+
+```text
+Biomarcadores positivos solicitados: 43
+Biomarcadores positivos com sequencia encontrada: 43
+Candidatos humanos avaliados: 221
+```
+
+Top 5 candidatos apos incorporar a lista consolidada:
+
+```text
+mir-449a       score=0.6500
+mir-20b-5p     score=0.6381
+let-7i-5p      score=0.6316
+let-7c-5p      score=0.6297
+mir-526b-3p    score=0.6270
+```
+
+O perfil positivo e ponderado por prioridade:
+
+```text
+alta = 3
+media = 2
+painel_inicial = 2
+exploratoria = 1
+```
+
+Como alguns nomes de literatura nao indicam explicitamente braco `5p` ou `3p`, o CSV usa a coluna `resolved_mature_mirna` para apontar a entrada madura usada no miRBase. Exemplos:
+
+```text
+miR-10b  -> hsa-miR-10b-5p
+miR-145  -> hsa-miR-145-5p
+miR-155  -> hsa-miR-155-5p
+miR-195  -> hsa-miR-195-5p
+miR-21   -> hsa-miR-21-5p
+miR-210  -> hsa-miR-210-3p
+miR-24   -> hsa-miR-24-3p
+miR-365  -> hsa-miR-365a-3p
+miR-520c -> hsa-miR-520c-3p
+```
+
+Essas resolucoes devem ser revisadas se uma fonte posterior especificar outro braco maduro.
+
+Fluxo para adicionar novos biomarcadores:
+
+1. Editar:
+
+```text
+data/external/breast_cancer_mirna_positive_markers.csv
+```
+
+2. Adicionar linhas no formato:
+
+```text
+mirna,resolved_mature_mirna,direcao,evidencia,fonte,tipo_amostra,numero_fontes,recorrencia_bibliografica,prioridade_projeto,urls,observacao
+```
+
+3. Rodar:
+
+```powershell
+node scripts\discover_mirna_sequence_candidates.js
+```
+
+4. Conferir as saidas atualizadas:
+
+```text
+data/processed/mirna_sequence_candidate_ranking.csv
+models/modelo_mirna_sequence_patterns.json
+reports/mirna_sequence_candidate_discovery_report.txt
+```
+
+Observacao tecnica:
+
+O ranking muda sempre que a lista positiva muda, porque os motifs enriquecidos, o centroide de k-mers e as similaridades passam a ser calculados com o novo conjunto positivo.
+
+Se o usuario trouxer apenas nomes, criar primeiro uma versao simples e depois enriquecer com metadados de fonte, recorrencia e URLs.
+
+Objetivo da proxima evolucao:
+
+```text
+score_integrado =
+  evidencia estavel de expressao nos pacientes
++ similaridade sequencial com marcadores positivos
++ motifs/k-mers em sequencias maduras
++ padroes de precursor/stem-loop
++ evidencia externa/literatura
+```
+
+Esse score integrado deve continuar sendo reportado como hipotese computacional e nao como diagnostico ou biomarcador validado.
+
+## Atualizacao: Evidencia Integrada dos Candidatos
+
+Foi criada uma etapa para combinar tres eixos de evidencia:
+
+```text
+sequencia + expressao nos pacientes + recorrencia das referencias positivas
+```
+
+Novo script:
+
+```text
+scripts/build_integrated_mirna_candidate_evidence.js
+```
+
+Comando:
+
+```powershell
+node scripts\build_integrated_mirna_candidate_evidence.js
+```
+
+Entradas:
+
+```text
+data/processed/mirna_sequence_candidate_ranking.csv
+data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+models/modelo_mirna_sequence_patterns.json
+```
+
+Saidas:
+
+```text
+data/processed/mirna_integrated_candidate_evidence.csv
+reports/mirna_integrated_candidate_evidence_report.txt
+```
+
+Logica:
+
+1. Ler o ranking sequencial gerado por `scripts/discover_mirna_sequence_candidates.js`.
+2. Para cada candidato, localizar as features de expressao no dataset seguro:
+
+```text
+data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+```
+
+3. Separar amostras por:
+
+```text
+classe = 1 doente
+classe = 0 saudavel
+```
+
+4. Calcular evidencias de expressao:
+
+- media em doentes e saudaveis;
+- mediana em doentes e saudaveis;
+- log2 fold-change doente vs saudavel;
+- AUC univariada;
+- AUC absoluta/direcional;
+- Cohen's d em `log1p`;
+- percentual de amostras com valor maior que zero.
+
+5. Associar o candidato aos biomarcadores positivos mais proximos por sequencia e usar a recorrencia desses biomarcadores como suporte auxiliar.
+
+Formula:
+
+```text
+score_integrado =
+  0.45 * score_sequencial
++ 0.45 * score_expressao
++ 0.10 * suporte_recorrencia_referencias
+```
+
+O `score_expressao` combina:
+
+- AUC univariada absoluta;
+- magnitude de `log2FC`;
+- diferenca de presenca maior que zero entre doentes e saudaveis.
+
+Execucao validada:
+
+```text
+Candidatos avaliados: 221
+```
+
+Top 5 por evidencia integrada:
+
+```text
+let-7f-5p      score_integrado=0.7947
+mir-106b-5p    score_integrado=0.7927
+mir-103a-3p    score_integrado=0.7753
+let-7c-5p      score_integrado=0.7749
+mir-486-5p     score_integrado=0.7645
+```
+
+Interpretacao:
+
+- O ranking sequencial puro responde: quais miRNAs parecem com os biomarcadores positivos por padrao de sequencia?
+- O ranking integrado responde: quais desses candidatos tambem apresentam separacao mensuravel entre doentes e saudaveis no CSV atual?
+
+Limite importante:
+
+Como os dados saudaveis e doentes podem vir de fontes/pipelines diferentes, a separacao por expressao pode estar inflada por efeito de lote/fonte. Portanto, o ranking integrado nao deve ser tratado como diagnostico, validacao clinica ou biomarcador confirmado. Ele e apenas uma priorizacao computacional de candidatos para investigacao.

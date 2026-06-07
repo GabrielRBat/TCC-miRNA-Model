@@ -1,0 +1,47 @@
+Evidencia integrada de candidatos miRNA
+
+Ranking sequencial usado: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\mirna_sequence_candidate_ranking.csv
+Dataset de expressao usado: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+Modelo/perfil sequencial usado: C:\Users\ACS INFO PC\Downloads\miRNA\models\modelo_mirna_sequence_patterns.json
+Candidatos avaliados: 221
+
+Formula do score integrado:
+score_integrado = 0.45 * score_sequencial + 0.45 * score_expressao + 0.10 * suporte_recorrencia_referencias
+
+O score_expressao combina AUC univariada absoluta, magnitude de log2 fold-change e diferenca de presenca >0 entre doentes e saudaveis.
+O suporte_recorrencia_referencias vem dos biomarcadores positivos mais proximos por sequencia: alta=1.00, media/painel=0.67, exploratoria=0.33.
+
+Top candidatos por evidencia integrada:
+1. let-7f-5p	score_integrado=0.7947	seq=0.6179	expr=1.0000	log2FC=12.063	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-let-7f-1, hsa-let-7f-2	referencias=let-7a-5p:0.906, let-7b-5p:0.710, mir-20a-5p:0.603
+2. mir-106b-5p	score_integrado=0.7927	seq=0.6134	expr=1.0000	log2FC=9.688	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-106b	referencias=mir-106a-5p:0.753, mir-17-5p:0.750, mir-20a-5p:0.689
+3. mir-103a-3p	score_integrado=0.7753	seq=0.5167	expr=0.9839	log2FC=12.901	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-103a-1, hsa-mir-103a-2	referencias=mir-195-5p:0.631, mir-497-5p:0.572, mir-16-5p:0.568
+4. let-7c-5p	score_integrado=0.7749	seq=0.6297	expr=0.9442	log2FC=9.103	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-let-7c	referencias=let-7a-5p:0.914, let-7b-5p:0.898, mir-34a-5p:0.550
+5. mir-486-5p	score_integrado=0.7645	seq=0.4786	expr=0.9982	log2FC=8.771	AUC_abs=0.999	direcao=maior_em_doentes	features=hsa-mir-486-1, hsa-mir-486-2	referencias=mir-125a-5p:0.587, mir-125b-5p:0.568, mir-92a-3p:0.492
+6. mir-34a-3p	score_integrado=0.7590	seq=0.4646	expr=1.0000	log2FC=8.031	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-34a	referencias=mir-191-5p:0.493, mir-195-5p:0.466, mir-19a-3p:0.450
+7. let-7i-5p	score_integrado=0.7531	seq=0.6316	expr=0.8937	log2FC=-4.904	AUC_abs=0.995	direcao=menor_em_doentes	features=hsa-let-7i	referencias=let-7b-5p:0.803, let-7a-5p:0.790, mir-93-5p:0.654
+8. mir-200b-3p	score_integrado=0.7523	seq=0.4929	expr=0.9567	log2FC=4.493	AUC_abs=0.978	direcao=maior_em_doentes	features=hsa-mir-200b	referencias=mir-200a-3p:0.530, mir-155-5p:0.521, mir-365a-3p:0.459
+9. mir-106b-3p	score_integrado=0.7490	seq=0.5163	expr=1.0000	log2FC=9.688	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-106b	referencias=mir-92a-3p:0.575, mir-497-5p:0.534, mir-210-3p:0.530
+10. mir-200b-5p	score_integrado=0.7474	seq=0.4820	expr=0.9567	log2FC=4.493	AUC_abs=0.978	direcao=maior_em_doentes	features=hsa-mir-200b	referencias=mir-195-5p:0.519, mir-497-5p:0.501, mir-31-5p:0.491
+11. mir-29b-3p	score_integrado=0.7450	seq=0.5531	expr=0.8802	log2FC=4.023	AUC_abs=0.975	direcao=maior_em_doentes	features=hsa-mir-29b-1	referencias=mir-195-5p:0.543, mir-223-3p:0.524, mir-497-5p:0.506
+12. mir-106a-3p	score_integrado=0.7364	seq=0.4891	expr=0.9991	log2FC=5.263	AUC_abs=0.999	direcao=maior_em_doentes	features=hsa-mir-106a	referencias=mir-19a-3p:0.495, mir-25-3p:0.472, mir-19b-3p:0.459
+13. let-7g-5p	score_integrado=0.7361	seq=0.6087	expr=0.8790	log2FC=-4.045	AUC_abs=0.982	direcao=menor_em_doentes	features=hsa-let-7g	referencias=let-7a-5p:0.841, let-7b-5p:0.736, mir-17-5p:0.559
+14. mir-30d-3p	score_integrado=0.7337	seq=0.5046	expr=0.9036	log2FC=8.579	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-30d	referencias=mir-21-5p:0.547, mir-24-3p:0.496, mir-223-3p:0.492
+15. mir-181a-5p	score_integrado=0.7321	seq=0.5792	expr=0.8995	log2FC=6.181	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-181a-1, hsa-mir-181a-2	referencias=mir-181b-5p:0.726, mir-200a-3p:0.496, mir-25-3p:0.472
+16. mir-323b-5p	score_integrado=0.7294	seq=0.5512	expr=0.9216	log2FC=2.613	AUC_abs=0.967	direcao=maior_em_doentes	features=hsa-mir-323b	referencias=mir-382-5p:0.702, let-7b-5p:0.670, mir-34a-5p:0.584
+17. mir-181b-3p	score_integrado=0.7256	seq=0.4642	expr=1.0000	log2FC=7.914	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-181b-1, hsa-mir-181b-2	referencias=mir-19b-3p:0.620, mir-19a-3p:0.616, mir-425-5p:0.496
+18. mir-26a-5p	score_integrado=0.7222	seq=0.4878	expr=0.8948	log2FC=-5.050	AUC_abs=0.996	direcao=menor_em_doentes	features=hsa-mir-26a-1, hsa-mir-26a-2	referencias=mir-145-5p:0.507, mir-155-5p:0.498, mir-24-3p:0.490
+19. mir-199b-5p	score_integrado=0.7202	seq=0.4988	expr=0.8794	log2FC=4.113	AUC_abs=0.982	direcao=maior_em_doentes	features=hsa-mir-199b	referencias=mir-21-5p:0.515, mir-34a-5p:0.509, mir-139-5p:0.492
+20. mir-30e-3p	score_integrado=0.7182	seq=0.4872	expr=0.8867	log2FC=3.576	AUC_abs=0.989	direcao=maior_em_doentes	features=hsa-mir-30e	referencias=mir-24-3p:0.516, mir-21-5p:0.471, mir-497-5p:0.448
+21. mir-30d-5p	score_integrado=0.7152	seq=0.4635	expr=0.9036	log2FC=8.579	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-30d	referencias=mir-1-3p:0.483, mir-191-5p:0.480, mir-10b-5p:0.477
+22. mir-200a-5p	score_integrado=0.7150	seq=0.5038	expr=0.9370	log2FC=3.088	AUC_abs=0.947	direcao=maior_em_doentes	features=hsa-mir-200a	referencias=mir-17-5p:0.516, mir-106a-5p:0.494, mir-34a-5p:0.474
+23. mir-23a-3p	score_integrado=0.7149	seq=0.4363	expr=0.9302	log2FC=7.576	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-23a	referencias=mir-145-5p:0.502, mir-1246:0.495, mir-181b-5p:0.492
+24. mir-181a-3p	score_integrado=0.7143	seq=0.4655	expr=0.8995	log2FC=6.181	AUC_abs=1.000	direcao=maior_em_doentes	features=hsa-mir-181a-1, hsa-mir-181a-2	referencias=mir-451a:0.560, mir-425-5p:0.536, mir-10b-5p:0.523
+25. mir-15a-5p	score_integrado=0.7129	seq=0.6197	expr=0.7422	log2FC=2.218	AUC_abs=0.932	direcao=maior_em_doentes	features=hsa-mir-15a	referencias=mir-497-5p:0.767, mir-195-5p:0.654, mir-16-5p:0.617
+26. mir-146b-5p	score_integrado=0.7122	seq=0.4764	expr=0.8841	log2FC=4.143	AUC_abs=0.986	direcao=maior_em_doentes	features=hsa-mir-146b	referencias=mir-21-5p:0.486, mir-125b-5p:0.469, mir-10b-5p:0.464
+27. let-7e-5p	score_integrado=0.7114	seq=0.6229	expr=0.8099	log2FC=2.463	AUC_abs=0.966	direcao=maior_em_doentes	features=hsa-let-7e	referencias=let-7a-5p:0.920, let-7b-5p:0.798, mir-20a-5p:0.555
+28. mir-486-3p	score_integrado=0.7069	seq=0.4987	expr=0.9982	log2FC=8.771	AUC_abs=0.999	direcao=maior_em_doentes	features=hsa-mir-486-1, hsa-mir-486-2	referencias=mir-24-3p:0.683, mir-6861-5p:0.533, mir-6875-5p:0.503
+29. mir-33a-5p	score_integrado=0.7066	seq=0.4763	expr=0.9458	log2FC=3.298	AUC_abs=0.955	direcao=maior_em_doentes	features=hsa-mir-33a	referencias=mir-25-3p:0.511, mir-92a-3p:0.499, mir-181b-5p:0.498
+30. mir-146b-3p	score_integrado=0.7054	seq=0.5354	expr=0.8841	log2FC=4.143	AUC_abs=0.986	direcao=maior_em_doentes	features=hsa-mir-146b	referencias=mir-34a-5p:0.550, mir-125a-5p:0.498, mir-382-5p:0.488
+
+Aviso cientifico:
+Esta analise gera candidatos, marcadores suspeitos e hipoteses computacionais. Nenhum miRNA listado deve ser tratado como diagnostico definitivo, biomarcador validado ou evidencia clinica sem validacao experimental/laboratorial.
