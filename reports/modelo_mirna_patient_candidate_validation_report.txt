@@ -1,0 +1,58 @@
+Modelo de validacao computacional de candidatos em pacientes
+
+Ranking de candidatos do Modelo 1: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\mirna_candidate_discovery_model_ranking.csv
+Modelo sequencial usado: C:\Users\ACS INFO PC\Downloads\miRNA\models\modelo_mirna_candidate_discovery.json
+Dataset de pacientes: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+Candidatos validados: 221
+
+Tipo do Modelo 2:
+patient_candidate_validation_models_per_candidate
+
+Como o Modelo 2 funciona:
+Para cada candidato do Modelo 1, o script localiza as features correspondentes no dataset de pacientes.
+Depois treina uma regressao logistica univariada usando apenas a expressao log1p daquele candidato para separar classe=1 de classe=0.
+Isso funciona como uma prova computacional: verifica se o candidato aparece e se sua expressao tem associacao com pacientes doentes no dataset atual.
+
+Formula de validacao em pacientes:
+score_validacao_pacientes = 0.70*AUC_signal + 0.20*|log2FC|_signal + 0.10*detection_presence_signal
+score_final_descoberta = 0.50*score_modelo_sequencial + 0.50*score_validacao_pacientes
+
+Top candidatos por score final:
+1. mir-106b-5p	score_final=0.9955	seq=0.9909	validacao=1.0000	test_auc=1.000	test_acc=1.000	log2FC=9.688	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-106b
+2. let-7f-5p	score_final=0.9795	seq=0.9591	validacao=1.0000	test_auc=1.000	test_acc=1.000	log2FC=12.063	direcao=maior_expressao_puxa_para_doente	features=hsa-let-7f-1, hsa-let-7f-2
+3. let-7c-5p	score_final=0.9698	seq=0.9955	validacao=0.9442	test_auc=1.000	test_acc=0.998	log2FC=9.103	direcao=maior_expressao_puxa_para_doente	features=hsa-let-7c
+4. mir-323b-5p	score_final=0.9542	seq=0.9818	validacao=0.9267	test_auc=0.966	test_acc=0.922	log2FC=2.613	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-323b
+5. let-7i-5p	score_final=0.9249	seq=0.9545	validacao=0.8952	test_auc=0.997	test_acc=0.963	log2FC=-4.904	direcao=menor_expressao_puxa_para_doente	features=hsa-let-7i
+6. mir-181a-3p	score_final=0.9135	seq=0.9273	validacao=0.8998	test_auc=1.000	test_acc=0.991	log2FC=6.181	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-181a-1, hsa-mir-181a-2
+7. mir-30d-5p	score_final=0.9063	seq=0.9091	validacao=0.9036	test_auc=1.000	test_acc=1.000	log2FC=8.579	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-30d
+8. mir-200b-3p	score_final=0.8970	seq=0.8500	validacao=0.9440	test_auc=0.972	test_acc=0.884	log2FC=4.493	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-200b
+9. mir-99b-5p	score_final=0.8951	seq=0.9864	validacao=0.8038	test_auc=0.950	test_acc=0.927	log2FC=2.599	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-99b
+10. let-7e-5p	score_final=0.8849	seq=0.9409	validacao=0.8289	test_auc=0.972	test_acc=0.920	log2FC=2.463	direcao=maior_expressao_puxa_para_doente	features=hsa-let-7e
+11. let-7g-5p	score_final=0.8827	seq=0.8909	validacao=0.8745	test_auc=0.982	test_acc=0.940	log2FC=-4.045	direcao=menor_expressao_puxa_para_doente	features=hsa-let-7g
+12. mir-33a-5p	score_final=0.8815	seq=0.8136	validacao=0.9494	test_auc=0.964	test_acc=0.881	log2FC=3.298	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-33a
+13. mir-486-5p	score_final=0.8714	seq=0.7455	validacao=0.9974	test_auc=0.998	test_acc=0.978	log2FC=8.771	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-486-1, hsa-mir-486-2
+14. mir-487b-5p	score_final=0.8631	seq=0.8773	validacao=0.8489	test_auc=0.962	test_acc=0.929	log2FC=-6.710	direcao=menor_expressao_puxa_para_doente	features=hsa-mir-487b
+15. mir-99b-3p	score_final=0.8610	seq=0.9182	validacao=0.8038	test_auc=0.950	test_acc=0.927	log2FC=2.599	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-99b
+16. mir-124-3p	score_final=0.8571	seq=0.9455	validacao=0.7688	test_auc=0.835	test_acc=0.767	log2FC=-7.836	direcao=menor_expressao_puxa_para_doente	features=hsa-mir-124-1, hsa-mir-124-2, hsa-mir-124-3
+17. mir-181b-3p	score_final=0.8545	seq=0.7091	validacao=1.0000	test_auc=1.000	test_acc=0.998	log2FC=7.914	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-181b-1, hsa-mir-181b-2
+18. mir-103a-3p	score_final=0.8374	seq=0.6909	validacao=0.9839	test_auc=1.000	test_acc=1.000	log2FC=12.901	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-103a-1, hsa-mir-103a-2
+19. mir-181a-5p	score_final=0.8363	seq=0.7727	validacao=0.8998	test_auc=1.000	test_acc=0.991	log2FC=6.181	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-181a-1, hsa-mir-181a-2
+20. mir-106b-3p	score_final=0.8295	seq=0.6591	validacao=1.0000	test_auc=1.000	test_acc=1.000	log2FC=9.688	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-106b
+21. mir-15a-5p	score_final=0.8287	seq=0.9045	validacao=0.7530	test_auc=0.931	test_acc=0.847	log2FC=2.218	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-15a
+22. mir-138-5p	score_final=0.8251	seq=0.9682	validacao=0.6820	test_auc=0.822	test_acc=0.810	log2FC=-6.876	direcao=menor_expressao_puxa_para_doente	features=hsa-mir-138-1, hsa-mir-138-2
+23. mir-29b-3p	score_final=0.8216	seq=0.7773	validacao=0.8659	test_auc=0.968	test_acc=0.912	log2FC=4.023	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-29b-1
+24. mir-486-3p	score_final=0.8010	seq=0.6045	validacao=0.9974	test_auc=0.998	test_acc=0.978	log2FC=8.771	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-486-1, hsa-mir-486-2
+25. mir-34a-3p	score_final=0.7886	seq=0.5773	validacao=1.0000	test_auc=1.000	test_acc=1.000	log2FC=8.031	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-34a
+26. mir-29c-3p	score_final=0.7848	seq=0.7909	validacao=0.7786	test_auc=0.928	test_acc=0.871	log2FC=2.651	direcao=maior_expressao_puxa_para_doente	features=hsa-mir-29c
+27. mir-26a-5p	score_final=0.7838	seq=0.6727	validacao=0.8949	test_auc=0.996	test_acc=0.953	log2FC=-5.050	direcao=menor_expressao_puxa_para_doente	features=hsa-mir-26a-1, hsa-mir-26a-2
+28. mir-378a-5p	score_final=0.7800	seq=0.7636	validacao=0.7965	test_auc=0.926	test_acc=0.830	log2FC=-4.367	direcao=menor_expressao_puxa_para_doente	features=hsa-mir-378a
+29. mir-487a-5p	score_final=0.7781	seq=0.8955	validacao=0.6607	test_auc=0.824	test_acc=0.795	log2FC=-4.790	direcao=menor_expressao_puxa_para_doente	features=hsa-mir-487a
+30. mir-135a-3p	score_final=0.7740	seq=0.8591	validacao=0.6889	test_auc=0.832	test_acc=0.813	log2FC=-6.517	direcao=menor_expressao_puxa_para_doente	features=hsa-mir-135a-1, hsa-mir-135a-2
+
+Como interpretar:
+Candidatos no topo tiveram bom suporte sequencial pelo Modelo 1 e tambem boa validacao computacional no dataset de pacientes.
+A direcao aprendida indica se maior ou menor expressao do candidato puxa o mini-modelo para classe doente.
+Isso nao prova causalidade nem valida clinicamente o biomarcador; apenas prioriza hipoteses para investigacao.
+
+Aviso cientifico:
+A validacao usa o dataset atual e pode refletir efeito de lote/fonte. Validacao laboratorial ou coorte externa independente continua necessaria.

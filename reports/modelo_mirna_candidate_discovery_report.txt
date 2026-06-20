@@ -1,0 +1,81 @@
+Modelo de descoberta de candidatos miRNA por k-mers
+
+FASTA de referencia: C:\Users\ACS INFO PC\Downloads\miRNA\data\external\mirbase_mature.fa
+CSV de biomarcadores positivos: C:\Users\ACS INFO PC\Downloads\miRNA\data\external\breast_cancer_mirna_positive_markers.csv
+Dataset usado para teste de expressao: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+Marcadores positivos com sequencia: 43
+Candidatos avaliados com expressao disponivel: 221
+Vocabulario aprendido: 608 features de k-mer/seed
+
+Tipo do modelo:
+trained_contrastive_one_class_kmer_model
+
+Como o treinamento foi feito:
+Os miRNAs associados ao cancer de mama foram usados como positivos. Os outros miRNAs humanos presentes no dataset foram usados apenas como background nao rotulado, e nao como classe nao cancerigena.
+O modelo aprendeu pesos para k-mers/seeds que diferenciam o perfil dos positivos em relacao ao background humano disponivel.
+
+Score do Modelo 1:
+score_modelo_sequencial = percentil do candidato pelo logit aprendido pelo modelo de k-mers
+
+Validacao interna de recuperacao de positivos conhecidos:
+LOPO percentil medio=0.7013
+LOPO positivos recuperados no top 10%=30.23%
+
+Top features aprendidas com peso positivo:
+kmer:CCC	peso=0.039532
+kmer:GU	peso=0.035156
+kmer:UGUG	peso=0.034322
+seed:AAAGUGC	peso=0.030302
+seed:AGCAGCA	peso=0.029632
+kmer:GCAG	peso=0.029000
+kmer:CAG	peso=0.027816
+kmer:CGU	peso=0.026948
+kmer:GUG	peso=0.026217
+kmer:CG	peso=0.025246
+kmer:ACCC	peso=0.024199
+kmer:UUGU	peso=0.024150
+kmer:GUAG	peso=0.023452
+kmer:AAU	peso=0.022947
+kmer:GCAGG	peso=0.021920
+
+Top candidatos por padrao sequencial aprendido:
+1. mir-6715a-3p	modelo_seq_percentil=1.0000	prob_contrastiva=0.6689	logit=0.7034	features=hsa-mir-6715a	referencias=mir-93-5p:0.579, mir-139-5p:0.557, mir-19b-3p:0.505
+2. let-7c-5p	modelo_seq_percentil=0.9955	prob_contrastiva=0.6686	logit=0.7018	features=hsa-let-7c	referencias=let-7a-5p:0.934, let-7b-5p:0.915, mir-34a-5p:0.542
+3. mir-106b-5p	modelo_seq_percentil=0.9909	prob_contrastiva=0.6684	logit=0.7007	features=hsa-mir-106b	referencias=mir-106a-5p:0.771, mir-17-5p:0.768, mir-20a-5p:0.708
+4. mir-99b-5p	modelo_seq_percentil=0.9864	prob_contrastiva=0.6683	logit=0.7007	features=hsa-mir-99b	referencias=mir-99a-5p:0.664, mir-10b-5p:0.644, mir-125a-5p:0.523
+5. mir-323b-5p	modelo_seq_percentil=0.9818	prob_contrastiva=0.6683	logit=0.7004	features=hsa-mir-323b	referencias=mir-382-5p:0.742, let-7b-5p:0.700, mir-34a-5p:0.607
+6. mir-551b-5p	modelo_seq_percentil=0.9773	prob_contrastiva=0.6682	logit=0.7003	features=hsa-mir-551b	referencias=mir-206:0.499, mir-191-5p:0.483, mir-382-5p:0.472
+7. mir-20b-5p	modelo_seq_percentil=0.9727	prob_contrastiva=0.6681	logit=0.6995	features=hsa-mir-20b	referencias=mir-20a-5p:0.874, mir-17-5p:0.872, mir-106a-5p:0.842
+8. mir-138-5p	modelo_seq_percentil=0.9682	prob_contrastiva=0.6681	logit=0.6994	features=hsa-mir-138-1, hsa-mir-138-2	referencias=mir-34a-5p:0.677, mir-210-3p:0.609, let-7b-5p:0.591
+9. mir-509-3p	modelo_seq_percentil=0.9636	prob_contrastiva=0.6680	logit=0.6990	features=hsa-mir-509-3	referencias=let-7b-5p:0.677, mir-6861-5p:0.593, mir-181b-5p:0.581
+10. let-7f-5p	modelo_seq_percentil=0.9591	prob_contrastiva=0.6679	logit=0.6989	features=hsa-let-7f-1, hsa-let-7f-2	referencias=let-7a-5p:0.920, let-7b-5p:0.736, mir-20a-5p:0.601
+11. let-7i-5p	modelo_seq_percentil=0.9545	prob_contrastiva=0.6678	logit=0.6985	features=hsa-let-7i	referencias=let-7b-5p:0.811, let-7a-5p:0.799, mir-93-5p:0.636
+12. mir-301a-3p	modelo_seq_percentil=0.9500	prob_contrastiva=0.6678	logit=0.6984	features=hsa-mir-301a	referencias=mir-17-5p:0.659, mir-20a-5p:0.641, mir-106a-5p:0.629
+13. mir-124-3p	modelo_seq_percentil=0.9455	prob_contrastiva=0.6678	logit=0.6983	features=hsa-mir-124-1, hsa-mir-124-2, hsa-mir-124-3	referencias=mir-191-5p:0.555, mir-31-5p:0.544, mir-16-5p:0.524
+14. let-7e-5p	modelo_seq_percentil=0.9409	prob_contrastiva=0.6678	logit=0.6980	features=hsa-let-7e	referencias=let-7a-5p:0.930, let-7b-5p:0.820, mir-20a-5p:0.551
+15. mir-449a	modelo_seq_percentil=0.9364	prob_contrastiva=0.6677	logit=0.6979	features=hsa-mir-449a	referencias=mir-34a-5p:0.864, let-7b-5p:0.596, let-7a-5p:0.549
+16. mir-301b-3p	modelo_seq_percentil=0.9318	prob_contrastiva=0.6677	logit=0.6979	features=hsa-mir-301b	referencias=mir-19a-3p:0.611, mir-19b-3p:0.603, mir-17-5p:0.575
+17. mir-181a-3p	modelo_seq_percentil=0.9273	prob_contrastiva=0.6677	logit=0.6979	features=hsa-mir-181a-1, hsa-mir-181a-2	referencias=mir-451a:0.598, mir-99a-5p:0.578, mir-425-5p:0.573
+18. mir-365b-3p	modelo_seq_percentil=0.9227	prob_contrastiva=0.6677	logit=0.6977	features=hsa-mir-365b	referencias=mir-365a-3p:1.000, mir-19a-3p:0.495, mir-191-5p:0.486
+19. mir-99b-3p	modelo_seq_percentil=0.9182	prob_contrastiva=0.6677	logit=0.6976	features=hsa-mir-99b	referencias=mir-1307-3p:0.602, mir-34a-5p:0.588, mir-139-5p:0.571
+20. mir-9-3p	modelo_seq_percentil=0.9136	prob_contrastiva=0.6676	logit=0.6972	features=hsa-mir-9-1, hsa-mir-9-2, hsa-mir-9-3	referencias=mir-1-3p:0.533, mir-191-5p:0.514, mir-20a-5p:0.506
+21. mir-30d-5p	modelo_seq_percentil=0.9091	prob_contrastiva=0.6676	logit=0.6972	features=hsa-mir-30d	referencias=mir-191-5p:0.545, mir-99a-5p:0.535, mir-1-3p:0.534
+22. mir-15a-5p	modelo_seq_percentil=0.9045	prob_contrastiva=0.6675	logit=0.6969	features=hsa-mir-15a	referencias=mir-497-5p:0.813, mir-195-5p:0.702, mir-16-5p:0.664
+23. mir-92b-5p	modelo_seq_percentil=0.9000	prob_contrastiva=0.6675	logit=0.6968	features=hsa-mir-92b	referencias=mir-4634:0.566, mir-6861-5p:0.554, mir-6875-5p:0.533
+24. mir-487a-5p	modelo_seq_percentil=0.8955	prob_contrastiva=0.6674	logit=0.6966	features=hsa-mir-487a	referencias=mir-382-5p:0.604, mir-34a-5p:0.581, mir-93-5p:0.559
+25. let-7g-5p	modelo_seq_percentil=0.8909	prob_contrastiva=0.6674	logit=0.6965	features=hsa-let-7g	referencias=let-7a-5p:0.855, let-7b-5p:0.755, mir-17-5p:0.553
+26. mir-200c-3p	modelo_seq_percentil=0.8864	prob_contrastiva=0.6674	logit=0.6964	features=hsa-mir-200c	referencias=mir-155-5p:0.623, mir-1-3p:0.520, mir-200a-3p:0.515
+27. let-7d-5p	modelo_seq_percentil=0.8818	prob_contrastiva=0.6674	logit=0.6962	features=hsa-let-7d	referencias=let-7a-5p:0.913, let-7b-5p:0.789, mir-20a-5p:0.630
+28. mir-487b-5p	modelo_seq_percentil=0.8773	prob_contrastiva=0.6672	logit=0.6956	features=hsa-mir-487b	referencias=mir-92a-3p:0.560, mir-125a-5p:0.552, mir-382-5p:0.549
+29. mir-130b-3p	modelo_seq_percentil=0.8727	prob_contrastiva=0.6672	logit=0.6954	features=hsa-mir-130b	referencias=mir-19b-3p:0.609, mir-31-5p:0.593, mir-19a-3p:0.593
+30. mir-34c-5p	modelo_seq_percentil=0.8682	prob_contrastiva=0.6671	logit=0.6953	features=hsa-mir-34c	referencias=mir-34a-5p:0.720, let-7a-5p:0.597, mir-20a-5p:0.589
+
+Como interpretar:
+O score_modelo_sequencial e o percentil do candidato pelo logit aprendido pelo modelo de k-mers; perto de 1 indica maior suporte sequencial relativo.
+A probabilidade_contrastiva_bruta e mantida para auditoria, mas nao deve ser lida como probabilidade clinica.
+Este primeiro modelo nao usa as classes dos pacientes; ele apenas aprende padroes sequenciais dos positivos e encontra candidatos na lista de miRNAs do projeto.
+A validacao computacional em pacientes deve ser feita no segundo modelo.
+
+Aviso cientifico:
+O modelo nao prova que um miRNA e cancerigeno. Ele prioriza candidatos hipoteticos para investigacao com base em padroes de sequencia e evidencia computacional no dataset atual.
+A separacao por expressao pode refletir efeito de lote/fonte entre doentes e saudaveis.

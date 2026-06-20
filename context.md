@@ -1458,3 +1458,258 @@ Interpretacao:
 Limite importante:
 
 Como os dados saudaveis e doentes podem vir de fontes/pipelines diferentes, a separacao por expressao pode estar inflada por efeito de lote/fonte. Portanto, o ranking integrado nao deve ser tratado como diagnostico, validacao clinica ou biomarcador confirmado. Ele e apenas uma priorizacao computacional de candidatos para investigacao.
+
+## Atualizacao Operacional: Dois Modelos para Descoberta de Candidatos
+
+### Mudanca de Direcao do Projeto
+
+O foco principal do TCC foi ajustado.
+
+Os modelos antigos:
+
+```text
+models/modelo_mirna_logistic.json
+models/modelo_mirna_painel.json
+```
+
+continuam existindo como historico, comparacao e apoio exploratorio, mas nao sao mais o fluxo principal. Eles classificam amostras/pacientes como saudavel ou doente. O objetivo principal agora nao e classificar pacientes, e sim descobrir e priorizar novos miRNAs candidatos.
+
+Nova pergunta principal:
+
+```text
+Quais miRNAs ainda nao usados como positivos no projeto compartilham padroes de k-mers com miRNAs associados ao cancer de mama e tambem mostram evidencia computacional nos pacientes do dataset?
+```
+
+Ponto cientifico importante:
+
+Nao foi criado um classificador supervisionado "cancerigeno vs nao cancerigeno", porque isso exigiria negativos biologicos confiaveis. Ausencia de evidencia na literatura nao prova que um miRNA e nao cancerigeno. Por isso o projeto usa uma abordagem de candidatos hipoteticos.
+
+### Modelo 1: Descoberta Sequencial por K-mers
+
+Novo script:
+
+```text
+scripts/train_mirna_candidate_discovery_model.js
+```
+
+Comando:
+
+```powershell
+node scripts\train_mirna_candidate_discovery_model.js
+```
+
+Entradas:
+
+```text
+data/external/breast_cancer_mirna_positive_markers.csv
+data/external/mirbase_mature.fa
+data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+```
+
+Saidas:
+
+```text
+models/modelo_mirna_candidate_discovery.json
+data/processed/mirna_candidate_discovery_model_ranking.csv
+reports/modelo_mirna_candidate_discovery_report.txt
+```
+
+Tipo:
+
+```text
+trained_contrastive_one_class_kmer_model
+```
+
+Esse e agora o modelo principal de descoberta sequencial.
+
+Funcionamento:
+
+1. Carrega os miRNAs positivos associados ao cancer de mama.
+2. Busca suas sequencias maduras no `mirbase_mature.fa`.
+3. Extrai k-mers com:
+
+```text
+k = 2, 3, 4, 5
+```
+
+4. Usa tambem a seed region como feature.
+5. Usa os demais miRNAs humanos presentes no dataset apenas como background nao rotulado.
+6. Treina uma regressao logistica contrastiva para aprender pesos de k-mers/seeds.
+7. Ranqueia candidatos pela saida aprendida do modelo.
+
+Importante:
+
+O background nao e tratado como "nao cancerigeno". Ele e apenas referencia para o modelo aprender quais k-mers sao mais caracteristicos dos positivos conhecidos.
+
+Execucao validada:
+
+```text
+Marcadores positivos com sequencia: 43
+Candidatos avaliados com expressao disponivel: 221
+Vocabulario aprendido: 608 features de k-mer/seed
+LOPO percentil medio: 0.7013
+LOPO positivos recuperados no top 10%: 30.23%
+```
+
+Top 5 por padrao sequencial aprendido:
+
+```text
+mir-6715a-3p
+let-7c-5p
+mir-106b-5p
+mir-99b-5p
+mir-323b-5p
+```
+
+Interpretacao do `score_modelo_sequencial`:
+
+```text
+percentil do candidato pelo logit aprendido pelo modelo de k-mers
+```
+
+Valores proximos de 1 significam que o candidato ficou entre os mais parecidos com o perfil sequencial positivo aprendido.
+
+### Modelo 2: Validacao Computacional em Pacientes
+
+Novo script:
+
+```text
+scripts/validate_mirna_candidates_in_patients_model.js
+```
+
+Comando:
+
+```powershell
+node scripts\validate_mirna_candidates_in_patients_model.js
+```
+
+Entradas:
+
+```text
+data/processed/mirna_candidate_discovery_model_ranking.csv
+models/modelo_mirna_candidate_discovery.json
+data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+```
+
+Saidas:
+
+```text
+models/modelo_mirna_patient_candidate_validation.json
+data/processed/mirna_patient_candidate_validation.csv
+reports/modelo_mirna_patient_candidate_validation_report.txt
+```
+
+Tipo:
+
+```text
+patient_candidate_validation_models_per_candidate
+```
+
+Esse e o segundo modelo do fluxo principal. Ele recebe os candidatos do Modelo 1 e faz uma validacao computacional nos pacientes.
+
+Funcionamento:
+
+1. Le os candidatos ranqueados pelo Modelo 1.
+2. Localiza as features de expressao associadas a cada candidato no dataset.
+3. Para cada candidato, calcula a expressao media das features associadas.
+4. Aplica `log1p(expressao)`.
+5. Treina uma regressao logistica univariada por candidato.
+6. Usa split estratificado deterministico 80/20 por classe.
+7. Mede se aquele candidato, sozinho, ajuda a separar:
+
+```text
+classe=1 doente
+classe=0 saudavel
+```
+
+Metricas calculadas:
+
+```text
+accuracy
+precision
+recall/sensibilidade
+specificity
+F1
+AUC
+matriz de confusao
+log2 fold-change
+percentual de doentes com expressao > 0
+percentual de saudaveis com expressao > 0
+```
+
+Formula:
+
+```text
+score_validacao_pacientes =
+  0.70 * AUC_signal
++ 0.20 * |log2FC|_signal
++ 0.10 * detection_presence_signal
+
+score_final_descoberta =
+  0.50 * score_modelo_sequencial
++ 0.50 * score_validacao_pacientes
+```
+
+Execucao validada:
+
+```text
+Candidatos validados: 221
+```
+
+Top 5 por score final:
+
+```text
+mir-106b-5p  score_final=0.9955
+let-7f-5p    score_final=0.9795
+let-7c-5p    score_final=0.9698
+mir-323b-5p  score_final=0.9542
+let-7i-5p    score_final=0.9249
+```
+
+Interpretacao:
+
+```text
+Modelo 1 = descobre candidatos por padroes sequenciais aprendidos com k-mers.
+Modelo 2 = testa se esses candidatos aparecem e tem associacao com pacientes doentes no dataset atual.
+```
+
+O Modelo 2 funciona como uma "prova" computacional, nao laboratorial. Se um candidato aparece nos pacientes doentes e sua expressao separa doentes de saudaveis, ele ganha prioridade como hipotese. Isso nao prova causalidade, nao confirma biomarcador e nao substitui validacao externa/laboratorial.
+
+### Novo Fluxo Principal
+
+Quando a tarefa for continuar a descoberta de candidatos, usar:
+
+```powershell
+node scripts\train_mirna_candidate_discovery_model.js
+node scripts\validate_mirna_candidates_in_patients_model.js
+```
+
+Arquivos principais para consulta:
+
+```text
+reports/modelo_mirna_candidate_discovery_report.txt
+reports/modelo_mirna_patient_candidate_validation_report.txt
+data/processed/mirna_patient_candidate_validation.csv
+models/modelo_mirna_candidate_discovery.json
+models/modelo_mirna_patient_candidate_validation.json
+```
+
+### Recomendacao Atual
+
+Para o TCC, descrever o pipeline principal assim:
+
+```text
+Foi desenvolvido um fluxo em dois modelos. O primeiro modelo aprende padroes sequenciais de k-mers a partir de miRNAs associados ao cancer de mama e ranqueia novos candidatos presentes no universo do projeto. O segundo modelo recebe esses candidatos e realiza uma validacao computacional no dataset de pacientes, testando se a expressao de cada candidato esta associada a amostras doentes em relacao a saudaveis.
+```
+
+Evitar dizer:
+
+```text
+o modelo descobre miRNAs cancerigenos
+```
+
+Preferir:
+
+```text
+o modelo prioriza miRNAs candidatos hipoteticamente associados ao cancer de mama
+```

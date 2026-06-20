@@ -1005,3 +1005,188 @@ evidencia externa/literatura
 ```
 
 Essa combinacao deve continuar sendo descrita como hipotese computacional ate passar por validacao biologica/laboratorial.
+
+## Atualizacao: Dois Modelos para Descoberta de Novos Marcadores
+
+O foco principal do projeto foi ajustado. Os modelos antigos de classificacao de pacientes (`modelo_mirna_logistic.json` e `modelo_mirna_painel.json`) continuam no repositorio como historico, comparacao e suporte exploratorio, mas nao sao mais o fluxo principal do TCC.
+
+O objetivo principal agora e:
+
+```text
+aprender padroes de k-mers em miRNAs associados ao cancer de mama
+-> encontrar novos miRNAs candidatos dentro da lista disponivel no projeto
+-> validar computacionalmente se esses candidatos aparecem/separam pacientes doentes e saudaveis no dataset atual
+```
+
+Essa formulacao evita chamar miRNAs nao estudados de "nao cancerigenos", porque isso exigiria validacao biologica/laboratorial. O projeto trabalha com candidatos hipoteticos, nao com classificacao definitiva de cancerigeno vs nao cancerigeno.
+
+### Modelo 1: Descoberta por K-mers
+
+Script:
+
+```powershell
+node scripts\train_mirna_candidate_discovery_model.js
+```
+
+Entradas:
+
+```text
+data/external/breast_cancer_mirna_positive_markers.csv
+data/external/mirbase_mature.fa
+data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+```
+
+Saidas:
+
+```text
+models/modelo_mirna_candidate_discovery.json
+data/processed/mirna_candidate_discovery_model_ranking.csv
+reports/modelo_mirna_candidate_discovery_report.txt
+```
+
+Esse modelo e do tipo:
+
+```text
+trained_contrastive_one_class_kmer_model
+```
+
+Como funciona:
+
+- usa miRNAs associados ao cancer de mama como positivos;
+- usa outros miRNAs humanos presentes no dataset apenas como background nao rotulado;
+- nao trata o background como "nao cancerigeno";
+- extrai k-mers de tamanho 2, 3, 4 e 5;
+- inclui a seed region como feature adicional;
+- treina pesos para k-mers/seeds que diferenciam o perfil positivo do background;
+- ranqueia candidatos pela semelhanca aprendida com o perfil dos positivos.
+
+Execucao validada:
+
+```text
+Marcadores positivos com sequencia: 43
+Candidatos avaliados com expressao disponivel: 221
+Vocabulario aprendido: 608 features de k-mer/seed
+LOPO percentil medio: 0.7013
+LOPO positivos recuperados no top 10%: 30.23%
+```
+
+Top 5 candidatos por padrao sequencial aprendido:
+
+```text
+mir-6715a-3p
+let-7c-5p
+mir-106b-5p
+mir-99b-5p
+mir-323b-5p
+```
+
+O `score_modelo_sequencial` e o percentil do candidato pelo logit aprendido pelo modelo. Valores proximos de 1 indicam maior suporte sequencial relativo.
+
+### Modelo 2: Validacao Computacional em Pacientes
+
+Script:
+
+```powershell
+node scripts\validate_mirna_candidates_in_patients_model.js
+```
+
+Entradas:
+
+```text
+data/processed/mirna_candidate_discovery_model_ranking.csv
+models/modelo_mirna_candidate_discovery.json
+data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+```
+
+Saidas:
+
+```text
+models/modelo_mirna_patient_candidate_validation.json
+data/processed/mirna_patient_candidate_validation.csv
+reports/modelo_mirna_patient_candidate_validation_report.txt
+```
+
+Esse modelo e do tipo:
+
+```text
+patient_candidate_validation_models_per_candidate
+```
+
+Como funciona:
+
+- recebe os candidatos gerados pelo Modelo 1;
+- localiza as features correspondentes no dataset de pacientes;
+- para cada candidato, treina uma regressao logistica univariada usando `log1p(expressao)`;
+- testa se a expressao desse candidato ajuda a separar `classe=1` doente de `classe=0` saudavel;
+- calcula AUC, accuracy, precision, recall, specificity, F1, log2 fold-change e presenca maior que zero;
+- gera um `score_validacao_pacientes`;
+- combina suporte sequencial e suporte em pacientes em um `score_final_descoberta`.
+
+Formula:
+
+```text
+score_validacao_pacientes =
+  0.70 * AUC_signal
++ 0.20 * |log2FC|_signal
++ 0.10 * detection_presence_signal
+
+score_final_descoberta =
+  0.50 * score_modelo_sequencial
++ 0.50 * score_validacao_pacientes
+```
+
+Execucao validada:
+
+```text
+Candidatos validados: 221
+```
+
+Top 5 por score final:
+
+```text
+mir-106b-5p  score_final=0.9955
+let-7f-5p    score_final=0.9795
+let-7c-5p    score_final=0.9698
+mir-323b-5p  score_final=0.9542
+let-7i-5p    score_final=0.9249
+```
+
+Interpretacao correta:
+
+```text
+Modelo 1 pergunta:
+quais miRNAs parecem sequencialmente com os marcadores positivos conhecidos?
+
+Modelo 2 pergunta:
+desses candidatos, quais tambem mostram associacao computacional com pacientes doentes no dataset atual?
+```
+
+Essa segunda etapa funciona como uma validacao computacional, nao laboratorial. Se um candidato aparece no dataset e sua expressao separa doentes e saudaveis, ele ganha prioridade como hipotese biologica. Ainda assim, isso nao prova causalidade nem valida o biomarcador clinicamente.
+
+### Fluxo Principal Atual
+
+Executar:
+
+```powershell
+node scripts\train_mirna_candidate_discovery_model.js
+node scripts\validate_mirna_candidates_in_patients_model.js
+```
+
+Consultar:
+
+```text
+reports/modelo_mirna_candidate_discovery_report.txt
+reports/modelo_mirna_patient_candidate_validation_report.txt
+data/processed/mirna_patient_candidate_validation.csv
+```
+
+### Status dos Modelos Antigos
+
+Os modelos antigos continuam disponiveis:
+
+```text
+models/modelo_mirna_logistic.json
+models/modelo_mirna_painel.json
+```
+
+Eles classificam amostras/pacientes como saudavel ou doente, mas nao sao mais o objetivo principal do projeto. Agora eles devem ser tratados como historico, comparacao ou apoio exploratorio, porque o objetivo cientifico principal passou a ser descoberta e priorizacao de novos miRNAs candidatos.
