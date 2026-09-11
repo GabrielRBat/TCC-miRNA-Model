@@ -1748,6 +1748,12 @@ Comando:
 node scripts\generate_mirna_rankings_html.js
 ```
 
+Comando para PDF:
+
+```powershell
+node scripts\generate_mirna_rankings_pdf.js
+```
+
 Entradas:
 
 ```text
@@ -1760,6 +1766,7 @@ Saida:
 
 ```text
 reports/mirna_rankings_dashboard.html
+reports/mirna_rankings_dashboard.pdf
 ```
 
 Conteudo do dashboard:
@@ -1780,6 +1787,8 @@ Observacao operacional:
 
 ```text
 Os graficos usam Plotly via CDN. Se o HTML for aberto sem internet, as tabelas continuam funcionando e os graficos podem ficar indisponiveis.
+O PDF e gerado a partir do HTML usando Microsoft Edge ou Google Chrome em modo headless.
+Se o navegador nao estiver no caminho padrao, definir MIRNA_PDF_BROWSER com o caminho do executavel Chromium.
 ```
 
 ### Recomendacao Atual
