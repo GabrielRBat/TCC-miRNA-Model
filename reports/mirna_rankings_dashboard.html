@@ -258,44 +258,44 @@
 <body>
   <header>
     <h1>miRNA Rankings Dashboard</h1>
-    <p>Visualizacao dos rankings gerados pelo Modelo 1 sequencial, pelo Modelo 2 de validacao em pacientes e pelo ranking integrado. Os scores sao computacionais e nao substituem validacao laboratorial.</p>
+    <p>Visualização dos rankings gerados pelo Modelo 1 sequencial, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
   </header>
 
   <main>
     <section class="metrics">
       <article class="metric"><span>Modelo 1 candidatos</span><strong>2613</strong><small>miRBase maduro humano</small></article>
-<article class="metric"><span>Com expressao</span><strong>221</strong><small>seguem para Modelo 2</small></article>
+<article class="metric"><span>Com expressão</span><strong>221</strong><small>seguem para Modelo 2</small></article>
 <article class="metric"><span>Modelo 2 validados</span><strong>221</strong><small>candidatos com feature no dataset</small></article>
-<article class="metric"><span>Precision media</span><strong>0.7275</strong><small>Modelo 2</small></article>
-<article class="metric"><span>AUC media</span><strong>0.7409</strong><small>Modelo 2</small></article>
-<article class="metric"><span>Accuracy media</span><strong>0.7217</strong><small>Modelo 2</small></article>
-<article class="metric"><span>Precision &gt;= 0.90</span><strong>61</strong><small>candidatos</small></article>
+<article class="metric"><span>Precisão média</span><strong>0.7275</strong><small>Modelo 2</small></article>
+<article class="metric"><span>AUC média</span><strong>0.7409</strong><small>Modelo 2</small></article>
+<article class="metric"><span>Acurácia média</span><strong>0.7217</strong><small>Modelo 2</small></article>
+<article class="metric"><span>Precisão &gt;= 0.90</span><strong>61</strong><small>candidatos</small></article>
 <article class="metric"><span>AUC &gt;= 0.90</span><strong>67</strong><small>candidatos</small></article>
     </section>
 
     <section class="panel">
-      <h2>O que cada metrica resume</h2>
+      <h2>O que cada métrica resume</h2>
       <div class="explain-grid">
-        <article class="definition"><strong>Modelo 1 candidatos</strong><span>Total de miRNAs maduros humanos ranqueados pelo padrao sequencial aprendido com os positivos conhecidos.</span></article>
-<article class="definition"><strong>Com expressao</strong><span>Subconjunto do ranking sequencial que possui feature correspondente no dataset de pacientes e pode ser avaliado pelo Modelo 2.</span></article>
-<article class="definition"><strong>Modelo 2 validados</strong><span>Quantidade de candidatos testados em doentes contra saudaveis usando a expressao disponivel no dataset.</span></article>
-<article class="definition"><strong>Precision media</strong><span>Entre os casos classificados como doentes pelo mini-modelo de cada candidato, mede a proporcao que realmente era classe 1.</span></article>
-<article class="definition"><strong>AUC media</strong><span>Capacidade media de separar doentes e saudaveis variando o limiar; 0.5 equivale a acaso e 1.0 indica separacao perfeita no teste.</span></article>
-<article class="definition"><strong>Accuracy media</strong><span>Proporcao media de amostras corretamente classificadas no teste estratificado do Modelo 2.</span></article>
-<article class="definition"><strong>Precision &gt;= 0.90 / AUC &gt;= 0.90</strong><span>Contagem de candidatos com desempenho alto no teste interno. Esses numeros continuam sendo validacao computacional, nao clinica.</span></article>
+        <article class="definition"><strong>Modelo 1 candidatos</strong><span>Total de miRNAs maduros humanos ranqueados pelo padrão sequencial aprendido com os positivos conhecidos.</span></article>
+<article class="definition"><strong>Com expressão</strong><span>Subconjunto do ranking sequencial que possui feature correspondente no dataset de pacientes e pode ser avaliado pelo Modelo 2.</span></article>
+<article class="definition"><strong>Modelo 2 validados</strong><span>Quantidade de candidatos testados em doentes contra saudáveis usando a expressão disponível no dataset.</span></article>
+<article class="definition"><strong>Precisão média</strong><span>Entre os casos classificados como doentes pelo mini-modelo de cada candidato, mede a proporção que realmente era classe 1.</span></article>
+<article class="definition"><strong>AUC média</strong><span>Capacidade média de separar doentes e saudáveis variando o limiar; 0.5 equivale a acaso e 1.0 indica separação perfeita no teste.</span></article>
+<article class="definition"><strong>Acurácia média</strong><span>Proporção média de amostras corretamente classificadas no teste estratificado do Modelo 2.</span></article>
+<article class="definition"><strong>Precisão &gt;= 0.90 / AUC &gt;= 0.90</strong><span>Contagem de candidatos com desempenho alto no teste interno. Esses números continuam sendo validação computacional, não clínica.</span></article>
       </div>
     </section>
 
     <section class="panel">
-      <h2>Visao Grafica</h2>
+      <h2>Visão Gráfica</h2>
       <div class="grid-2">
         <div>
           <div id="scatter" class="chart"></div>
-          <p class="chart-caption">Cada ponto e um miRNA candidato validado no dataset. No eixo X fica o suporte sequencial do Modelo 1; no eixo Y fica a validacao em pacientes do Modelo 2. Pontos no canto superior direito sao os candidatos mais interessantes porque combinam semelhanca sequencial com associacao em pacientes.</p>
+          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte sequencial do Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito são os candidatos mais interessantes porque combinam semelhança sequencial com associação em pacientes.</p>
         </div>
         <div>
           <div id="bar" class="chart"></div>
-          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do score de validacao em pacientes, servindo como lista priorizada para discussao cientifica.</p>
+          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do score de validação em pacientes, servindo como lista priorizada para discussão científica.</p>
         </div>
       </div>
       <p class="status" id="plot-status"></p>
@@ -303,14 +303,14 @@
 
     <section class="panel">
       <h2>Rankings</h2>
-      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba de validacao mostra apenas a forca no dataset de pacientes. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressao disponivel para validacao.</p>
+      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba de validação mostra apenas a força no dataset de pacientes. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressão disponível para validação.</p>
       <div class="tabs">
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
-        <button type="button" class="tab" data-view="validation">Validacao em pacientes</button>
+        <button type="button" class="tab" data-view="validation">Validação em pacientes</button>
         <button type="button" class="tab" data-view="sequence">Modelo 1 sequencial</button>
       </div>
       <div class="toolbar">
-        <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direcao, referencia ou k-mer">
+        <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direção, referência ou k-mer">
         <select id="page-size">
           <option value="25">25 linhas</option>
           <option value="50">50 linhas</option>
@@ -318,7 +318,7 @@
           <option value="500">500 linhas</option>
         </select>
         <button type="button" id="prev">Anterior</button>
-        <button type="button" id="next">Proximo</button>
+        <button type="button" id="next">Próximo</button>
         <span class="status" id="table-status"></span>
       </div>
       <div class="table-wrap">
@@ -327,7 +327,7 @@
     </section>
 
     <section class="note">
-      O Modelo 2 compara expressao em doentes contra saudaveis. Quando o dataset tem uma feature em nivel de precursor/familia, candidatos maduros 5p e 3p podem compartilhar a mesma metrica de validacao. Nesses casos, a evidencia e da feature disponivel no dataset, nao uma distincao experimental entre bracos maduros.
+      O Modelo 2 compara expressão em doentes contra saudáveis. Quando o dataset tem uma feature em nível de precursor/família, candidatos maduros 5p e 3p podem compartilhar a mesma métrica de validação. Nesses casos, a evidência é da feature disponível no dataset, não uma distinção experimental entre braços maduros.
     </section>
   </main>
 
@@ -339,36 +339,36 @@
         rows: DATA.integratedRows,
         columns: [
           ["rank_integrado", "Rank integrado"],
-          ["rank_validacao", "Rank validacao"],
+          ["rank_validacao", "Rank validação"],
           ["mirna", "miRNA"],
           ["score_final", "Score final"],
-          ["validacao", "Validacao"],
+          ["validacao", "Validação"],
           ["score_seq", "Score seq."],
           ["auc", "AUC"],
-          ["acc", "Accuracy"],
-          ["precision", "Precision"],
+          ["acc", "Acurácia"],
+          ["precision", "Precisão"],
           ["log2fc", "log2FC"],
-          ["direcao", "Direcao"],
+          ["direcao", "Direção"],
           ["features", "Features"]
         ]
       },
       validation: {
         rows: DATA.validationRows,
         columns: [
-          ["rank_validacao", "Rank validacao"],
+          ["rank_validacao", "Rank validação"],
           ["rank_integrado", "Rank integrado"],
           ["mirna", "miRNA"],
-          ["validacao", "Validacao"],
+          ["validacao", "Validação"],
           ["auc", "AUC"],
-          ["acc", "Accuracy"],
-          ["precision", "Precision"],
+          ["acc", "Acurácia"],
+          ["precision", "Precisão"],
           ["recall", "Recall"],
-          ["specificity", "Specificity"],
+          ["specificity", "Especificidade"],
           ["f1", "F1"],
           ["log2fc", "log2FC"],
           ["pct_doente", "% doente > 0"],
-          ["pct_saudavel", "% saudavel > 0"],
-          ["direcao", "Direcao"],
+          ["pct_saudavel", "% saudável > 0"],
+          ["direcao", "Direção"],
           ["features", "Features"]
         ]
       },
@@ -377,12 +377,12 @@
         columns: [
           ["rank", "Rank seq."],
           ["mirna", "miRNA"],
-          ["expressao", "Expressao no dataset"],
+          ["expressao", "Expressão no dataset"],
           ["score", "Score sequencial"],
           ["prob", "Prob. bruta"],
           ["logit", "Logit"],
-          ["features", "Features expressao"],
-          ["referencias", "Referencias proximas"],
+          ["features", "Features expressão"],
+          ["referencias", "Referências próximas"],
           ["kmers", "K-mers influentes"]
         ]
       }
@@ -457,7 +457,7 @@
 
     function renderPlots() {
       if (!window.Plotly) {
-        document.getElementById("plot-status").textContent = "Graficos indisponiveis sem acesso ao Plotly CDN. As tabelas continuam funcionando.";
+        document.getElementById("plot-status").textContent = "Gráficos indisponíveis sem acesso ao Plotly CDN. As tabelas continuam funcionando.";
         return;
       }
 
@@ -474,9 +474,9 @@
           colorscale: "Viridis",
           showscale: true
         },
-        hovertemplate: "%{text}<br>seq=%{x:.3f}<br>validacao=%{y:.3f}<extra></extra>"
+        hovertemplate: "%{text}<br>seq=%{x:.3f}<br>validação=%{y:.3f}<extra></extra>"
       }], {
-        title: "Sequencia vs validacao em pacientes",
+        title: "Sequência vs validação em pacientes",
         xaxis: { title: "Score Modelo 1" },
         yaxis: { title: "Score Modelo 2" },
         margin: { t: 48, r: 18, b: 52, l: 58 }

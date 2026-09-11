@@ -146,43 +146,43 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 
   const metrics = [
     renderMetric("Modelo 1 candidatos", sequenceRows.length, "miRBase maduro humano"),
-    renderMetric("Com expressao", sequenceWithExpression, "seguem para Modelo 2"),
+    renderMetric("Com expressão", sequenceWithExpression, "seguem para Modelo 2"),
     renderMetric("Modelo 2 validados", validationRows.length, "candidatos com feature no dataset"),
-    renderMetric("Precision media", round(mean(precisions)), "Modelo 2"),
-    renderMetric("AUC media", round(mean(aucs)), "Modelo 2"),
-    renderMetric("Accuracy media", round(mean(accuracies)), "Modelo 2"),
-    renderMetric("Precision >= 0.90", countWhere(precisions, (value) => value >= 0.9), "candidatos"),
+    renderMetric("Precisão média", round(mean(precisions)), "Modelo 2"),
+    renderMetric("AUC média", round(mean(aucs)), "Modelo 2"),
+    renderMetric("Acurácia média", round(mean(accuracies)), "Modelo 2"),
+    renderMetric("Precisão >= 0.90", countWhere(precisions, (value) => value >= 0.9), "candidatos"),
     renderMetric("AUC >= 0.90", countWhere(aucs, (value) => value >= 0.9), "candidatos"),
   ].join("\n");
 
   const metricDefinitions = [
     renderDefinition(
       "Modelo 1 candidatos",
-      "Total de miRNAs maduros humanos ranqueados pelo padrao sequencial aprendido com os positivos conhecidos."
+      "Total de miRNAs maduros humanos ranqueados pelo padrão sequencial aprendido com os positivos conhecidos."
     ),
     renderDefinition(
-      "Com expressao",
+      "Com expressão",
       "Subconjunto do ranking sequencial que possui feature correspondente no dataset de pacientes e pode ser avaliado pelo Modelo 2."
     ),
     renderDefinition(
       "Modelo 2 validados",
-      "Quantidade de candidatos testados em doentes contra saudaveis usando a expressao disponivel no dataset."
+      "Quantidade de candidatos testados em doentes contra saudáveis usando a expressão disponível no dataset."
     ),
     renderDefinition(
-      "Precision media",
-      "Entre os casos classificados como doentes pelo mini-modelo de cada candidato, mede a proporcao que realmente era classe 1."
+      "Precisão média",
+      "Entre os casos classificados como doentes pelo mini-modelo de cada candidato, mede a proporção que realmente era classe 1."
     ),
     renderDefinition(
-      "AUC media",
-      "Capacidade media de separar doentes e saudaveis variando o limiar; 0.5 equivale a acaso e 1.0 indica separacao perfeita no teste."
+      "AUC média",
+      "Capacidade média de separar doentes e saudáveis variando o limiar; 0.5 equivale a acaso e 1.0 indica separação perfeita no teste."
     ),
     renderDefinition(
-      "Accuracy media",
-      "Proporcao media de amostras corretamente classificadas no teste estratificado do Modelo 2."
+      "Acurácia média",
+      "Proporção média de amostras corretamente classificadas no teste estratificado do Modelo 2."
     ),
     renderDefinition(
-      "Precision >= 0.90 / AUC >= 0.90",
-      "Contagem de candidatos com desempenho alto no teste interno. Esses numeros continuam sendo validacao computacional, nao clinica."
+      "Precisão >= 0.90 / AUC >= 0.90",
+      "Contagem de candidatos com desempenho alto no teste interno. Esses números continuam sendo validação computacional, não clínica."
     ),
   ].join("\n");
 
@@ -446,7 +446,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 <body>
   <header>
     <h1>miRNA Rankings Dashboard</h1>
-    <p>Visualizacao dos rankings gerados pelo Modelo 1 sequencial, pelo Modelo 2 de validacao em pacientes e pelo ranking integrado. Os scores sao computacionais e nao substituem validacao laboratorial.</p>
+    <p>Visualização dos rankings gerados pelo Modelo 1 sequencial, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
   </header>
 
   <main>
@@ -455,22 +455,22 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
     </section>
 
     <section class="panel">
-      <h2>O que cada metrica resume</h2>
+      <h2>O que cada métrica resume</h2>
       <div class="explain-grid">
         ${metricDefinitions}
       </div>
     </section>
 
     <section class="panel">
-      <h2>Visao Grafica</h2>
+      <h2>Visão Gráfica</h2>
       <div class="grid-2">
         <div>
           <div id="scatter" class="chart"></div>
-          <p class="chart-caption">Cada ponto e um miRNA candidato validado no dataset. No eixo X fica o suporte sequencial do Modelo 1; no eixo Y fica a validacao em pacientes do Modelo 2. Pontos no canto superior direito sao os candidatos mais interessantes porque combinam semelhanca sequencial com associacao em pacientes.</p>
+          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte sequencial do Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito são os candidatos mais interessantes porque combinam semelhança sequencial com associação em pacientes.</p>
         </div>
         <div>
           <div id="bar" class="chart"></div>
-          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do score de validacao em pacientes, servindo como lista priorizada para discussao cientifica.</p>
+          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do score de validação em pacientes, servindo como lista priorizada para discussão científica.</p>
         </div>
       </div>
       <p class="status" id="plot-status"></p>
@@ -478,14 +478,14 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 
     <section class="panel">
       <h2>Rankings</h2>
-      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba de validacao mostra apenas a forca no dataset de pacientes. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressao disponivel para validacao.</p>
+      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba de validação mostra apenas a força no dataset de pacientes. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressão disponível para validação.</p>
       <div class="tabs">
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
-        <button type="button" class="tab" data-view="validation">Validacao em pacientes</button>
+        <button type="button" class="tab" data-view="validation">Validação em pacientes</button>
         <button type="button" class="tab" data-view="sequence">Modelo 1 sequencial</button>
       </div>
       <div class="toolbar">
-        <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direcao, referencia ou k-mer">
+        <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direção, referência ou k-mer">
         <select id="page-size">
           <option value="25">25 linhas</option>
           <option value="50">50 linhas</option>
@@ -493,7 +493,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
           <option value="500">500 linhas</option>
         </select>
         <button type="button" id="prev">Anterior</button>
-        <button type="button" id="next">Proximo</button>
+        <button type="button" id="next">Próximo</button>
         <span class="status" id="table-status"></span>
       </div>
       <div class="table-wrap">
@@ -502,7 +502,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
     </section>
 
     <section class="note">
-      O Modelo 2 compara expressao em doentes contra saudaveis. Quando o dataset tem uma feature em nivel de precursor/familia, candidatos maduros 5p e 3p podem compartilhar a mesma metrica de validacao. Nesses casos, a evidencia e da feature disponivel no dataset, nao uma distincao experimental entre bracos maduros.
+      O Modelo 2 compara expressão em doentes contra saudáveis. Quando o dataset tem uma feature em nível de precursor/família, candidatos maduros 5p e 3p podem compartilhar a mesma métrica de validação. Nesses casos, a evidência é da feature disponível no dataset, não uma distinção experimental entre braços maduros.
     </section>
   </main>
 
@@ -514,36 +514,36 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
         rows: DATA.integratedRows,
         columns: [
           ["rank_integrado", "Rank integrado"],
-          ["rank_validacao", "Rank validacao"],
+          ["rank_validacao", "Rank validação"],
           ["mirna", "miRNA"],
           ["score_final", "Score final"],
-          ["validacao", "Validacao"],
+          ["validacao", "Validação"],
           ["score_seq", "Score seq."],
           ["auc", "AUC"],
-          ["acc", "Accuracy"],
-          ["precision", "Precision"],
+          ["acc", "Acurácia"],
+          ["precision", "Precisão"],
           ["log2fc", "log2FC"],
-          ["direcao", "Direcao"],
+          ["direcao", "Direção"],
           ["features", "Features"]
         ]
       },
       validation: {
         rows: DATA.validationRows,
         columns: [
-          ["rank_validacao", "Rank validacao"],
+          ["rank_validacao", "Rank validação"],
           ["rank_integrado", "Rank integrado"],
           ["mirna", "miRNA"],
-          ["validacao", "Validacao"],
+          ["validacao", "Validação"],
           ["auc", "AUC"],
-          ["acc", "Accuracy"],
-          ["precision", "Precision"],
+          ["acc", "Acurácia"],
+          ["precision", "Precisão"],
           ["recall", "Recall"],
-          ["specificity", "Specificity"],
+          ["specificity", "Especificidade"],
           ["f1", "F1"],
           ["log2fc", "log2FC"],
           ["pct_doente", "% doente > 0"],
-          ["pct_saudavel", "% saudavel > 0"],
-          ["direcao", "Direcao"],
+          ["pct_saudavel", "% saudável > 0"],
+          ["direcao", "Direção"],
           ["features", "Features"]
         ]
       },
@@ -552,12 +552,12 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
         columns: [
           ["rank", "Rank seq."],
           ["mirna", "miRNA"],
-          ["expressao", "Expressao no dataset"],
+          ["expressao", "Expressão no dataset"],
           ["score", "Score sequencial"],
           ["prob", "Prob. bruta"],
           ["logit", "Logit"],
-          ["features", "Features expressao"],
-          ["referencias", "Referencias proximas"],
+          ["features", "Features expressão"],
+          ["referencias", "Referências próximas"],
           ["kmers", "K-mers influentes"]
         ]
       }
@@ -632,7 +632,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 
     function renderPlots() {
       if (!window.Plotly) {
-        document.getElementById("plot-status").textContent = "Graficos indisponiveis sem acesso ao Plotly CDN. As tabelas continuam funcionando.";
+        document.getElementById("plot-status").textContent = "Gráficos indisponíveis sem acesso ao Plotly CDN. As tabelas continuam funcionando.";
         return;
       }
 
@@ -649,9 +649,9 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
           colorscale: "Viridis",
           showscale: true
         },
-        hovertemplate: "%{text}<br>seq=%{x:.3f}<br>validacao=%{y:.3f}<extra></extra>"
+        hovertemplate: "%{text}<br>seq=%{x:.3f}<br>validação=%{y:.3f}<extra></extra>"
       }], {
-        title: "Sequencia vs validacao em pacientes",
+        title: "Sequência vs validação em pacientes",
         xaxis: { title: "Score Modelo 1" },
         yaxis: { title: "Score Modelo 2" },
         margin: { t: 48, r: 18, b: 52, l: 58 }
@@ -686,7 +686,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 
 function main() {
   for (const requiredPath of [SEQUENCE_RANKING_CSV, VALIDATION_RANKING_CSV, INTEGRATED_RANKING_CSV]) {
-    if (!fs.existsSync(requiredPath)) throw new Error(`Arquivo obrigatorio nao encontrado: ${requiredPath}`);
+    if (!fs.existsSync(requiredPath)) throw new Error(`Arquivo obrigatório não encontrado: ${requiredPath}`);
   }
 
   const sequenceRows = compactSequenceRows(readCsv(SEQUENCE_RANKING_CSV));
@@ -696,8 +696,8 @@ function main() {
   fs.writeFileSync(OUTPUT_HTML, buildHtml({ sequenceRows, validationRows, integratedRows }), "utf8");
 
   console.log(`Dashboard HTML gerado: ${OUTPUT_HTML}`);
-  if (fs.existsSync(SEQUENCE_REPORT)) console.log(`Relatorio Modelo 1: ${SEQUENCE_REPORT}`);
-  if (fs.existsSync(VALIDATION_REPORT)) console.log(`Relatorio Modelo 2: ${VALIDATION_REPORT}`);
+  if (fs.existsSync(SEQUENCE_REPORT)) console.log(`Relatório Modelo 1: ${SEQUENCE_REPORT}`);
+  if (fs.existsSync(VALIDATION_REPORT)) console.log(`Relatório Modelo 2: ${VALIDATION_REPORT}`);
 }
 
 main();
