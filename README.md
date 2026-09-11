@@ -1212,6 +1212,40 @@ data/processed/mirna_patient_candidate_validation.csv
 data/processed/mirna_patient_candidate_integrated_ranking.csv
 ```
 
+### Dashboard HTML dos Rankings
+
+Foi adicionado um gerador de dashboard HTML para visualizar os rankings sem abrir os CSVs diretamente.
+
+Script:
+
+```powershell
+node scripts\generate_mirna_rankings_html.js
+```
+
+Entradas:
+
+```text
+data/processed/mirna_candidate_discovery_model_ranking.csv
+data/processed/mirna_patient_candidate_validation.csv
+data/processed/mirna_patient_candidate_integrated_ranking.csv
+```
+
+Saida:
+
+```text
+reports/mirna_rankings_dashboard.html
+```
+
+O dashboard contem:
+
+- cards com metricas gerais dos modelos;
+- grafico `score_modelo_sequencial` vs `score_validacao_pacientes`;
+- grafico do top 20 do ranking integrado;
+- abas para ranking integrado, validacao em pacientes e Modelo 1 sequencial;
+- busca textual, paginacao e ordenacao por coluna.
+
+Os graficos usam Plotly via CDN. Se o HTML for aberto sem internet, as tabelas continuam funcionando e os graficos podem ficar indisponiveis.
+
 ### Status dos Modelos Antigos
 
 Os modelos antigos continuam disponiveis:

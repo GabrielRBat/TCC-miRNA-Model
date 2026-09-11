@@ -1732,6 +1732,56 @@ models/modelo_mirna_candidate_discovery.json
 models/modelo_mirna_patient_candidate_validation.json
 ```
 
+### Dashboard HTML dos Rankings
+
+Foi criado um script para gerar uma visualizacao HTML dos rankings, evitando depender da abertura manual dos CSVs.
+
+Script:
+
+```text
+scripts/generate_mirna_rankings_html.js
+```
+
+Comando:
+
+```powershell
+node scripts\generate_mirna_rankings_html.js
+```
+
+Entradas:
+
+```text
+data/processed/mirna_candidate_discovery_model_ranking.csv
+data/processed/mirna_patient_candidate_validation.csv
+data/processed/mirna_patient_candidate_integrated_ranking.csv
+```
+
+Saida:
+
+```text
+reports/mirna_rankings_dashboard.html
+```
+
+Conteudo do dashboard:
+
+```text
+cards com metricas gerais dos modelos
+grafico score_modelo_sequencial vs score_validacao_pacientes
+grafico top 20 do ranking integrado
+aba do ranking integrado
+aba do ranking puro de validacao em pacientes
+aba do ranking sequencial do Modelo 1
+busca textual
+paginacao
+ordenacao por coluna
+```
+
+Observacao operacional:
+
+```text
+Os graficos usam Plotly via CDN. Se o HTML for aberto sem internet, as tabelas continuam funcionando e os graficos podem ficar indisponiveis.
+```
+
 ### Recomendacao Atual
 
 Para o TCC, descrever o pipeline principal assim:
