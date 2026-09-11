@@ -123,6 +123,10 @@ function renderMetric(label, value, hint) {
   return `<article class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(hint)}</small></article>`;
 }
 
+function renderDefinition(term, description) {
+  return `<article class="definition"><strong>${escapeHtml(term)}</strong><span>${escapeHtml(description)}</span></article>`;
+}
+
 function buildHtml({ sequenceRows, validationRows, integratedRows }) {
   const validationScores = validationRows.map((row) => row.validacao);
   const precisions = validationRows.map((row) => row.precision);
@@ -149,6 +153,37 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
     renderMetric("Accuracy media", round(mean(accuracies)), "Modelo 2"),
     renderMetric("Precision >= 0.90", countWhere(precisions, (value) => value >= 0.9), "candidatos"),
     renderMetric("AUC >= 0.90", countWhere(aucs, (value) => value >= 0.9), "candidatos"),
+  ].join("\n");
+
+  const metricDefinitions = [
+    renderDefinition(
+      "Modelo 1 candidatos",
+      "Total de miRNAs maduros humanos ranqueados pelo padrao sequencial aprendido com os positivos conhecidos."
+    ),
+    renderDefinition(
+      "Com expressao",
+      "Subconjunto do ranking sequencial que possui feature correspondente no dataset de pacientes e pode ser avaliado pelo Modelo 2."
+    ),
+    renderDefinition(
+      "Modelo 2 validados",
+      "Quantidade de candidatos testados em doentes contra saudaveis usando a expressao disponivel no dataset."
+    ),
+    renderDefinition(
+      "Precision media",
+      "Entre os casos classificados como doentes pelo mini-modelo de cada candidato, mede a proporcao que realmente era classe 1."
+    ),
+    renderDefinition(
+      "AUC media",
+      "Capacidade media de separar doentes e saudaveis variando o limiar; 0.5 equivale a acaso e 1.0 indica separacao perfeita no teste."
+    ),
+    renderDefinition(
+      "Accuracy media",
+      "Proporcao media de amostras corretamente classificadas no teste estratificado do Modelo 2."
+    ),
+    renderDefinition(
+      "Precision >= 0.90 / AUC >= 0.90",
+      "Contagem de candidatos com desempenho alto no teste interno. Esses numeros continuam sendo validacao computacional, nao clinica."
+    ),
   ].join("\n");
 
   return `<!doctype html>
@@ -242,6 +277,36 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       letter-spacing: 0;
     }
 
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .definition {
+      border: 1px solid var(--line);
+      background: #fafbfc;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 92px;
+    }
+
+    .definition strong,
+    .definition span {
+      display: block;
+    }
+
+    .definition strong {
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .definition span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -307,6 +372,13 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       min-height: 390px;
     }
 
+    .chart-caption {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
     .table-wrap {
       overflow: auto;
       border: 1px solid var(--line);
@@ -360,6 +432,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       header,
       main { padding-left: 16px; padding-right: 16px; }
       .metrics { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+      .explain-grid { grid-template-columns: 1fr; }
       .grid-2 { grid-template-columns: 1fr; }
       h1 { font-size: 24px; }
     }
@@ -382,16 +455,30 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
     </section>
 
     <section class="panel">
+      <h2>O que cada metrica resume</h2>
+      <div class="explain-grid">
+        ${metricDefinitions}
+      </div>
+    </section>
+
+    <section class="panel">
       <h2>Visao Grafica</h2>
       <div class="grid-2">
-        <div id="scatter" class="chart"></div>
-        <div id="bar" class="chart"></div>
+        <div>
+          <div id="scatter" class="chart"></div>
+          <p class="chart-caption">Cada ponto e um miRNA candidato validado no dataset. No eixo X fica o suporte sequencial do Modelo 1; no eixo Y fica a validacao em pacientes do Modelo 2. Pontos no canto superior direito sao os candidatos mais interessantes porque combinam semelhanca sequencial com associacao em pacientes.</p>
+        </div>
+        <div>
+          <div id="bar" class="chart"></div>
+          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do score de validacao em pacientes, servindo como lista priorizada para discussao cientifica.</p>
+        </div>
       </div>
       <p class="status" id="plot-status"></p>
     </section>
 
     <section class="panel">
       <h2>Rankings</h2>
+      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba de validacao mostra apenas a forca no dataset de pacientes. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressao disponivel para validacao.</p>
       <div class="tabs">
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
         <button type="button" class="tab" data-view="validation">Validacao em pacientes</button>
