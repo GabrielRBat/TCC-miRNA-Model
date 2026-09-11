@@ -10,6 +10,7 @@ const SEQUENCE_MODEL_JSON = fromRoot("models", "modelo_mirna_candidate_discovery
 
 const OUTPUT_MODEL = fromRoot("models", "modelo_mirna_patient_candidate_validation.json");
 const OUTPUT_CSV = fromRoot("data", "processed", "mirna_patient_candidate_validation.csv");
+const OUTPUT_INTEGRATED_CSV = fromRoot("data", "processed", "mirna_patient_candidate_integrated_ranking.csv");
 const OUTPUT_REPORT = fromRoot("reports", "modelo_mirna_patient_candidate_validation_report.txt");
 
 const TRAIN_EPOCHS = 900;
@@ -242,6 +243,7 @@ function main() {
 
   const candidateResults = [];
   const candidateModels = [];
+  let skippedWithoutExpression = 0;
 
   for (const row of candidates.rows) {
     const get = (name) => row[candidates.indexByName.get(name)] ?? "";
@@ -250,7 +252,10 @@ function main() {
       .split(";")
       .map((item) => item.trim())
       .filter((feature) => dataset.indexByName.has(feature));
-    if (!features.length) continue;
+    if (!features.length) {
+      skippedWithoutExpression += 1;
+      continue;
+    }
 
     const samples = datasetSamples.map((sample, index) => ({
       index,
@@ -316,10 +321,35 @@ function main() {
     });
   }
 
-  candidateResults.sort((a, b) => b.finalDiscoveryScore - a.finalDiscoveryScore);
+  const validationRanked = [...candidateResults].sort(
+    (a, b) =>
+      b.validationScore - a.validationScore ||
+      b.testMetrics.auc - a.testMetrics.auc ||
+      Math.abs(b.log2FoldChange) - Math.abs(a.log2FoldChange) ||
+      b.sequenceScore - a.sequenceScore
+  );
+  const integratedRanked = [...candidateResults].sort(
+    (a, b) => b.finalDiscoveryScore - a.finalDiscoveryScore || b.validationScore - a.validationScore
+  );
+
+  validationRanked.forEach((item, index) => {
+    item.validationRank = index + 1;
+  });
+  integratedRanked.forEach((item, index) => {
+    item.integratedRank = index + 1;
+  });
+
+  const resultByKey = new Map(candidateResults.map((item) => [`${item.mirna}|${item.sequenceRank}`, item]));
+  for (const candidateModel of candidateModels) {
+    const result = resultByKey.get(`${candidateModel.mirna}|${candidateModel.sequence_rank}`);
+    candidateModel.validation_rank = result?.validationRank ?? null;
+    candidateModel.integrated_rank = result?.integratedRank ?? null;
+  }
+  candidateModels.sort((a, b) => (a.validation_rank ?? 0) - (b.validation_rank ?? 0));
 
   ensureDirectory(OUTPUT_MODEL);
   ensureDirectory(OUTPUT_CSV);
+  ensureDirectory(OUTPUT_INTEGRATED_CSV);
   ensureDirectory(OUTPUT_REPORT);
 
   const modelArtifact = {
@@ -329,16 +359,30 @@ function main() {
     input_candidate_ranking: CANDIDATE_RANKING_CSV,
     input_sequence_model: SEQUENCE_MODEL_JSON,
     input_dataset: DATASET_CSV,
+    output_validation_ranking: OUTPUT_CSV,
+    output_integrated_ranking: OUTPUT_INTEGRATED_CSV,
     candidate_count: candidateResults.length,
+    candidate_count_from_sequence_ranking: candidates.rows.length,
+    candidate_count_skipped_without_expression: skippedWithoutExpression,
     train_test_split: "estratificado deterministico 80/20 por classe",
     per_candidate_model:
       "Para cada candidato, treina regressao logistica univariada usando log1p(expressao media das features associadas).",
     validation_score_formula:
       "score_validacao_pacientes = 0.70*AUC_signal + 0.20*|log2FC|_signal + 0.10*detection_presence_signal",
     final_score_formula: "score_final_descoberta = 0.50*score_modelo_sequencial + 0.50*score_validacao_pacientes",
+    ranking_definitions: {
+      rank_validacao_pacientes:
+        "Ranking puro do Modelo 2, ordenado por score_validacao_pacientes. Mede apenas associacao computacional no dataset de pacientes.",
+      rank_integrado:
+        "Ranking combinado, ordenado por score_final_descoberta. Combina hipotese sequencial do Modelo 1 com validacao computacional do Modelo 2.",
+    },
+    expression_level_note:
+      "O dataset pode representar miRNAs em nivel de precursor/familia. Quando candidatos maduros 5p/3p compartilham a mesma feature de expressao, o Modelo 2 valida a feature disponivel, mas nao distingue experimentalmente o braco maduro.",
     sequence_model_summary: {
       type: sequenceModel.type,
       candidate_count: sequenceModel.candidate_count,
+      candidate_count_global_mirbase: sequenceModel.candidate_count_global_mirbase,
+      candidate_count_with_expression_available: sequenceModel.candidate_count_with_expression_available,
       vocabulary_size: sequenceModel.vocabulary_size,
     },
     candidates: candidateModels,
@@ -348,11 +392,12 @@ function main() {
   fs.writeFileSync(OUTPUT_MODEL, JSON.stringify(modelArtifact, null, 2), "utf8");
 
   const outputHeader = [
-    "rank_final",
+    "rank_validacao_pacientes",
+    "rank_integrado",
     "mirna",
+    "score_validacao_pacientes",
     "score_final_descoberta",
     "score_modelo_sequencial",
-    "score_validacao_pacientes",
     "rank_modelo_sequencial",
     "features_expressao",
     "direcao_aprendida_no_paciente",
@@ -377,12 +422,13 @@ function main() {
     "features_kmer_mais_influentes",
   ];
 
-  const outputRows = candidateResults.map((item, index) => [
-    index + 1,
+  const rowsFor = (items) => items.map((item) => [
+    item.validationRank,
+    item.integratedRank,
     item.mirna,
+    item.validationScore.toFixed(6),
     item.finalDiscoveryScore.toFixed(6),
     item.sequenceScore.toFixed(6),
-    item.validationScore.toFixed(6),
     item.sequenceRank,
     item.features.join("; "),
     item.direction,
@@ -406,22 +452,33 @@ function main() {
     item.nearestMarkers,
     item.influentialKmers,
   ]);
-  fs.writeFileSync(OUTPUT_CSV, [outputHeader, ...outputRows].map((row) => row.map(csvCell).join(",")).join("\n"), "utf8");
+  fs.writeFileSync(OUTPUT_CSV, [outputHeader, ...rowsFor(validationRanked)].map((row) => row.map(csvCell).join(",")).join("\n"), "utf8");
+  fs.writeFileSync(
+    OUTPUT_INTEGRATED_CSV,
+    [outputHeader, ...rowsFor(integratedRanked)].map((row) => row.map(csvCell).join(",")).join("\n"),
+    "utf8"
+  );
 
-  const top = candidateResults.slice(0, TOP_REPORT_COUNT);
+  const topValidation = validationRanked.slice(0, TOP_REPORT_COUNT);
+  const topIntegrated = integratedRanked.slice(0, TOP_REPORT_COUNT);
   const report = [
     "Modelo de validacao computacional de candidatos em pacientes",
     "",
     `Ranking de candidatos do Modelo 1: ${CANDIDATE_RANKING_CSV}`,
     `Modelo sequencial usado: ${SEQUENCE_MODEL_JSON}`,
     `Dataset de pacientes: ${DATASET_CSV}`,
+    `Ranking puro do Modelo 2: ${OUTPUT_CSV}`,
+    `Ranking integrado Modelo 1 + Modelo 2: ${OUTPUT_INTEGRATED_CSV}`,
+    `Candidatos recebidos do ranking sequencial global: ${candidates.rows.length}`,
     `Candidatos validados: ${candidateResults.length}`,
+    `Candidatos ignorados por falta de expressao no dataset: ${skippedWithoutExpression}`,
     "",
     "Tipo do Modelo 2:",
     "patient_candidate_validation_models_per_candidate",
     "",
     "Como o Modelo 2 funciona:",
     "Para cada candidato do Modelo 1, o script localiza as features correspondentes no dataset de pacientes.",
+    "Candidatos do ranking sequencial global sem feature de expressao no dataset atual sao mantidos no Modelo 1, mas ignorados nesta validacao.",
     "Depois treina uma regressao logistica univariada usando apenas a expressao log1p daquele candidato para separar classe=1 de classe=0.",
     "Isso funciona como uma prova computacional: verifica se o candidato aparece e se sua expressao tem associacao com pacientes doentes no dataset atual.",
     "",
@@ -429,22 +486,44 @@ function main() {
     "score_validacao_pacientes = 0.70*AUC_signal + 0.20*|log2FC|_signal + 0.10*detection_presence_signal",
     "score_final_descoberta = 0.50*score_modelo_sequencial + 0.50*score_validacao_pacientes",
     "",
-    "Top candidatos por score final:",
-    ...top.map(
+    "Observacao sobre nivel de expressao:",
+    "O dataset de expressao usa varias colunas em nivel de precursor/familia. Quando candidatos maduros diferentes compartilham a mesma feature de expressao, o Modelo 2 valida a associacao da feature disponivel, mas nao distingue experimentalmente 5p vs 3p.",
+    "",
+    "Top candidatos por validacao em pacientes:",
+    ...topValidation.map(
       (item, index) =>
         `${index + 1}. ${item.mirna}\t` +
+        `rank_integrado=${item.integratedRank}\t` +
+        `validacao=${item.validationScore.toFixed(4)}\t` +
+        `score_final=${item.finalDiscoveryScore.toFixed(4)}\t` +
+        `seq=${item.sequenceScore.toFixed(4)}\t` +
+        `test_auc=${item.testMetrics.auc.toFixed(3)}\t` +
+        `test_acc=${item.testMetrics.accuracy.toFixed(3)}\t` +
+        `precision=${item.testMetrics.precision.toFixed(3)}\t` +
+        `log2FC=${item.log2FoldChange.toFixed(3)}\t` +
+        `direcao=${item.direction}\t` +
+        `features=${item.features.join(", ")}`
+    ),
+    "",
+    "Top candidatos por score integrado:",
+    ...topIntegrated.map(
+      (item, index) =>
+        `${index + 1}. ${item.mirna}\t` +
+        `rank_validacao=${item.validationRank}\t` +
         `score_final=${item.finalDiscoveryScore.toFixed(4)}\t` +
         `seq=${item.sequenceScore.toFixed(4)}\t` +
         `validacao=${item.validationScore.toFixed(4)}\t` +
         `test_auc=${item.testMetrics.auc.toFixed(3)}\t` +
         `test_acc=${item.testMetrics.accuracy.toFixed(3)}\t` +
+        `precision=${item.testMetrics.precision.toFixed(3)}\t` +
         `log2FC=${item.log2FoldChange.toFixed(3)}\t` +
         `direcao=${item.direction}\t` +
         `features=${item.features.join(", ")}`
     ),
     "",
     "Como interpretar:",
-    "Candidatos no topo tiveram bom suporte sequencial pelo Modelo 1 e tambem boa validacao computacional no dataset de pacientes.",
+    "O ranking por validacao em pacientes mostra apenas a forca da associacao computacional no dataset atual.",
+    "O ranking integrado combina suporte sequencial do Modelo 1 e validacao computacional do Modelo 2.",
     "A direcao aprendida indica se maior ou menor expressao do candidato puxa o mini-modelo para classe doente.",
     "Isso nao prova causalidade nem valida clinicamente o biomarcador; apenas prioriza hipoteses para investigacao.",
     "",

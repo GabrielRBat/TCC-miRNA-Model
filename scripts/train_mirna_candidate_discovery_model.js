@@ -15,6 +15,7 @@ const OUTPUT_REPORT = fromRoot("reports", "modelo_mirna_candidate_discovery_repo
 const K_VALUES = [2, 3, 4, 5];
 const TRAIN_EPOCHS = 900;
 const LOPO_EPOCHS = 220;
+const LOPO_BACKGROUND_LIMIT = 500;
 const LEARNING_RATE = 0.8;
 const L2 = 0.015;
 const UNLABELED_BACKGROUND_TOTAL_WEIGHT_RATIO = 0.5;
@@ -458,18 +459,19 @@ function expressionEvidence(candidate, dataset, expressionRows) {
 }
 
 function leaveOnePositiveOutEvaluation(markerEntries, backgroundEntries) {
+  const lopoBackgroundEntries = deterministicBackgroundSample(backgroundEntries, LOPO_BACKGROUND_LIMIT);
   const evaluations = [];
   for (let i = 0; i < markerEntries.length; i += 1) {
     const heldOut = markerEntries[i];
     const trainMarkers = markerEntries.filter((_, index) => index !== i);
-    const model = trainContrastiveModel(trainMarkers, backgroundEntries, LOPO_EPOCHS);
+    const model = trainContrastiveModel(trainMarkers, lopoBackgroundEntries, LOPO_EPOCHS);
     const scored = [
       {
         marker: markerDisplayName(heldOut.name),
         isHeldOut: true,
         score: sequenceModelScore(model, heldOut.sequence),
       },
-      ...backgroundEntries.map((candidate) => ({
+      ...lopoBackgroundEntries.map((candidate) => ({
         marker: markerDisplayName(candidate.name),
         isHeldOut: false,
         score: sequenceModelScore(model, candidate.sequence),
@@ -487,6 +489,17 @@ function leaveOnePositiveOutEvaluation(markerEntries, backgroundEntries) {
   }
 
   return evaluations;
+}
+
+function deterministicBackgroundSample(entries, limit) {
+  if (entries.length <= limit) return entries;
+  const sorted = [...entries].sort((a, b) => a.normalizedName.localeCompare(b.normalizedName));
+  const sample = [];
+  for (let index = 0; index < limit; index += 1) {
+    const sourceIndex = Math.floor((index * sorted.length) / limit);
+    sample.push(sorted[sourceIndex]);
+  }
+  return sample;
 }
 
 function main() {
@@ -520,12 +533,12 @@ function main() {
   }
 
   const candidateEntries = matureEntries
-    .filter((entry) => featuresByFamily.has(entry.familyBase))
     .filter((entry) => !knownNames.has(entry.normalizedName))
     .map((entry) => ({
       ...entry,
       associatedFeatures: featuresByFamily.get(entry.familyBase) ?? [],
     }));
+  const candidatesWithExpressionCount = candidateEntries.filter((entry) => entry.associatedFeatures.length > 0).length;
 
   const model = trainContrastiveModel(markerEntries, candidateEntries, TRAIN_EPOCHS);
   const lopo = leaveOnePositiveOutEvaluation(markerEntries, candidateEntries);
@@ -576,13 +589,17 @@ function main() {
     purpose:
       "Priorizar miRNAs candidatos por semelhanca aprendida com miRNAs associados ao cancer de mama; nao classifica cancerigeno vs nao cancerigeno.",
     training_design:
-      "Marcadores positivos conhecidos recebem rotulo positivo. Outros miRNAs humanos presentes no dataset sao usados apenas como background nao rotulado, nao como negativos biologicos.",
+      "Marcadores positivos conhecidos recebem rotulo positivo. Os demais miRNAs humanos maduros do miRBase sao usados como background nao rotulado, nao como negativos biologicos. A disponibilidade de expressao no dataset e usada apenas na validacao posterior.",
     source_fasta: FASTA_PATH,
-    source_dataset_for_expression_test: DATASET_CSV,
+    source_dataset_for_expression_filter: DATASET_CSV,
     positive_markers_csv: POSITIVE_MARKERS_CSV,
+    candidate_pool_definition:
+      "Todos os miRNAs humanos maduros do miRBase, removendo os positivos conhecidos usados no treino.",
     k_values: K_VALUES,
     vocabulary_size: model.vocabulary.size,
     epochs: TRAIN_EPOCHS,
+    lopo_epochs: LOPO_EPOCHS,
+    lopo_background_limit: LOPO_BACKGROUND_LIMIT,
     regularization_l2: L2,
     unlabeled_background_total_weight_ratio: UNLABELED_BACKGROUND_TOTAL_WEIGHT_RATIO,
     bias: model.bias,
@@ -602,14 +619,17 @@ function main() {
     })),
     missing_marker_sequences: missingMarkers,
     candidate_count: ranked.length,
+    candidate_count_global_mirbase: ranked.length,
+    candidate_count_with_expression_available: candidatesWithExpressionCount,
     training_history: model.history,
     internal_recovery_validation: {
       method: "leave_one_positive_out_recovery_against_unlabeled_background",
       mean_percentile: lopoMeanPercentile,
       held_out_markers_in_top_10_percent: lopoTop10Pct,
       details: lopo,
+      background_pool_size_for_lopo: Math.min(candidateEntries.length, LOPO_BACKGROUND_LIMIT),
       warning:
-        "Esta validacao mede recuperacao de positivos conhecidos por padroes de sequencia. Nao e validacao clinica nem prova laboratorial.",
+        "Esta validacao mede recuperacao de positivos conhecidos por padroes de sequencia contra uma amostra deterministica do background. Nao e validacao clinica nem prova laboratorial.",
     },
     candidate_ranking_score_definition:
       "score_modelo_sequencial e o percentil do candidato pelo logit aprendido pelo modelo de k-mers; perto de 1 indica maior suporte sequencial relativo.",
@@ -623,6 +643,7 @@ function main() {
     "mirna",
     "accession",
     "sequence",
+    "tem_expressao_no_dataset",
     "score_modelo_sequencial",
     "probabilidade_contrastiva_bruta",
     "logit_modelo_sequencial",
@@ -636,6 +657,7 @@ function main() {
     markerDisplayName(candidate.name),
     candidate.accession,
     candidate.sequence,
+    candidate.associatedFeatures.length > 0 ? "sim" : "nao",
     candidate.sequenceScore.toFixed(6),
     candidate.sequenceProbability.toFixed(6),
     candidate.rawSequenceLogit.toFixed(6),
@@ -651,17 +673,19 @@ function main() {
     "",
     `FASTA de referencia: ${FASTA_PATH}`,
     `CSV de biomarcadores positivos: ${POSITIVE_MARKERS_CSV}`,
-    `Dataset usado para teste de expressao: ${DATASET_CSV}`,
+    `Dataset usado apenas para marcar disponibilidade de expressao: ${DATASET_CSV}`,
     `Marcadores positivos com sequencia: ${markerEntries.length}`,
-    `Candidatos avaliados com expressao disponivel: ${ranked.length}`,
+    `Candidatos ranqueados no universo miRBase: ${ranked.length}`,
+    `Candidatos com expressao disponivel para validacao em pacientes: ${candidatesWithExpressionCount}`,
     `Vocabulario aprendido: ${model.vocabulary.size} features de k-mer/seed`,
     "",
     "Tipo do modelo:",
     "trained_contrastive_one_class_kmer_model",
     "",
     "Como o treinamento foi feito:",
-    "Os miRNAs associados ao cancer de mama foram usados como positivos. Os outros miRNAs humanos presentes no dataset foram usados apenas como background nao rotulado, e nao como classe nao cancerigena.",
-    "O modelo aprendeu pesos para k-mers/seeds que diferenciam o perfil dos positivos em relacao ao background humano disponivel.",
+    "Os miRNAs associados ao cancer de mama foram usados como positivos. Os demais miRNAs humanos maduros do miRBase foram usados como background nao rotulado, e nao como classe nao cancerigena.",
+    "O modelo aprendeu pesos para k-mers/seeds que diferenciam o perfil dos positivos em relacao ao universo humano maduro do miRBase.",
+    "A disponibilidade de expressao no dataset de pacientes nao limita o ranking sequencial; ela apenas define quais candidatos podem seguir para o Modelo 2.",
     "",
     "Score do Modelo 1:",
     "score_modelo_sequencial = percentil do candidato pelo logit aprendido pelo modelo de k-mers",
@@ -669,6 +693,7 @@ function main() {
     "Validacao interna de recuperacao de positivos conhecidos:",
     `LOPO percentil medio=${lopoMeanPercentile.toFixed(4)}`,
     `LOPO positivos recuperados no top 10%=${lopoTop10Pct.toFixed(2)}%`,
+    `LOPO background usado=${Math.min(candidateEntries.length, LOPO_BACKGROUND_LIMIT)} candidatos por custo computacional`,
     "",
     "Top features aprendidas com peso positivo:",
     ...sortedWeights.slice(0, 15).map(([feature, weight]) => `${feature}\tpeso=${weight.toFixed(6)}`),
@@ -680,14 +705,16 @@ function main() {
         `modelo_seq_percentil=${candidate.sequenceScore.toFixed(4)}\t` +
         `prob_contrastiva=${candidate.sequenceProbability.toFixed(4)}\t` +
         `logit=${candidate.rawSequenceLogit.toFixed(4)}\t` +
-        `features=${candidate.associatedFeatures.join(", ")}\t` +
+        `expressao=${candidate.associatedFeatures.length > 0 ? "sim" : "nao"}\t` +
+        `features=${candidate.associatedFeatures.join(", ") || "sem_feature_no_dataset"}\t` +
         `referencias=${candidate.nearest.map((item) => `${item.marker}:${item.similarity.toFixed(3)}`).join(", ")}`
     ),
     "",
     "Como interpretar:",
     "O score_modelo_sequencial e o percentil do candidato pelo logit aprendido pelo modelo de k-mers; perto de 1 indica maior suporte sequencial relativo.",
     "A probabilidade_contrastiva_bruta e mantida para auditoria, mas nao deve ser lida como probabilidade clinica.",
-    "Este primeiro modelo nao usa as classes dos pacientes; ele apenas aprende padroes sequenciais dos positivos e encontra candidatos na lista de miRNAs do projeto.",
+    "Este primeiro modelo nao usa as classes dos pacientes; ele apenas aprende padroes sequenciais dos positivos e encontra candidatos no universo humano maduro do miRBase.",
+    "Candidatos sem expressao disponivel continuam no ranking sequencial global, mas nao sao validados pelo Modelo 2 no dataset atual.",
     "A validacao computacional em pacientes deve ser feita no segundo modelo.",
     "",
     "Aviso cientifico:",

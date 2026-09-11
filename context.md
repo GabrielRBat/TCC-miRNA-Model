@@ -1477,7 +1477,7 @@ continuam existindo como historico, comparacao e apoio exploratorio, mas nao sao
 Nova pergunta principal:
 
 ```text
-Quais miRNAs ainda nao usados como positivos no projeto compartilham padroes de k-mers com miRNAs associados ao cancer de mama e tambem mostram evidencia computacional nos pacientes do dataset?
+Quais miRNAs ainda nao usados como positivos no projeto compartilham padroes de k-mers com miRNAs associados ao cancer de mama no universo humano maduro do miRBase e, entre eles, quais tambem mostram evidencia computacional nos pacientes do dataset?
 ```
 
 Ponto cientifico importante:
@@ -1533,9 +1533,10 @@ k = 2, 3, 4, 5
 ```
 
 4. Usa tambem a seed region como feature.
-5. Usa os demais miRNAs humanos presentes no dataset apenas como background nao rotulado.
+5. Usa os demais miRNAs humanos maduros do miRBase como background nao rotulado.
 6. Treina uma regressao logistica contrastiva para aprender pesos de k-mers/seeds.
 7. Ranqueia candidatos pela saida aprendida do modelo.
+8. Marca quais candidatos tem expressao disponivel no dataset para validacao posterior.
 
 Importante:
 
@@ -1545,20 +1546,22 @@ Execucao validada:
 
 ```text
 Marcadores positivos com sequencia: 43
-Candidatos avaliados com expressao disponivel: 221
+Candidatos ranqueados no universo miRBase: 2613
+Candidatos com expressao disponivel para validacao em pacientes: 221
 Vocabulario aprendido: 608 features de k-mer/seed
-LOPO percentil medio: 0.7013
+LOPO percentil medio: 0.7027
 LOPO positivos recuperados no top 10%: 30.23%
+LOPO background usado: 500 candidatos
 ```
 
 Top 5 por padrao sequencial aprendido:
 
 ```text
-mir-6715a-3p
-let-7c-5p
-mir-106b-5p
-mir-99b-5p
-mir-323b-5p
+mir-574-5p
+mir-1277-5p
+mir-32-3p
+mir-297
+mir-3149
 ```
 
 Interpretacao do `score_modelo_sequencial`:
@@ -1568,6 +1571,8 @@ percentil do candidato pelo logit aprendido pelo modelo de k-mers
 ```
 
 Valores proximos de 1 significam que o candidato ficou entre os mais parecidos com o perfil sequencial positivo aprendido.
+
+Candidatos sem expressao disponivel continuam no ranking sequencial global, mas nao entram no Modelo 2 no dataset atual.
 
 ### Modelo 2: Validacao Computacional em Pacientes
 
@@ -1596,6 +1601,7 @@ Saidas:
 ```text
 models/modelo_mirna_patient_candidate_validation.json
 data/processed/mirna_patient_candidate_validation.csv
+data/processed/mirna_patient_candidate_integrated_ranking.csv
 reports/modelo_mirna_patient_candidate_validation_report.txt
 ```
 
@@ -1650,27 +1656,58 @@ score_final_descoberta =
 + 0.50 * score_validacao_pacientes
 ```
 
+Rankings gerados:
+
+```text
+data/processed/mirna_patient_candidate_validation.csv
+ranking puro do Modelo 2, ordenado por score_validacao_pacientes
+
+data/processed/mirna_patient_candidate_integrated_ranking.csv
+ranking integrado, ordenado por score_final_descoberta
+```
+
+Observacao cientifica importante:
+
+```text
+O dataset de expressao usa varias colunas em nivel de precursor/familia, como hsa-mir-106b.
+O ranking sequencial trabalha com miRNAs maduros, como mir-106b-5p e mir-106b-3p.
+Quando dois candidatos maduros compartilham a mesma feature de expressao, o Modelo 2 atribui as mesmas metricas de validacao a ambos.
+Nesses casos, a validacao em pacientes confirma associacao da feature disponivel no dataset, mas nao distingue experimentalmente o braco maduro 5p vs 3p.
+```
+
 Execucao validada:
 
 ```text
 Candidatos validados: 221
+Candidatos recebidos do ranking sequencial global: 2613
+Candidatos ignorados por falta de expressao no dataset: 2392
 ```
 
-Top 5 por score final:
+Top 5 por validacao em pacientes:
 
 ```text
-mir-106b-5p  score_final=0.9955
-let-7f-5p    score_final=0.9795
-let-7c-5p    score_final=0.9698
-mir-323b-5p  score_final=0.9542
-let-7i-5p    score_final=0.9249
+let-7f-5p    validacao=1.0000  rank_integrado=1
+mir-106b-5p  validacao=1.0000  rank_integrado=2
+mir-106b-3p  validacao=1.0000  rank_integrado=28
+mir-34a-3p   validacao=1.0000  rank_integrado=21
+mir-181b-3p  validacao=1.0000  rank_integrado=12
+```
+
+Top 5 por score integrado:
+
+```text
+let-7f-5p    score_final=0.9952
+mir-106b-5p  score_final=0.9847
+mir-33a-5p   score_final=0.9692
+let-7c-5p    score_final=0.9606
+let-7i-5p    score_final=0.9426
 ```
 
 Interpretacao:
 
 ```text
-Modelo 1 = descobre candidatos por padroes sequenciais aprendidos com k-mers.
-Modelo 2 = testa se esses candidatos aparecem e tem associacao com pacientes doentes no dataset atual.
+Modelo 1 = descobre candidatos por padroes sequenciais aprendidos com k-mers no universo humano maduro do miRBase.
+Modelo 2 = testa, entre esses candidatos, quais aparecem e tem associacao com pacientes doentes no dataset atual.
 ```
 
 O Modelo 2 funciona como uma "prova" computacional, nao laboratorial. Se um candidato aparece nos pacientes doentes e sua expressao separa doentes de saudaveis, ele ganha prioridade como hipotese. Isso nao prova causalidade, nao confirma biomarcador e nao substitui validacao externa/laboratorial.
@@ -1690,6 +1727,7 @@ Arquivos principais para consulta:
 reports/modelo_mirna_candidate_discovery_report.txt
 reports/modelo_mirna_patient_candidate_validation_report.txt
 data/processed/mirna_patient_candidate_validation.csv
+data/processed/mirna_patient_candidate_integrated_ranking.csv
 models/modelo_mirna_candidate_discovery.json
 models/modelo_mirna_patient_candidate_validation.json
 ```
@@ -1699,7 +1737,7 @@ models/modelo_mirna_patient_candidate_validation.json
 Para o TCC, descrever o pipeline principal assim:
 
 ```text
-Foi desenvolvido um fluxo em dois modelos. O primeiro modelo aprende padroes sequenciais de k-mers a partir de miRNAs associados ao cancer de mama e ranqueia novos candidatos presentes no universo do projeto. O segundo modelo recebe esses candidatos e realiza uma validacao computacional no dataset de pacientes, testando se a expressao de cada candidato esta associada a amostras doentes em relacao a saudaveis.
+Foi desenvolvido um fluxo em dois modelos. O primeiro modelo aprende padroes sequenciais de k-mers a partir de miRNAs associados ao cancer de mama e ranqueia novos candidatos no universo humano maduro do miRBase. O segundo modelo recebe esse ranking global e realiza uma validacao computacional apenas nos candidatos com expressao disponivel no dataset de pacientes, testando se a expressao de cada candidato esta associada a amostras doentes em relacao a saudaveis.
 ```
 
 Evitar dizer:

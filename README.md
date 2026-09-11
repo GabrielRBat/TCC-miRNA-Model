@@ -1014,7 +1014,7 @@ O objetivo principal agora e:
 
 ```text
 aprender padroes de k-mers em miRNAs associados ao cancer de mama
--> encontrar novos miRNAs candidatos dentro da lista disponivel no projeto
+-> encontrar novos miRNAs candidatos dentro do universo humano maduro do miRBase
 -> validar computacionalmente se esses candidatos aparecem/separam pacientes doentes e saudaveis no dataset atual
 ```
 
@@ -1053,34 +1053,39 @@ trained_contrastive_one_class_kmer_model
 Como funciona:
 
 - usa miRNAs associados ao cancer de mama como positivos;
-- usa outros miRNAs humanos presentes no dataset apenas como background nao rotulado;
+- usa os demais miRNAs humanos maduros do miRBase como background nao rotulado;
 - nao trata o background como "nao cancerigeno";
 - extrai k-mers de tamanho 2, 3, 4 e 5;
 - inclui a seed region como feature adicional;
 - treina pesos para k-mers/seeds que diferenciam o perfil positivo do background;
-- ranqueia candidatos pela semelhanca aprendida com o perfil dos positivos.
+- ranqueia candidatos pela semelhanca aprendida com o perfil dos positivos;
+- marca quais candidatos tem expressao disponivel no dataset para a validacao posterior.
 
 Execucao validada:
 
 ```text
 Marcadores positivos com sequencia: 43
-Candidatos avaliados com expressao disponivel: 221
+Candidatos ranqueados no universo miRBase: 2613
+Candidatos com expressao disponivel para validacao em pacientes: 221
 Vocabulario aprendido: 608 features de k-mer/seed
-LOPO percentil medio: 0.7013
+LOPO percentil medio: 0.7027
 LOPO positivos recuperados no top 10%: 30.23%
+LOPO background usado: 500 candidatos
 ```
 
 Top 5 candidatos por padrao sequencial aprendido:
 
 ```text
-mir-6715a-3p
-let-7c-5p
-mir-106b-5p
-mir-99b-5p
-mir-323b-5p
+mir-574-5p
+mir-1277-5p
+mir-32-3p
+mir-297
+mir-3149
 ```
 
 O `score_modelo_sequencial` e o percentil do candidato pelo logit aprendido pelo modelo. Valores proximos de 1 indicam maior suporte sequencial relativo.
+
+Observacao: candidatos sem expressao disponivel continuam no ranking sequencial global, mas nao entram no Modelo 2 no dataset atual.
 
 ### Modelo 2: Validacao Computacional em Pacientes
 
@@ -1103,6 +1108,7 @@ Saidas:
 ```text
 models/modelo_mirna_patient_candidate_validation.json
 data/processed/mirna_patient_candidate_validation.csv
+data/processed/mirna_patient_candidate_integrated_ranking.csv
 reports/modelo_mirna_patient_candidate_validation_report.txt
 ```
 
@@ -1120,7 +1126,8 @@ Como funciona:
 - testa se a expressao desse candidato ajuda a separar `classe=1` doente de `classe=0` saudavel;
 - calcula AUC, accuracy, precision, recall, specificity, F1, log2 fold-change e presenca maior que zero;
 - gera um `score_validacao_pacientes`;
-- combina suporte sequencial e suporte em pacientes em um `score_final_descoberta`.
+- gera um ranking puro de validacao em pacientes;
+- combina suporte sequencial e suporte em pacientes em um ranking integrado por `score_final_descoberta`.
 
 Formula:
 
@@ -1139,17 +1146,41 @@ Execucao validada:
 
 ```text
 Candidatos validados: 221
+Candidatos recebidos do ranking sequencial global: 2613
+Candidatos ignorados por falta de expressao no dataset: 2392
 ```
 
-Top 5 por score final:
+Top 5 por validacao em pacientes:
 
 ```text
-mir-106b-5p  score_final=0.9955
-let-7f-5p    score_final=0.9795
-let-7c-5p    score_final=0.9698
-mir-323b-5p  score_final=0.9542
-let-7i-5p    score_final=0.9249
+let-7f-5p    validacao=1.0000  rank_integrado=1
+mir-106b-5p  validacao=1.0000  rank_integrado=2
+mir-106b-3p  validacao=1.0000  rank_integrado=28
+mir-34a-3p   validacao=1.0000  rank_integrado=21
+mir-181b-3p  validacao=1.0000  rank_integrado=12
 ```
+
+Top 5 por score integrado:
+
+```text
+let-7f-5p    score_final=0.9952
+mir-106b-5p  score_final=0.9847
+mir-33a-5p   score_final=0.9692
+let-7c-5p    score_final=0.9606
+let-7i-5p    score_final=0.9426
+```
+
+Arquivos de ranking:
+
+```text
+data/processed/mirna_patient_candidate_validation.csv
+ranking puro do Modelo 2, ordenado por score_validacao_pacientes
+
+data/processed/mirna_patient_candidate_integrated_ranking.csv
+ranking integrado, ordenado por score_final_descoberta
+```
+
+Observacao cientifica importante: o dataset de expressao usa varias colunas em nivel de precursor/familia, como `hsa-mir-106b`, enquanto o ranking sequencial trabalha com miRNAs maduros, como `mir-106b-5p` e `mir-106b-3p`. Por isso, alguns candidatos maduros podem compartilhar a mesma feature de expressao e receber metricas identicas no Modelo 2. Nesses casos, o Modelo 2 valida a associacao da feature disponivel no dataset, nao distingue experimentalmente o braco maduro 5p vs 3p.
 
 Interpretacao correta:
 
@@ -1178,6 +1209,7 @@ Consultar:
 reports/modelo_mirna_candidate_discovery_report.txt
 reports/modelo_mirna_patient_candidate_validation_report.txt
 data/processed/mirna_patient_candidate_validation.csv
+data/processed/mirna_patient_candidate_integrated_ranking.csv
 ```
 
 ### Status dos Modelos Antigos
