@@ -52,8 +52,8 @@
     <div class="callout"><strong>Resposta curta para a banca:</strong> o Modelo 1 prioriza candidatos por padrões da sequência madura; o Modelo 2 verifica se a expressão disponível separa doentes e saudáveis. Nenhum dos dois confirma sozinho um biomarcador.</div>
 
     <h3>Por que o hairpin não aparece mais?</h3>
-    <p>O hairpin é biologicamente parte da formação do miRNA, mas foi retirado do pipeline para reduzir complexidade e manter a pergunta do TCC centrada no miRNA maduro. O percentil médio passou de 60,35% para 60,55% e o Recall@10% permaneceu em 9,38%. A mudança é pequena e não prova melhora estatística, mas mostra que a simplificação não prejudicou a métrica principal observada.</p>
-    <div class="callout success"><strong>Escopo atual:</strong> k-mers, seed, comprimento e fração GC da sequência madura. Hairpin, estrutura secundária e MFE não entram no modelo.</div>
+    <p>O hairpin é biologicamente parte da formação do miRNA, mas foi retirado do pipeline para reduzir complexidade e manter a pergunta do TCC centrada no miRNA maduro. A primeira versão madura-only preservou o desempenho observado. Depois, novas representações exclusivamente maduras elevaram o percentil médio externo de 60,55% para 64,60%. Esse ganho é promissor, mas continua sendo uma comparação interna e não substitui uma coorte externa.</p>
+    <div class="callout success"><strong>Escopo atual:</strong> k-mers globais e posicionais, seed, comprimento, composição, entropia e motivos das extremidades 5p/3p da sequência madura. Hairpin, estrutura secundária e MFE não entram no modelo.</div>
   </section>
 
   <section class="page">
@@ -73,23 +73,32 @@
       <tr><td>3</td><td><code>AUG</code>, <code>UGC</code>, <code>GCU</code>, ...</td><td>Contexto local um pouco maior.</td></tr>
       <tr><td>4</td><td><code>AUGC</code>, <code>UGCU</code>, ...</td><td>Motivos mais específicos.</td></tr>
     </tbody></table>
-    <p>As contagens são normalizadas pelo total de fragmentos, evitando que uma sequência pareça mais importante apenas por ser um pouco maior. A configuração final usa k=2,3,4.</p>
+    <p>As contagens são normalizadas pelo total de fragmentos, evitando que uma sequência pareça mais importante apenas por ser um pouco maior. A configuração final usa k=2,3,4 e separa os motivos encontrados no começo, centro e fim da sequência. Essa posição importa porque o mesmo fragmento pode ter papéis diferentes dependendo de onde aparece.</p>
+    <h3>Outras pistas extraídas do miRNA maduro</h3>
+    <div class="cards">
+      <div class="card"><strong>Composição</strong><br>Frações de A, U, C e G e entropia, que resumem diversidade e equilíbrio da sequência.</div>
+      <div class="card"><strong>Posição</strong><br>K-mers separados nas regiões 5p, central e 3p, preservando onde cada padrão ocorreu.</div>
+      <div class="card"><strong>Extremidades</strong><br>Motivos exatos de 2, 3 e 4 bases no início e no fim do miRNA maduro.</div>
+    </div>
   </section>
 
   <section class="page">
     <h2>3. Como o Modelo 1 aprende</h2>
     <ol>
       <li>Carrega os 43 miRNAs positivos e suas sequências maduras.</li>
-      <li>Converte cada sequência em um vetor de k-mers, seed, comprimento e fração GC.</li>
+      <li>Converte cada sequência em um vetor com k-mers, seed, comprimento, composição, entropia, posição e motivos terminais.</li>
       <li>Aplica o peso de evidência e divide o peso entre positivos da mesma família de seed.</li>
       <li>Usa os demais miRNAs como conjunto <em>não rotulado</em>, e não como negativos biológicos.</li>
-      <li>Treina 8 modelos com amostras diferentes de 800 não rotulados.</li>
+      <li>Compara oito configurações dentro dos folds internos, sem consultar o teste externo.</li>
+      <li>Treina um ensemble final de 20 modelos, cada um com uma amostra diferente de 800 não rotulados.</li>
       <li>Pontua cada candidato somente pelos modelos que não o usaram como contraste: pontuação out-of-bag.</li>
       <li>Converte o logit em percentil dentro dos 2.613 candidatos e produz o ranking.</li>
     </ol>
     <div class="callout warning"><strong>Por que Positive-Unlabeled?</strong> Estar fora da lista dos 43 não significa ser biologicamente negativo. Alguns não rotulados podem ser candidatos verdadeiros ainda pouco estudados.</div>
     <h3>O que significa out-of-bag?</h3>
     <p>Se um candidato entrou como contraste temporário em determinado bag, aquele modelo não pode pontuá-lo. Ele recebe a média apenas dos bags em que ficou de fora. Isso reduz a penalização artificial causada pelo próprio processo PU.</p>
+    <h3>Como medimos a estabilidade do ranking?</h3>
+    <p>Além do percentil final, o pipeline registra, para cada candidato, a mediana, os quartis e a frequência com que ele aparece nos top 1%, 5%, 10% e 20% entre os modelos em que estava out-of-bag. Um candidato alto e consistente é mais confiável que outro que chega à mesma média por poucos resultados extremos.</p>
     <h3>O score é probabilidade de câncer?</h3>
     <p>Não. <code>score_modelo_sequencial</code> é uma posição relativa: 0,99 indica que o candidato ficou acima de aproximadamente 99% do universo avaliado. A probabilidade PU bruta também é apenas uma saída contrastiva interna.</p>
   </section>
@@ -99,23 +108,33 @@
     <p>A avaliação esconde famílias inteiras de seed. Isso impede que um parente quase equivalente apareça no treino e torne o teste artificialmente fácil.</p>
     <div class="flow"><div class="step"><strong>5 folds externos</strong><br>medem desempenho</div><div class="arrow">→</div><div class="step"><strong>3 folds internos</strong><br>escolhem configuração</div><div class="arrow">→</div><div class="step"><strong>Background completo</strong><br>mede o rank real</div></div>
     <table><thead><tr><th>Métrica principal por família</th><th>Resultado</th><th>Leitura prática</th></tr></thead><tbody>
-      <tr><td>Percentil médio</td><td class="metric">60,55%</td><td>Em média, a família escondida ficou acima de 60,55% do background.</td></tr>
-      <tr><td>IC95% do percentil</td><td class="metric">51,87%–69,02%</td><td>Incerteza obtida por 4.000 reamostragens das famílias.</td></tr>
-      <tr><td>p do nulo</td><td class="metric">0,0111</td><td>O desempenho global é improvável sob ranking aleatório.</td></tr>
+      <tr><td>Percentil médio</td><td class="metric">64,60%</td><td>Em média, a família escondida ficou acima de 64,60% do background.</td></tr>
+      <tr><td>IC95% do percentil</td><td class="metric">55,85%–72,85%</td><td>Incerteza obtida por 4.000 reamostragens das famílias.</td></tr>
+      <tr><td>p do nulo</td><td class="metric">0,0008</td><td>O desempenho global é improvável sob ranking aleatório.</td></tr>
       <tr><td>Recall@5%</td><td class="metric">1/32 (3,13%)</td><td>Uma família apareceu entre os 5% primeiros.</td></tr>
-      <tr><td>Recall@10%</td><td class="metric">3/32 (9,38%)</td><td>Três famílias apareceram entre os 10% primeiros.</td></tr>
-      <tr><td>p do Recall@10%</td><td class="metric">0,4723</td><td>O enriquecimento no topo não foi significativo.</td></tr>
-      <tr><td>Recall@20%</td><td class="metric">9/32 (28,13%)</td><td>Nove famílias apareceram entre os 20% primeiros.</td></tr>
+      <tr><td>Recall@10%</td><td class="metric">4/32 (12,50%)</td><td>Quatro famílias apareceram entre os 10% primeiros.</td></tr>
+      <tr><td>p do Recall@10%</td><td class="metric">0,2417</td><td>O enriquecimento no topo ainda não foi significativo.</td></tr>
+      <tr><td>Recall@20%</td><td class="metric">13/32 (40,63%)</td><td>Treze famílias apareceram entre os 20% primeiros.</td></tr>
     </tbody></table>
     <div class="callout warning"><strong>Defesa correta:</strong> existe sinal global acima do nulo, mas ainda não há evidência robusta de concentração no top 10%. Percentil médio e Recall@10% respondem perguntas diferentes.</div>
     <h3>Baselines</h3>
     <table><thead><tr><th>Método</th><th>Percentil médio</th><th>Recall@10%</th></tr></thead><tbody>
-      <tr><td>Ensemble PU maduro</td><td>60,55%</td><td>9,38%</td></tr>
+      <tr><td>Ensemble PU maduro</td><td>64,60%</td><td>12,50%</td></tr>
       <tr><td>Seed</td><td>53,08%</td><td>0,00%</td></tr>
-      <tr><td>Centroide k-mer maduro</td><td>51,19%</td><td>6,25%</td></tr>
+      <tr><td>Centroide k-mer maduro</td><td>51,35%</td><td>6,25%</td></tr>
       <tr><td>Composição madura</td><td>63,54%</td><td>9,38%</td></tr>
       <tr><td>Aleatório determinístico</td><td>54,34%</td><td>9,38%</td></tr>
     </tbody></table>
+    <h3>Ablação: qual bloco de informação ajuda?</h3>
+    <p>A ablação repete exatamente os mesmos folds, amostras PU e hiperparâmetros, alterando somente a representação da sequência madura. Assim, a comparação é pareada por família.</p>
+    <table><thead><tr><th>Representação</th><th>Percentil médio</th><th>Recall@10%</th></tr></thead><tbody>
+      <tr><td>Core: k-mers globais, seed, tamanho e GC</td><td>60,63%</td><td>9,38%</td></tr>
+      <tr><td>Composição e entropia</td><td>55,79%</td><td>6,25%</td></tr>
+      <tr><td>K-mers posicionais</td><td>61,00%</td><td>6,25%</td></tr>
+      <tr><td>Motivos terminais 5p/3p</td><td>68,29%</td><td>28,13%</td></tr>
+      <tr><td>Representação completa</td><td>64,08%</td><td>18,75%</td></tr>
+    </tbody></table>
+    <div class="callout warning"><strong>Leitura correta:</strong> motivos terminais superaram o core em 7,66 pontos percentuais (IC95% 1,23 a 14,96; p pareado nominal=0,0369; FDR BH=0,0738). É uma pista científica interessante, mas não permanece significativa a 5% após corrigir as quatro comparações. A configuração final foi escolhida somente nos folds internos e não pelo melhor número dessa tabela externa.</div>
   </section>
 
   <section class="page">
@@ -125,7 +144,12 @@
       <tr><td>Recall@X%</td><td>Fração das famílias escondidas recuperadas dentro dos X% primeiros.</td></tr>
       <tr><td>IC95% bootstrap</td><td>Faixa de resultados plausíveis ao reamostrar as famílias observadas.</td></tr>
       <tr><td>p do teste nulo</td><td>Frequência com que rankings aleatórios igualam ou superam o observado.</td></tr>
+      <tr><td>Mediana e IQR OOB</td><td>Posição típica e variação do candidato entre os 20 modelos em que ele não foi usado como contraste.</td></tr>
       <tr><td>AUC OOF</td><td>Capacidade do candidato de ordenar doentes acima de saudáveis em amostras não usadas no treino daquele fold; 0,5 é acaso.</td></tr>
+      <tr><td>IC95% da AUC</td><td>Faixa aproximada de valores compatíveis com a AUC observada; intervalos acima de 0,5 sugerem separação interna.</td></tr>
+      <tr><td>FDR</td><td>Correção de Benjamini-Hochberg sobre 325 hipóteses de expressão únicas. Braços que usam a mesma coluna não são contados como testes independentes; valores no piso são apresentados como p&lt;1e-16.</td></tr>
+      <tr><td>Cliff's delta</td><td>Tamanho de efeito não paramétrico: resume com que frequência a expressão de um grupo supera a do outro.</td></tr>
+      <tr><td>Hedges g</td><td>Diferença padronizada entre as médias, com correção para amostras pequenas.</td></tr>
       <tr><td>Acurácia OOF</td><td>Proporção total de classificações corretas.</td></tr>
       <tr><td>Precisão OOF</td><td>Entre amostras previstas como doentes, quantas realmente são doentes.</td></tr>
       <tr><td>Sensibilidade</td><td>Entre os doentes, quantos foram identificados.</td></tr>
@@ -144,21 +168,26 @@
       <div class="card"><strong>10% detecção</strong><br>presença de expressão nas amostras.</div>
     </div>
     <p>O ranking integrado combina 50% do percentil do Modelo 1 com 50% do score do Modelo 2.</p>
+    <p>Também são calculados cenários de sensibilidade com pesos 75%/25% e 25%/75%, além da fronteira de Pareto. A fronteira reúne candidatos para os quais não existe outro candidato simultaneamente melhor nos dois modelos. Se um nome permanece bem colocado nos três pesos, sua prioridade depende menos de uma escolha arbitrária de ponderação.</p>
+    <div class="callout warning"><strong>Ambiguidade de braços:</strong> 552 dos 611 candidatos compartilham a mesma coluna de expressão com pelo menos outro candidato. Por isso, o FDR é calculado sobre 325 hipóteses únicas: 278 ficaram abaixo de 0,05 e correspondem a 531 candidatos. Esse número muito alto é evidência interna e reforça a suspeita de lote/fonte; não comprova 278 biomarcadores.</div>
     <div class="callout danger"><strong>Limite importante:</strong> AUCs muito altas podem refletir diferença de fonte ou lote entre doentes e saudáveis. Validação cruzada interna não corrige esse confundimento.</div>
     <h3>Top 5 integrado atual</h3>
-    <ol><li><strong>mir-32-3p</strong> — 0,9973</li><li><strong>let-7f-5p</strong> — 0,9818</li><li><strong>mir-32-5p</strong> — 0,9774</li><li><strong>mir-95-5p</strong> — 0,9321</li><li><strong>mir-200b-3p</strong> — 0,9253</li></ol>
+    <ol><li><strong>mir-32-3p</strong> — 0,9965</li><li><strong>let-7f-5p</strong> — 0,9833</li><li><strong>mir-32-5p</strong> — 0,9734</li><li><strong>mir-95-5p</strong> — 0,9317</li><li><strong>mir-200b-3p</strong> — 0,9257</li></ol>
+    <h3>Como entra a futura coorte externa?</h3>
+    <p>A nova base não serve para ensinar novamente o modelo. Ela recebe o ranking e a direção esperada já congelados. O validador procura as colunas maduras exatas, marca separadamente aproximações por família/precursor, calcula AUC e intervalo de confiança externos, corrige os testes por FDR e verifica se a direção do efeito se repete. Um sinal só recebe o rótulo de reproduzido com ao menos 10 amostras por classe, direção concordante, limite inferior do IC95% acima de 0,5 e FDR abaixo de 0,05. Isso testa transportabilidade em pacientes independentes.</p>
+    <div class="callout success"><strong>Formato desejado:</strong> uma linha por paciente, identificador único, classe 1 para câncer de mama e 0 para controle, e colunas de expressão de muitos miRNAs maduros — idealmente distinguindo 5p e 3p. A tecnologia, o tipo de amostra e o pré-processamento devem ser informados.</div>
   </section>
 
   <section class="page">
     <h2>7. Roteiro para a apresentação</h2>
-    <div class="say">“Primeiro, transformamos cada sequência madura em pequenos padrões chamados k-mers. Também representamos a seed, o comprimento e a composição GC. Como temos positivos confiáveis, mas não negativos biológicos confirmados, usamos um ensemble Positive-Unlabeled com balanceamento por família. Cada candidato é pontuado somente por modelos out-of-bag que não o usaram como contraste. O Modelo 1 é testado escondendo famílias inteiras de seed. Depois, o Modelo 2 usa predições out-of-fold para verificar se a expressão disponível está associada a doentes e saudáveis. O ranking integrado combina essas duas evidências e prioriza hipóteses, sem confirmar biomarcadores.”</div>
+    <div class="say">“Primeiro, transformamos cada sequência madura em padrões globais e posicionais: k-mers, seed, composição e motivos das extremidades. Como temos positivos confiáveis, mas não negativos biológicos confirmados, usamos um ensemble Positive-Unlabeled com balanceamento por família. Cada candidato é pontuado somente por modelos out-of-bag que não o usaram como contraste, e sua estabilidade é medida entre 20 bags. O Modelo 1 é testado escondendo famílias inteiras de seed. Depois, o Modelo 2 usa predições out-of-fold, correção FDR e tamanhos de efeito para verificar associação com doentes e saudáveis. O ranking integrado combina essas evidências e prioriza hipóteses, sem confirmar biomarcadores.”</div>
     <h3>Perguntas rápidas da banca</h3>
     <div class="card"><strong>Por que k-mers?</strong><br>Representam motivos locais sem exigir alinhamento e são adequados a um conjunto pequeno de positivos.</div>
     <div class="card"><strong>Por que retirar hairpin?</strong><br>Para manter o foco na sequência madura e reduzir complexidade. A métrica principal não caiu após a retirada.</div>
     <div class="card"><strong>Por que não chamar os demais de negativos?</strong><br>Ausência da lista positiva não comprova ausência de associação.</div>
-    <div class="card"><strong>Qual é a conclusão?</strong><br>Há sinal global acima do nulo, mas o top 10% ainda não é robusto. Os resultados são candidatos para investigação externa.</div>
+    <div class="card"><strong>Qual é a conclusão?</strong><br>Há sinal global acima do nulo, mas o enriquecimento do top 10% ainda não é significativo. Os resultados são candidatos priorizados para investigação externa.</div>
     <h3>Limitações que devem ser declaradas</h3>
-    <ul><li>43 positivos e 32 famílias são uma amostra pequena.</li><li>O conjunto não rotulado pode conter positivos desconhecidos.</li><li>Recall@10% não foi significativo.</li><li>O baseline de composição madura teve percentil observado maior que o ensemble.</li><li>O Modelo 2 pode capturar lote ou origem.</li><li>O dataset pode não distinguir 5p de 3p.</li><li>Confirmação exige coorte externa e validação laboratorial.</li></ul>
+    <ul><li>43 positivos e 32 famílias são uma amostra pequena.</li><li>O conjunto não rotulado pode conter positivos desconhecidos.</li><li>Recall@10% não foi significativo.</li><li>O ganho de motivos terminais na ablação é exploratório e não foi usado para escolher o modelo olhando o teste externo.</li><li>O Modelo 2 pode capturar lote ou origem.</li><li>552/611 candidatos do Modelo 2 não têm expressão específica de braço.</li><li>Confirmação exige coorte externa e validação laboratorial.</li></ul>
     <p class="mini">Documento gerado a partir da implementação vigente em 10/10/2026. Consulte <code>docs/METODOLOGIA_MODELOS_MIRNA.md</code> e <code>reports/auditoria_pipeline_descoberta_mirna.txt</code>.</p>
   </section>
 </body>

@@ -19,6 +19,7 @@ const CONVERGENCE_TOLERANCE = 1e-8;
 const L2 = 0.01;
 const CV_FOLDS = 5;
 const TOP_REPORT_COUNT = 30;
+const P_VALUE_FLOOR = 1e-16;
 
 function ensureDirectory(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -60,15 +61,18 @@ function parseCsvLine(line) {
 }
 
 function readCsv(filePath) {
-  const rows = fs
-    .readFileSync(filePath, "utf8")
-    .split(/\r?\n/)
-    .filter((line) => line.trim())
-    .map(parseCsvLine);
-  const header = rows[0];
+  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/).filter((line) => line.trim());
+  if (!lines.length) throw new Error(`CSV vazio: ${filePath}`);
+  const header = parseCsvLine(lines[0]).map((name) => name.trim());
+  if (new Set(header).size !== header.length) throw new Error(`CSV possui cabecalhos duplicados: ${filePath}`);
+  const rows = lines.slice(1).map((line, index) => {
+    const row = parseCsvLine(line);
+    if (row.length !== header.length) throw new Error(`Linha ${index + 2} de ${filePath} possui ${row.length} colunas; esperado: ${header.length}`);
+    return row;
+  });
   return {
     header,
-    rows: rows.slice(1),
+    rows,
     indexByName: new Map(header.map((name, index) => [name, index])),
   };
 }
@@ -118,6 +122,66 @@ function computeAuc(positives, negatives) {
   const positiveCount = positives.length;
   const negativeCount = negatives.length;
   return (rankSumPositive - (positiveCount * (positiveCount + 1)) / 2) / (positiveCount * negativeCount);
+}
+
+function normalCdf(value) {
+  const sign = value < 0 ? -1 : 1;
+  const x = Math.abs(value) / Math.sqrt(2);
+  const t = 1 / (1 + 0.3275911 * x);
+  const erf = sign * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x));
+  return 0.5 * (1 + erf);
+}
+
+function aucInference(auc, positiveCount, negativeCount) {
+  const pairCount = Math.max(1, positiveCount * negativeCount);
+  const varianceAuc = auc <= 0 || auc >= 1 ? (auc * pairCount + 0.5) / (pairCount + 1) : auc;
+  const q1 = varianceAuc / Math.max(1e-12, 2 - varianceAuc);
+  const q2 = (2 * varianceAuc * varianceAuc) / Math.max(1e-12, 1 + varianceAuc);
+  const variance = (
+    varianceAuc * (1 - varianceAuc) +
+    (positiveCount - 1) * (q1 - varianceAuc * varianceAuc) +
+    (negativeCount - 1) * (q2 - varianceAuc * varianceAuc)
+  ) / Math.max(1, positiveCount * negativeCount);
+  const standardError = Math.sqrt(Math.max(0, variance));
+  const nullStandardError = Math.sqrt((positiveCount + negativeCount + 1) / Math.max(1, 12 * positiveCount * negativeCount));
+  const z = nullStandardError > 0 ? (auc - 0.5) / nullStandardError : 0;
+  const pValue = Math.max(P_VALUE_FLOOR, Math.min(1, 1 - normalCdf(z)));
+  return {
+    method: "hanley_mcneil_ci_with_half_pair_boundary_stabilization_and_one_sided_null_rank_variance_p_value_auc_gt_0_5_on_oof_predictions",
+    standard_error: standardError,
+    confidence_interval_95: [Math.max(0, auc - 1.96 * standardError), Math.min(1, auc + 1.96 * standardError)],
+    p_value_auc_gt_0_5_one_sided: pValue,
+  };
+}
+
+function benjaminiHochberg(items, pValueGetter, assign) {
+  const ordered = [...items].sort((left, right) => pValueGetter(left) - pValueGetter(right));
+  let runningMinimum = 1;
+  for (let index = ordered.length - 1; index >= 0; index -= 1) {
+    const adjusted = Math.min(1, pValueGetter(ordered[index]) * ordered.length / (index + 1));
+    runningMinimum = Math.min(runningMinimum, adjusted);
+    assign(ordered[index], runningMinimum);
+  }
+}
+
+function standardizedMeanDifference(diseaseValues, healthyValues) {
+  const diseaseVariance = std(diseaseValues) ** 2;
+  const healthyVariance = std(healthyValues) ** 2;
+  const degrees = diseaseValues.length + healthyValues.length - 2;
+  const pooled = Math.sqrt(Math.max(0, ((diseaseValues.length - 1) * diseaseVariance + (healthyValues.length - 1) * healthyVariance) / Math.max(1, degrees)));
+  if (!pooled) return 0;
+  const correction = 1 - 3 / Math.max(4, 4 * (diseaseValues.length + healthyValues.length) - 9);
+  return correction * (mean(diseaseValues) - mean(healthyValues)) / pooled;
+}
+
+function meanDifferenceInference(diseaseValues, healthyValues) {
+  const difference = mean(diseaseValues) - mean(healthyValues);
+  const standardError = Math.sqrt((std(diseaseValues) ** 2) / Math.max(1, diseaseValues.length) + (std(healthyValues) ** 2) / Math.max(1, healthyValues.length));
+  return {
+    difference,
+    standard_error: standardError,
+    confidence_interval_95: [difference - 1.96 * standardError, difference + 1.96 * standardError],
+  };
 }
 
 function metricsFromPredictions(items) {
@@ -263,11 +327,15 @@ function crossValidateUnivariate(samples, foldCount = CV_FOLDS) {
   };
 }
 
-function expressionValueForRow(row, dataset, features) {
-  return (
-    features.reduce((sum, feature) => sum + (Number(row[dataset.indexByName.get(feature)]) || 0), 0) /
-    Math.max(1, features.length)
-  );
+function expressionValueForRow(row, dataset, features, sampleId) {
+  return features.reduce((sum, feature) => {
+    const raw = row[dataset.indexByName.get(feature)];
+    const value = Number(raw);
+    if (String(raw ?? "").trim() === "" || !Number.isFinite(value) || value < 0) {
+      throw new Error(`Expressao invalida em sample_id=${sampleId}, feature=${feature}: ${raw}`);
+    }
+    return sum + value;
+  }, 0) / Math.max(1, features.length);
 }
 
 function validationEvidenceScore(item) {
@@ -313,14 +381,15 @@ function main() {
   const sampleIds = dataset.rows.map((row) => row[sampleIdIndex]?.trim());
   if (sampleIds.some((sampleId) => !sampleId)) throw new Error(`sample_id vazio em ${DATASET_CSV}`);
   if (new Set(sampleIds).size !== sampleIds.length) throw new Error(`sample_id duplicado em ${DATASET_CSV}`);
-  const labels = new Set(dataset.rows.map((row) => Number(row[classIndex])));
-  if (labels.size !== 2 || !labels.has(0) || !labels.has(1)) {
+  const labelValues = dataset.rows.map((row) => String(row[classIndex] ?? "").trim() === "" ? NaN : Number(row[classIndex]));
+  const labels = new Set(labelValues);
+  if (labelValues.some((value) => ![0, 1].includes(value)) || labels.size !== 2 || !labels.has(0) || !labels.has(1)) {
     throw new Error(`Classes esperadas 0 e 1 nao encontradas em ${DATASET_CSV}`);
   }
 
-  const datasetSamples = dataset.rows.map((row) => ({
+  const datasetSamples = dataset.rows.map((row, index) => ({
     sampleId: row[sampleIdIndex],
-    label: Number(row[classIndex]),
+    label: labelValues[index],
     row,
   }));
 
@@ -340,13 +409,10 @@ function main() {
       continue;
     }
 
-    const samples = datasetSamples.map((sample, index) => ({
-      index,
-      sampleId: sample.sampleId,
-      label: sample.label,
-      value: Math.log1p(Math.max(0, expressionValueForRow(sample.row, dataset, features))),
-      rawValue: expressionValueForRow(sample.row, dataset, features),
-    }));
+    const samples = datasetSamples.map((sample, index) => {
+      const rawValue = expressionValueForRow(sample.row, dataset, features, sample.sampleId);
+      return { index, sampleId: sample.sampleId, label: sample.label, value: Math.log1p(rawValue), rawValue };
+    });
 
     const crossValidation = crossValidateUnivariate(samples);
     const finalModel = trainUnivariateLogistic(samples);
@@ -354,6 +420,8 @@ function main() {
 
     const diseaseRaw = samples.filter((sample) => sample.label === 1).map((sample) => sample.rawValue);
     const healthyRaw = samples.filter((sample) => sample.label === 0).map((sample) => sample.rawValue);
+    const diseaseLog = samples.filter((sample) => sample.label === 1).map((sample) => sample.value);
+    const healthyLog = samples.filter((sample) => sample.label === 0).map((sample) => sample.value);
     const diseaseMean = mean(diseaseRaw);
     const healthyMean = mean(healthyRaw);
     const log2FoldChange = Math.log2((diseaseMean + 1) / (healthyMean + 1));
@@ -373,6 +441,11 @@ function main() {
       diseaseMedian: median(diseaseRaw),
       healthyMedian: median(healthyRaw),
       log2FoldChange,
+      aucInference: aucInference(cvMetrics.auc, diseaseRaw.length, healthyRaw.length),
+      rawExpressionAuc: computeAuc(diseaseLog, healthyLog),
+      cliffsDelta: 2 * computeAuc(diseaseLog, healthyLog) - 1,
+      hedgesGLogExpression: standardizedMeanDifference(diseaseLog, healthyLog),
+      logExpressionDifference: meanDifferenceInference(diseaseLog, healthyLog),
       diseaseNonzeroPct,
       healthyNonzeroPct,
       direction: directionFromWeight(finalModel.weight),
@@ -407,6 +480,31 @@ function main() {
     });
   }
 
+  const featureGroupCounts = new Map();
+  const expressionHypotheses = new Map();
+  for (const item of candidateResults) {
+    const key = [...item.features].sort().join("|");
+    featureGroupCounts.set(key, (featureGroupCounts.get(key) ?? 0) + 1);
+    item.expressionHypothesisKey = key;
+    if (!expressionHypotheses.has(key)) expressionHypotheses.set(key, { key, pValue: item.aucInference.p_value_auc_gt_0_5_one_sided, fdrBh: 1 });
+  }
+  benjaminiHochberg([...expressionHypotheses.values()], (item) => item.pValue, (item, adjusted) => { item.fdrBh = adjusted; });
+  for (const item of candidateResults) {
+    const key = item.expressionHypothesisKey;
+    item.aucFdrBh = expressionHypotheses.get(key).fdrBh;
+    item.sharedExpressionFeatureCandidateCount = featureGroupCounts.get(key) ?? 1;
+    item.matureArmAmbiguity = item.sharedExpressionFeatureCandidateCount > 1;
+    item.molecular75Score = 0.75 * item.sequenceScore + 0.25 * item.validationScore;
+    item.patient75Score = 0.25 * item.sequenceScore + 0.75 * item.validationScore;
+  }
+
+  const assignRank = (items, scoreName, rankName) => [...items].sort((left, right) => right[scoreName] - left[scoreName] || left.mirna.localeCompare(right.mirna)).forEach((item, index) => { item[rankName] = index + 1; });
+  assignRank(candidateResults, "molecular75Score", "molecular75Rank");
+  assignRank(candidateResults, "patient75Score", "patient75Rank");
+  for (const item of candidateResults) {
+    item.paretoFront = !candidateResults.some((other) => other !== item && other.sequenceScore >= item.sequenceScore && other.validationScore >= item.validationScore && (other.sequenceScore > item.sequenceScore || other.validationScore > item.validationScore));
+  }
+
   const validationRanked = [...candidateResults].sort(
     (a, b) =>
       b.validationScore - a.validationScore ||
@@ -430,6 +528,26 @@ function main() {
     const result = resultByKey.get(`${candidateModel.mirna}|${candidateModel.sequence_rank}`);
     candidateModel.validation_rank = result?.validationRank ?? null;
     candidateModel.integrated_rank = result?.integratedRank ?? null;
+    candidateModel.statistical_inference = result ? {
+      auc: result.aucInference,
+      auc_fdr_bh: result.aucFdrBh,
+      raw_expression_auc: result.rawExpressionAuc,
+      cliffs_delta: result.cliffsDelta,
+      hedges_g_log_expression: result.hedgesGLogExpression,
+      log_expression_difference: result.logExpressionDifference,
+      warning: "IC e p unilateral para AUC>0,5 usam aproximacao sobre predicoes OOF correlacionadas; o FDR e calculado por hipotese de expressao unica, valores no piso devem ser lidos como p<1e-16 e tudo permanece evidencia interna.",
+    } : null;
+    candidateModel.integration_sensitivity = result ? {
+      molecular_75_patient_25_score: result.molecular75Score,
+      molecular_75_patient_25_rank: result.molecular75Rank,
+      molecular_25_patient_75_score: result.patient75Score,
+      molecular_25_patient_75_rank: result.patient75Rank,
+      pareto_front: result.paretoFront,
+    } : null;
+    candidateModel.expression_resolution = result ? {
+      shared_feature_candidate_count: result.sharedExpressionFeatureCandidateCount,
+      mature_arm_ambiguity: result.matureArmAmbiguity,
+    } : null;
   }
   candidateModels.sort((a, b) => (a.validation_rank ?? 0) - (b.validation_rank ?? 0));
 
@@ -464,6 +582,18 @@ function main() {
     validation_score_formula:
       "score_validacao_pacientes = 0.70*AUC_signal + 0.20*|log2FC|_signal + 0.10*detection_presence_signal",
     final_score_formula: "score_final_descoberta = 0.50*score_modelo_sequencial + 0.50*score_validacao_pacientes",
+    statistical_inference: {
+      auc_interval_and_p_value: "IC Hanley-McNeil e p unilateral para AUC maior que 0,5 aplicados as predicoes out-of-fold",
+      multiple_testing: `Benjamini-Hochberg sobre ${expressionHypotheses.size} hipoteses de expressao unicas; candidatos 5p/3p com as mesmas features nao sao contados como testes independentes`,
+      unique_expression_hypothesis_count: expressionHypotheses.size,
+      significant_unique_expression_hypothesis_count_fdr_0_05: [...expressionHypotheses.values()].filter((item) => item.fdrBh < 0.05).length,
+      effect_sizes: ["Cliff's delta da expressao log1p", "Hedges g da expressao log1p", "diferenca media log1p com IC95% normal"],
+      warning: "Predicoes OOF de folds diferentes nao sao independentes; p-valores unilaterais e ICs sao aproximacoes internas, valores no piso significam p<1e-16 e nao substituem coorte externa.",
+    },
+    integration_sensitivity: {
+      scenarios: ["75% Modelo 1 + 25% Modelo 2", "50% Modelo 1 + 50% Modelo 2", "25% Modelo 1 + 75% Modelo 2"],
+      pareto_front: "candidatos nao dominados simultaneamente nos scores dos Modelos 1 e 2",
+    },
     ranking_definitions: {
       rank_validacao_pacientes:
         "Ranking puro do Modelo 2, ordenado por score_validacao_pacientes. Mede apenas associacao computacional no dataset de pacientes.",
@@ -496,6 +626,10 @@ function main() {
     "features_expressao",
     "direcao_aprendida_no_paciente",
     "cv_oof_auc",
+    "cv_oof_auc_ic95_inferior_aprox",
+    "cv_oof_auc_ic95_superior_aprox",
+    "cv_oof_auc_p_gt_0_5_unilateral_aprox",
+    "cv_oof_auc_fdr_bh_aprox",
     "cv_oof_accuracy",
     "cv_oof_precision",
     "cv_oof_recall_sensibilidade",
@@ -505,6 +639,12 @@ function main() {
     "cv_oof_fp",
     "cv_oof_fn",
     "cv_oof_tn",
+    "auc_expressao_bruta",
+    "cliffs_delta_expressao_log1p",
+    "hedges_g_expressao_log1p",
+    "diferenca_media_log1p",
+    "diferenca_media_log1p_ic95_inferior",
+    "diferenca_media_log1p_ic95_superior",
     "log2_fc_doente_vs_saudavel",
     "media_doente",
     "media_saudavel",
@@ -512,6 +652,13 @@ function main() {
     "mediana_saudavel",
     "pct_doentes_maior_que_zero",
     "pct_saudaveis_maior_que_zero",
+    "numero_candidatos_mesma_feature_expressao",
+    "ambiguidade_braco_maduro",
+    "score_75_modelo1_25_modelo2",
+    "rank_75_modelo1_25_modelo2",
+    "score_25_modelo1_75_modelo2",
+    "rank_25_modelo1_75_modelo2",
+    "fronteira_pareto",
     "marcadores_referencia_mais_proximos",
     "features_modelo_mais_influentes",
     "features_kmer_mais_influentes",
@@ -528,6 +675,10 @@ function main() {
     item.features.join("; "),
     item.direction,
     item.cvMetrics.auc.toFixed(6),
+    item.aucInference.confidence_interval_95[0].toFixed(6),
+    item.aucInference.confidence_interval_95[1].toFixed(6),
+    item.aucInference.p_value_auc_gt_0_5_one_sided.toExponential(6),
+    item.aucFdrBh.toExponential(6),
     item.cvMetrics.accuracy.toFixed(6),
     item.cvMetrics.precision.toFixed(6),
     item.cvMetrics.recall.toFixed(6),
@@ -537,6 +688,12 @@ function main() {
     item.cvMetrics.fp,
     item.cvMetrics.fn,
     item.cvMetrics.tn,
+    item.rawExpressionAuc.toFixed(6),
+    item.cliffsDelta.toFixed(6),
+    item.hedgesGLogExpression.toFixed(6),
+    item.logExpressionDifference.difference.toFixed(6),
+    item.logExpressionDifference.confidence_interval_95[0].toFixed(6),
+    item.logExpressionDifference.confidence_interval_95[1].toFixed(6),
     item.log2FoldChange.toFixed(6),
     item.diseaseMean.toFixed(6),
     item.healthyMean.toFixed(6),
@@ -544,6 +701,13 @@ function main() {
     item.healthyMedian.toFixed(6),
     item.diseaseNonzeroPct.toFixed(2),
     item.healthyNonzeroPct.toFixed(2),
+    item.sharedExpressionFeatureCandidateCount,
+    item.matureArmAmbiguity ? "sim" : "nao",
+    item.molecular75Score.toFixed(6),
+    item.molecular75Rank,
+    item.patient75Score.toFixed(6),
+    item.patient75Rank,
+    item.paretoFront ? "sim" : "nao",
     item.nearestMarkers,
     item.influentialKmers,
     item.influentialKmers,
@@ -568,6 +732,11 @@ function main() {
     `Candidatos recebidos do ranking sequencial global: ${candidates.rows.length}`,
     `Candidatos validados: ${candidateResults.length}`,
     `Candidatos ignorados por falta de expressao no dataset: ${skippedWithoutExpression}`,
+    `Hipoteses de expressao unicas avaliadas: ${expressionHypotheses.size}`,
+    `Hipoteses unicas com FDR BH aproximado < 0.05 para AUC > 0.5: ${[...expressionHypotheses.values()].filter((item) => item.fdrBh < 0.05).length}`,
+    `Candidatos associados a essas hipoteses significativas: ${candidateResults.filter((item) => item.aucFdrBh < 0.05).length}`,
+    `Candidatos com ambiguidade de braco por feature compartilhada: ${candidateResults.filter((item) => item.matureArmAmbiguity).length}`,
+    `Candidatos na fronteira de Pareto dos dois scores: ${candidateResults.filter((item) => item.paretoFront).length}`,
     "",
     "Tipo do Modelo 2:",
     "patient_candidate_validation_models_per_candidate",
@@ -583,6 +752,8 @@ function main() {
     "Formula de validacao em pacientes:",
     "score_validacao_pacientes = 0.70*AUC_signal + 0.20*|log2FC|_signal + 0.10*detection_presence_signal",
     "score_final_descoberta = 0.50*score_modelo_sequencial + 0.50*score_validacao_pacientes",
+    "Analise de sensibilidade adicional: 75/25 e 25/75, alem da fronteira de Pareto.",
+    "Inferencia adicional: IC95% e p unilateral aproximado para AUC > 0.5, FDR Benjamini-Hochberg por hipotese de expressao unica e tamanhos de efeito. Como as predicoes OOF sao correlacionadas, esses valores continuam sendo internos.",
     "",
     "Observacao sobre nivel de expressao:",
     "O dataset de expressao usa varias colunas em nivel de precursor/familia. Quando candidatos maduros diferentes compartilham a mesma feature de expressao, o Modelo 2 valida a associacao da feature disponivel, mas nao distingue experimentalmente 5p vs 3p.",
@@ -596,6 +767,7 @@ function main() {
         `score_final=${item.finalDiscoveryScore.toFixed(4)}\t` +
         `seq=${item.sequenceScore.toFixed(4)}\t` +
         `cv_oof_auc=${item.cvMetrics.auc.toFixed(3)}\t` +
+        `fdr_aprox=${item.aucFdrBh.toExponential(2)}\t` +
         `cv_oof_acc=${item.cvMetrics.accuracy.toFixed(3)}\t` +
         `cv_oof_precision=${item.cvMetrics.precision.toFixed(3)}\t` +
         `log2FC=${item.log2FoldChange.toFixed(3)}\t` +
@@ -612,6 +784,7 @@ function main() {
         `seq=${item.sequenceScore.toFixed(4)}\t` +
         `validacao=${item.validationScore.toFixed(4)}\t` +
         `cv_oof_auc=${item.cvMetrics.auc.toFixed(3)}\t` +
+        `fdr_aprox=${item.aucFdrBh.toExponential(2)}\t` +
         `cv_oof_acc=${item.cvMetrics.accuracy.toFixed(3)}\t` +
         `cv_oof_precision=${item.cvMetrics.precision.toFixed(3)}\t` +
         `log2FC=${item.log2FoldChange.toFixed(3)}\t` +

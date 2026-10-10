@@ -7,6 +7,7 @@ const fromRoot = (...parts) => path.join(ROOT, ...parts);
 const SEQUENCE_RANKING_CSV = fromRoot("data", "processed", "mirna_candidate_discovery_model_ranking.csv");
 const VALIDATION_RANKING_CSV = fromRoot("data", "processed", "mirna_patient_candidate_validation.csv");
 const INTEGRATED_RANKING_CSV = fromRoot("data", "processed", "mirna_patient_candidate_integrated_ranking.csv");
+const PATIENT_MODEL_JSON = fromRoot("models", "modelo_mirna_patient_candidate_validation.json");
 const SEQUENCE_REPORT = fromRoot("reports", "modelo_mirna_candidate_discovery_report.txt");
 const VALIDATION_REPORT = fromRoot("reports", "modelo_mirna_patient_candidate_validation_report.txt");
 
@@ -77,6 +78,9 @@ function compactSequenceRows(rows) {
     score: toNumber(row.score_modelo_sequencial),
     prob: toNumber(row.probabilidade_pu_consenso_bruta ?? row.probabilidade_contrastiva_bruta),
     logit: toNumber(row.logit_modelo_sequencial),
+    estabilidade_mediana: toNumber(row.percentil_mediano_bags_oob),
+    estabilidade_iqr: toNumber(row.iqr_percentil_bags_oob),
+    frequencia_top10: toNumber(row.frequencia_top_10_bags_oob),
     features: row.features_expressao_associadas,
     referencias: row.marcadores_referencia_mais_proximos,
     kmers: row.features_modelo_mais_influentes ?? row.features_kmer_mais_influentes,
@@ -93,17 +97,25 @@ function compactPatientRows(rows) {
     score_seq: toNumber(row.score_modelo_sequencial),
     rank_seq: toNumber(row.rank_modelo_sequencial),
     auc: toNumber(row.cv_oof_auc ?? row.test_auc),
+    auc_ic_inf: toNumber(row.cv_oof_auc_ic95_inferior_aprox),
+    auc_ic_sup: toNumber(row.cv_oof_auc_ic95_superior_aprox),
+    fdr: toNumber(row.cv_oof_auc_fdr_bh_aprox),
     acc: toNumber(row.cv_oof_accuracy ?? row.test_accuracy),
     precision: toNumber(row.cv_oof_precision ?? row.test_precision),
     recall: toNumber(row.cv_oof_recall_sensibilidade ?? row.test_recall_sensibilidade),
     specificity: toNumber(row.cv_oof_specificity ?? row.test_specificity),
     f1: toNumber(row.cv_oof_f1 ?? row.test_f1),
+    cliffs_delta: toNumber(row.cliffs_delta_expressao_log1p),
     log2fc: toNumber(row.log2_fc_doente_vs_saudavel),
     media_doente: toNumber(row.media_doente),
     media_saudavel: toNumber(row.media_saudavel),
     pct_doente: toNumber(row.pct_doentes_maior_que_zero),
     pct_saudavel: toNumber(row.pct_saudaveis_maior_que_zero),
     direcao: row.direcao_aprendida_no_paciente,
+    ambiguidade: row.ambiguidade_braco_maduro,
+    rank_molecular75: toNumber(row.rank_75_modelo1_25_modelo2),
+    rank_paciente75: toNumber(row.rank_25_modelo1_75_modelo2),
+    pareto: row.fronteira_pareto,
     features: row.features_expressao,
     referencias: row.marcadores_referencia_mais_proximos,
     kmers: row.features_kmer_mais_influentes,
@@ -127,12 +139,15 @@ function renderDefinition(term, description) {
   return `<article class="definition"><strong>${escapeHtml(term)}</strong><span>${escapeHtml(description)}</span></article>`;
 }
 
-function buildHtml({ sequenceRows, validationRows, integratedRows }) {
+function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel }) {
   const validationScores = validationRows.map((row) => row.validacao);
   const precisions = validationRows.map((row) => row.precision);
   const aucs = validationRows.map((row) => row.auc);
   const accuracies = validationRows.map((row) => row.acc);
   const sequenceWithExpression = sequenceRows.filter((row) => row.expressao === "sim").length;
+  const uniqueHypothesisCount = patientModel.statistical_inference?.unique_expression_hypothesis_count ?? validationRows.length;
+  const fdrSignificant = patientModel.statistical_inference?.significant_unique_expression_hypothesis_count_fdr_0_05 ?? validationRows.filter((row) => Number.isFinite(row.fdr) && row.fdr < 0.05).length;
+  const paretoCount = integratedRows.filter((row) => row.pareto === "sim").length;
 
   const dataPayload = JSON.stringify(
     {
@@ -153,6 +168,8 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
     renderMetric("Acurácia CV média", round(mean(accuracies)), "predições out-of-fold"),
     renderMetric("Precisão >= 0.90", countWhere(precisions, (value) => value >= 0.9), "candidatos"),
     renderMetric("AUC >= 0.90", countWhere(aucs, (value) => value >= 0.9), "candidatos"),
+    renderMetric("Hipoteses FDR < 0.05", fdrSignificant, `de ${uniqueHypothesisCount} expressoes unicas`),
+    renderMetric("Fronteira de Pareto", paretoCount, "fortes sem peso 50/50"),
   ].join("\n");
 
   const metricDefinitions = [
@@ -183,6 +200,14 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
     renderDefinition(
       "Precisão >= 0.90 / AUC >= 0.90",
       "Contagem de candidatos com desempenho alto nas predições out-of-fold. Esses números continuam sendo validação computacional, não clínica."
+    ),
+    renderDefinition(
+      "Hipoteses FDR < 0.05",
+      "Contagem de expressoes unicas apos correcao Benjamini-Hochberg e teste unilateral AUC > 0,5. Bracos que compartilham a mesma feature nao sao contados como testes independentes."
+    ),
+    renderDefinition(
+      "Fronteira de Pareto",
+      "Candidatos para os quais nenhum outro possui simultaneamente score maior nos Modelos 1 e 2. Nao depende de escolher o peso 50/50."
     ),
   ].join("\n");
 
@@ -520,6 +545,12 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
           ["validacao", "Validação"],
           ["score_seq", "Score seq."],
           ["auc", "AUC"],
+          ["auc_ic_inf", "AUC IC95% inf."],
+          ["auc_ic_sup", "AUC IC95% sup."],
+          ["fdr", "FDR aprox."],
+          ["pareto", "Pareto"],
+          ["rank_molecular75", "Rank 75% M1"],
+          ["rank_paciente75", "Rank 75% M2"],
           ["acc", "Acurácia"],
           ["precision", "Precisão"],
           ["log2fc", "log2FC"],
@@ -535,6 +566,11 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
           ["mirna", "miRNA"],
           ["validacao", "Validação"],
           ["auc", "AUC"],
+          ["auc_ic_inf", "AUC IC95% inf."],
+          ["auc_ic_sup", "AUC IC95% sup."],
+          ["fdr", "FDR aprox."],
+          ["cliffs_delta", "Cliff's delta"],
+          ["ambiguidade", "Ambiguidade 5p/3p"],
           ["acc", "Acurácia"],
           ["precision", "Precisão"],
           ["recall", "Recall"],
@@ -556,6 +592,9 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
           ["score", "Score Modelo 1"],
           ["prob", "Consenso PU bruto"],
           ["logit", "Logit"],
+          ["estabilidade_mediana", "Percentil mediano OOB"],
+          ["estabilidade_iqr", "IQR percentil OOB"],
+          ["frequencia_top10", "FrequÃªncia top 10%"],
           ["features", "Features expressão"],
           ["referencias", "Referências próximas"],
           ["kmers", "Features influentes"]
@@ -685,15 +724,16 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 }
 
 function main() {
-  for (const requiredPath of [SEQUENCE_RANKING_CSV, VALIDATION_RANKING_CSV, INTEGRATED_RANKING_CSV]) {
+  for (const requiredPath of [SEQUENCE_RANKING_CSV, VALIDATION_RANKING_CSV, INTEGRATED_RANKING_CSV, PATIENT_MODEL_JSON]) {
     if (!fs.existsSync(requiredPath)) throw new Error(`Arquivo obrigatório não encontrado: ${requiredPath}`);
   }
 
   const sequenceRows = compactSequenceRows(readCsv(SEQUENCE_RANKING_CSV));
   const validationRows = compactPatientRows(readCsv(VALIDATION_RANKING_CSV));
   const integratedRows = compactPatientRows(readCsv(INTEGRATED_RANKING_CSV));
+  const patientModel = JSON.parse(fs.readFileSync(PATIENT_MODEL_JSON, "utf8"));
   fs.mkdirSync(path.dirname(OUTPUT_HTML), { recursive: true });
-  fs.writeFileSync(OUTPUT_HTML, buildHtml({ sequenceRows, validationRows, integratedRows }), "utf8");
+  fs.writeFileSync(OUTPUT_HTML, buildHtml({ sequenceRows, validationRows, integratedRows, patientModel }), "utf8");
 
   console.log(`Dashboard HTML gerado: ${OUTPUT_HTML}`);
   if (fs.existsSync(SEQUENCE_REPORT)) console.log(`Relatório Modelo 1: ${SEQUENCE_REPORT}`);

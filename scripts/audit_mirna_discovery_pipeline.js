@@ -11,6 +11,8 @@ const FILES = {
   ranking2: fromRoot("data", "processed", "mirna_patient_candidate_validation.csv"),
   integrated: fromRoot("data", "processed", "mirna_patient_candidate_integrated_ranking.csv"),
   report: fromRoot("reports", "auditoria_pipeline_descoberta_mirna.txt"),
+  externalValidator: fromRoot("scripts", "validate_mirna_external_cohort.js"),
+  externalFormat: fromRoot("docs", "FORMATO_COORTE_EXTERNA.md"),
 };
 
 function parseCsvLine(line) {
@@ -94,6 +96,9 @@ function main() {
   check(Object.keys(validation?.baselines ?? {}).length >= 4, "validacao inclui pelo menos quatro baselines", Object.keys(validation?.baselines ?? {}).join(", "));
   check(model1.pu_ensemble?.candidate_scoring?.includes("out-of-bag"), "candidatos nao rotulados sao pontuados somente fora dos bags em que serviram de contraste", model1.pu_ensemble?.candidate_scoring);
   check(model1.pu_ensemble?.out_of_bag_fallback_count === 0, "nenhum candidato precisou de fallback sem modelos out-of-bag", model1.pu_ensemble?.out_of_bag_fallback_count);
+  check(model1.pu_ensemble?.bags >= 20, "ensemble final usa pelo menos 20 bags para estimar estabilidade", model1.pu_ensemble?.bags);
+  check(Object.keys(model1.mature_feature_ablation?.representations ?? {}).length === 5, "ablacao compara cinco representacoes exclusivamente maduras", Object.keys(model1.mature_feature_ablation?.representations ?? {}).join(", "));
+  check(Object.values(model1.mature_feature_ablation?.paired_comparisons_against_core ?? {}).every((item) => finiteUnit(item.paired_sign_flip_fdr_bh)), "ablacao corrige as quatro comparacoes contra o core por FDR BH");
 
   check(ranking1.length === model1.candidate_count, "quantidade do ranking do Modelo 1 confere com o JSON", `${ranking1.length}/${model1.candidate_count}`);
   check(new Set(ranking1.map((row) => row.mirna)).size === ranking1.length, "ranking do Modelo 1 nao possui miRNAs duplicados");
@@ -104,6 +109,7 @@ function main() {
   check(ranking1.every((row) => Number(row.numero_modelos_oob) >= 1 && Number(row.numero_modelos_oob) <= model1.pu_ensemble.bags), "todo candidato registra quantidade valida de modelos out-of-bag");
   check(ranking1.filter((row) => row.tem_expressao_no_dataset === "sim").length === model1.candidate_count_with_expression_available, "contagem de candidatos com expressao confere", model1.candidate_count_with_expression_available);
   check(!Object.hasOwn(ranking1[0] ?? {}, "numero_hairpins_associados") && !Object.hasOwn(ranking1[0] ?? {}, "metodo_estrutura_hairpin"), "ranking ativo nao expoe colunas de hairpin ou estrutura");
+  check(ranking1.every((row) => ["percentil_mediano_bags_oob", "percentil_q25_bags_oob", "percentil_q75_bags_oob", "frequencia_top_10_bags_oob"].every((column) => finiteUnit(row[column]))), "ranking do Modelo 1 registra estabilidade out-of-bag em [0,1]");
   check(ranking1.every((row) => row.features_modelo_mais_influentes === row.features_kmer_mais_influentes), "alias legado de features influentes preserva o mesmo valor");
 
   const model2 = JSON.parse(fs.readFileSync(FILES.model2, "utf8"));
@@ -119,6 +125,18 @@ function main() {
   check(ranksAreContiguous(integrated, "rank_integrado"), "ranking integrado possui ranks contiguos");
   check(scoresAreDescending(integrated, "score_final_descoberta"), "ranking integrado esta ordenado por score decrescente");
   check(ranking2.every((row) => ["cv_oof_auc", "cv_oof_accuracy", "cv_oof_precision", "cv_oof_recall_sensibilidade", "cv_oof_specificity", "cv_oof_f1"].every((column) => finiteUnit(row[column]))), "metricas OOF do Modelo 2 pertencem a [0,1]");
+  check(ranking2.every((row) => ["cv_oof_auc_ic95_inferior_aprox", "cv_oof_auc_ic95_superior_aprox", "cv_oof_auc_fdr_bh_aprox"].every((column) => finiteUnit(row[column]))), "Modelo 2 registra IC e FDR aproximados validos");
+  const expressionGroups = new Map();
+  for (const row of ranking2) {
+    const values = expressionGroups.get(row.features_expressao) ?? [];
+    values.push(Number(row.cv_oof_auc_fdr_bh_aprox));
+    expressionGroups.set(row.features_expressao, values);
+  }
+  check(model2.statistical_inference?.unique_expression_hypothesis_count === expressionGroups.size, "Modelo 2 conta hipoteses de expressao unicas para FDR", `${model2.statistical_inference?.unique_expression_hypothesis_count}/${expressionGroups.size}`);
+  check([...expressionGroups.values()].every((values) => new Set(values.map((value) => value.toPrecision(12))).size === 1), "candidatos que compartilham features recebem o mesmo FDR");
+  check(ranking2.every((row) => Number(row.cv_oof_auc) >= 0.5 || Number(row.cv_oof_auc_fdr_bh_aprox) >= 0.05), "teste unilateral nao declara AUC abaixo do acaso significativa");
+  check(integrated.every((row) => Number(row.rank_75_modelo1_25_modelo2) >= 1 && Number(row.rank_25_modelo1_75_modelo2) >= 1), "ranking integrado inclui analise de sensibilidade 75/25 e 25/75");
+  check(integrated.some((row) => row.fronteira_pareto === "sim"), "ranking integrado identifica fronteira de Pareto");
 
   finish();
 }

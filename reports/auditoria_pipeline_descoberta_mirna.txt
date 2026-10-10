@@ -1,7 +1,7 @@
 Auditoria automatizada do pipeline de descoberta de miRNA
 
 Resultado: APROVADO
-Verificacoes: 40
+Verificacoes: 52
 Falhas: 0
 
 OK	arquivo obrigatorio existe: models\modelo_mirna_candidate_discovery.json
@@ -9,6 +9,8 @@ OK	arquivo obrigatorio existe: data\processed\mirna_candidate_discovery_model_ra
 OK	arquivo obrigatorio existe: models\modelo_mirna_patient_candidate_validation.json
 OK	arquivo obrigatorio existe: data\processed\mirna_patient_candidate_validation.csv
 OK	arquivo obrigatorio existe: data\processed\mirna_patient_candidate_integrated_ranking.csv
+OK	arquivo obrigatorio existe: scripts\validate_mirna_external_cohort.js
+OK	arquivo obrigatorio existe: docs\FORMATO_COORTE_EXTERNA.md
 OK	Modelo 1 declara ensemble PU da sequencia madura	bagged_positive_unlabeled_mature_sequence_model
 OK	desenho do Modelo 1 explicita aprendizado Positive-Unlabeled	Ensemble PU por bagging deterministico. Cada bag usa todos os positivos e uma amostra diferente do universo nao rotulado como contraste temporario; candidatos do conjunto nao rotulado sao ranqueados e explicados apenas pelos modelos out-of-bag.
 OK	hairpin e estrutura estao explicitamente fora do escopo ativo	precursor hairpin, estrutura secundaria, MFE
@@ -18,13 +20,16 @@ OK	validacao usa o background nao rotulado completo	nested_group_cross_validatio
 OK	validacao externa possui 5 folds	5
 OK	cada familia de seed aparece uma unica vez nos folds externos	32/32
 OK	selecao interna possui 3 folds	3
-OK	grade aninhada possui multiplas configuracoes	6
+OK	grade aninhada possui multiplas configuracoes	8
 OK	grade avalia k-mers ate k=7
 OK	IC bootstrap usa pelo menos 4.000 repeticoes	4000
 OK	teste nulo usa pelo menos 10.000 repeticoes	10000
 OK	validacao inclui pelo menos quatro baselines	similaridade_seed, centroide_kmer_maduro, similaridade_composicao_madura, ranking_aleatorio_deterministico
 OK	candidatos nao rotulados sao pontuados somente fora dos bags em que serviram de contraste	media dos logits apenas dos modelos em que o candidato nao foi usado como contraste temporario (out-of-bag)
 OK	nenhum candidato precisou de fallback sem modelos out-of-bag	0
+OK	ensemble final usa pelo menos 20 bags para estimar estabilidade	20
+OK	ablacao compara cinco representacoes exclusivamente maduras	core, composition, positional, terminals, full
+OK	ablacao corrige as quatro comparacoes contra o core por FDR BH
 OK	quantidade do ranking do Modelo 1 confere com o JSON	2613/2613
 OK	ranking do Modelo 1 nao possui miRNAs duplicados
 OK	ranks do Modelo 1 sao contiguos
@@ -34,6 +39,7 @@ OK	alias legado da probabilidade preserva o mesmo valor
 OK	todo candidato registra quantidade valida de modelos out-of-bag
 OK	contagem de candidatos com expressao confere	611
 OK	ranking ativo nao expoe colunas de hairpin ou estrutura
+OK	ranking do Modelo 1 registra estabilidade out-of-bag em [0,1]
 OK	alias legado de features influentes preserva o mesmo valor
 OK	Modelo 2 registra validacao cruzada de 5 folds	5
 OK	contagens dos dois rankings do Modelo 2 conferem	611/611/611
@@ -44,3 +50,9 @@ OK	ranking de validacao esta ordenado por score decrescente
 OK	ranking integrado possui ranks contiguos
 OK	ranking integrado esta ordenado por score decrescente
 OK	metricas OOF do Modelo 2 pertencem a [0,1]
+OK	Modelo 2 registra IC e FDR aproximados validos
+OK	Modelo 2 conta hipoteses de expressao unicas para FDR	325/325
+OK	candidatos que compartilham features recebem o mesmo FDR
+OK	teste unilateral nao declara AUC abaixo do acaso significativa
+OK	ranking integrado inclui analise de sensibilidade 75/25 e 25/75
+OK	ranking integrado identifica fronteira de Pareto

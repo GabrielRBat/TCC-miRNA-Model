@@ -56,6 +56,7 @@ miRNA/
 │   └── mirna_rankings_dashboard.html
 ├── docs/
 │   ├── METODOLOGIA_MODELOS_MIRNA.md
+│   ├── FORMATO_COORTE_EXTERNA.md
 │   ├── GUIA_DIDATICO_PIPELINE_MIRNA.html
 │   └── GUIA_DIDATICO_PIPELINE_MIRNA.pdf
 ├── scripts/
@@ -67,6 +68,7 @@ miRNA/
 │   ├── generate_mirna_didactic_guide.js
 │   ├── train_mirna_candidate_discovery_model.js
 │   ├── validate_mirna_candidates_in_patients_model.js
+│   ├── validate_mirna_external_cohort.js
 │   ├── generate_mirna_rankings_html.js
 │   └── audit_mirna_discovery_pipeline.js
 ├── README.md
@@ -1106,11 +1108,12 @@ Como funciona:
 - usa os 43 miRNAs associados ao cancer de mama como positivos;
 - aplica pesos explicitos definidos em `breast_cancer_mirna_training_policy.csv`: alta=3, media/painel inicial=2 e exploratoria=1;
 - usa os demais miRNAs humanos maduros do miRBase como conjunto nao rotulado, nunca como negativos biologicos;
-- mantem k-mers como nucleo e adiciona seed, comprimento e fracao GC da sequencia madura;
-- testa, dentro da validacao aninhada, faixas de k-mers entre k=2 e k=7, regularizacao e peso do conjunto nao rotulado;
+- mantem k-mers globais como nucleo e avalia seed, composicao, entropia, k-mers posicionais e motivos terminais 5p/3p da sequencia madura;
+- testa, dentro da validacao aninhada, oito configuracoes com k entre 2 e 7, L2, Elastic Net e diferentes representacoes maduras;
 - balanceia o peso positivo por familia de seed, preservando depois a massa total dos pesos de evidencia;
 - treina um ensemble PU por bagging: cada bag usa todos os positivos e uma amostra diferente do conjunto nao rotulado como contraste temporario;
-- calcula o modelo consenso pela media dos pesos e do vies de 8 bags e ranqueia cada candidato apenas com predicoes out-of-bag;
+- calcula o modelo consenso pela media dos pesos e do vies de 20 bags e ranqueia cada candidato apenas com predicoes out-of-bag;
+- registra estabilidade por candidato: mediana, quartis, IQR e frequencia nos top 1/5/10/20% entre bags OOB;
 - ranqueia candidatos pela semelhanca aprendida com o perfil dos positivos;
 - marca quais candidatos tem expressao disponivel no dataset para a validacao posterior.
 
@@ -1125,30 +1128,30 @@ Marcadores positivos: 43
 Familias de seed: 32
 Candidatos ranqueados no universo miRBase: 2613
 Candidatos com expressao disponivel para validacao em pacientes: 611
-Configuracao final: k234_mature_seed_l2_003_u050
-Vocabulario final: 304 features
-Percentil medio externo por familia: 0.6055 (IC95% 0.5187 a 0.6902; p nulo=0.0111)
+Configuracao final: k234_positional_mature_l2_003_u050
+Vocabulario final: 783 features
+Percentil medio externo por familia: 0.6460 (IC95% 0.5585 a 0.7285; p nulo=0.0008)
 Recall@1%: 0/32 (0.00%)
 Recall@5%: 1/32 (3.13%)
-Recall@10%: 3/32 (9.38%; IC95% 0.00% a 21.88%; p nulo=0.4723)
-Recall@20%: 9/32 (28.13%)
+Recall@10%: 4/32 (12.50%; IC95% 3.13% a 25.00%; p nulo=0.2417)
+Recall@20%: 13/32 (40.63%)
 ```
 
 Top 5 candidatos por padrao de sequencia madura aprendido:
 
 ```text
-mir-1277-5p
 mir-2054
+mir-1277-5p
 mir-1277-3p
-mir-590-3p
-mir-548f-3p
+mir-8084
+mir-374a-3p
 ```
 
 O `score_modelo_sequencial` e o percentil do candidato pelo logit do ensemble. Valores proximos de 1 indicam maior suporte relativo da sequencia madura. A `probabilidade_pu_consenso_bruta` nao e probabilidade de cancer.
 
 Observacao: candidatos sem expressao disponivel continuam no ranking global, mas nao entram no Modelo 2 no dataset atual.
 
-Interpretacao dos resultados: o percentil medio apresenta sinal acima do nulo, mas o Recall@10% nao e significativo. A remocao do hairpin mudou o percentil medio de 0.6035 para 0.6055 e manteve Recall@10% em 9.38%; isso nao prova superioridade, mas mostra que a simplificacao nao reduziu a metrica principal observada.
+Interpretacao dos resultados: o percentil medio apresenta sinal acima do nulo, mas o Recall@10% ainda nao e significativo. A nova representacao exclusivamente madura elevou o percentil de 0.6055 para 0.6460. Na ablação pareada, motivos terminais 5p/3p chegaram a 0.6829 e superaram o core em +0.0766 (IC95% 0.0123 a 0.1496; p nominal=0.0369; FDR BH=0.0738). Portanto, o resultado e promissor e exploratorio, mas nao permanece significativo a 5% depois da correcao das quatro comparacoes.
 
 O mapeamento de nomes remove apenas sufixos que representam locus (`-1`, `-2` etc.) quando o nome realmente possui uma familia antes desse sufixo. Assim, nomes validos como `hsa-mir-574` nao sao truncados para `hsa-mir`; bracos com locus explicito, como `mir-16-1-3p`, tambem sao associados a familia precursora correta. Os caminhos gravados nos modelos e relatorios sao relativos a raiz do projeto, permitindo reproduzir a execucao em outra maquina.
 
@@ -1191,11 +1194,14 @@ Como funciona:
 - usa validacao cruzada estratificada deterministica de 5 folds, com distribuicao estavel por hash de `sample_id` dentro de cada classe;
 - cada amostra recebe uma predicao out-of-fold de um modelo que nao a utilizou no treino;
 - agrega as predicoes out-of-fold para calcular AUC, accuracy, precision, recall, specificity e F1;
+- calcula IC95% aproximado da AUC por Hanley-McNeil com estabilizacao de fronteira, p unilateral para `AUC > 0,5`, FDR Benjamini-Hochberg por hipotese de expressao unica, Cliff's delta, Hedges g e diferenca media log1p;
+- identifica explicitamente quando diferentes bracos maduros compartilham a mesma feature de expressao;
 - ajusta depois um modelo final em todas as amostras apenas para serializacao e uso futuro;
 - calcula tambem log2 fold-change e presenca maior que zero;
 - gera um `score_validacao_pacientes`;
 - gera um ranking puro de validacao em pacientes;
 - combina suporte da sequencia madura e suporte em pacientes em um ranking integrado por `score_final_descoberta`.
+- produz cenarios 75/25 e 25/75 e uma fronteira de Pareto, reduzindo dependencia da escolha 50/50.
 
 Formula:
 
@@ -1218,26 +1224,31 @@ Execucao validada:
 Candidatos validados: 611
 Candidatos recebidos do ranking sequencial global: 2613
 Candidatos ignorados por falta de expressao no dataset: 2002
+Hipoteses de expressao unicas: 325
+Hipoteses unicas com FDR BH < 0.05 para AUC > 0.5: 278
+Candidatos associados a essas hipoteses: 531
+Candidatos com ambiguidade de braco por feature compartilhada: 552
+Candidatos na fronteira de Pareto: 4
 ```
 
 Top 5 por validacao em pacientes:
 
 ```text
-mir-182-5p   validacao=1.0000  rank_integrado=9
-mir-182-3p   validacao=1.0000  rank_integrado=45
+mir-182-5p   validacao=1.0000  rank_integrado=13
+mir-182-3p   validacao=1.0000  rank_integrado=60
 let-7f-5p    validacao=1.0000  rank_integrado=2
-let-7f-2-3p  validacao=1.0000  rank_integrado=18
-let-7f-1-3p  validacao=1.0000  rank_integrado=23
+let-7f-2-3p  validacao=1.0000  rank_integrado=22
+let-7f-1-3p  validacao=1.0000  rank_integrado=25
 ```
 
 Top 5 por score integrado:
 
 ```text
-mir-32-3p    score_final=0.9973
-let-7f-5p    score_final=0.9818
-mir-32-5p    score_final=0.9774
-mir-95-5p    score_final=0.9321
-mir-200b-3p  score_final=0.9253
+mir-32-3p    score_final=0.9965
+let-7f-5p    score_final=0.9833
+mir-32-5p    score_final=0.9734
+mir-95-5p    score_final=0.9317
+mir-200b-3p  score_final=0.9257
 ```
 
 Arquivos de ranking:
@@ -1264,7 +1275,37 @@ desses candidatos, quais tambem mostram associacao computacional com pacientes d
 
 Essa segunda etapa funciona como uma validacao computacional, nao laboratorial. Se um candidato aparece no dataset e sua expressao separa doentes e saudaveis, ele ganha prioridade como hipotese biologica. Ainda assim, isso nao prova causalidade nem valida o biomarcador clinicamente.
 
-A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes podem estar confundidas com fonte/lote. Uma coorte externa continua sendo necessaria.
+A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes podem estar confundidas com fonte/lote. Os 278 resultados com FDR interno referem-se a 325 hipoteses de expressao unicas, nao a 611 testes independentes. Valores-p no piso numerico devem ser apresentados como `p<1e-16`, sem alegar precisao adicional. Uma coorte externa continua sendo necessaria.
+
+### Versao Congelada e Proximo Passo Cientifico
+
+Esta versao deve ser tratada como o pipeline **congelado antes da validacao externa**. O codigo, os hiperparametros, o ranking dos candidatos, as direcoes esperadas de expressao e os criterios estatisticos devem permanecer inalterados quando a nova coorte for analisada. No Git, o ponto congelado e identificado pela tag `pre-validacao-externa-v1`.
+
+Isso evita ajustar o metodo depois de observar os resultados externos e reduz o risco de vazamento de informacao. Se futuramente houver uma mudanca metodologica, ela deve gerar uma nova versao claramente identificada; a coorte usada para avaliar a versao anterior nao deve ser reaproveitada como se ainda fosse uma validacao independente.
+
+O repositorio pode ser publicado e apresentado neste estado como estudo computacional exploratorio. Entretanto, os resultados atuais nao devem ser descritos como validacao clinica ou confirmacao definitiva de novos biomarcadores. Para fortalecer a conclusao cientifica do TCC, o proximo passo e testar o pipeline congelado em uma coorte externa independente.
+
+A coorte externa ideal deve conter:
+
+- pacientes com cancer de mama e controles sem cancer de mama;
+- uma linha por amostra/paciente e identificadores que permitam excluir qualquer sobreposicao com a coorte atual;
+- expressao de miRNAs maduros, preferencialmente incluindo os candidatos priorizados;
+- o mesmo tipo de material biologico da coorte atual, sempre que possivel (por exemplo, tecido com tecido ou sangue com sangue);
+- plataforma e processamento comparaveis, ou metadados suficientes para avaliar diferencas tecnicas;
+- classe diagnostica clara e, se disponiveis, idade, subtipo tumoral, estagio, tratamento e lote experimental.
+
+O minimo de 10 amostras por classe implementado no validador e apenas um piso tecnico, nao uma recomendacao de tamanho amostral. Como referencia operacional para o TCC, `30 + 30` permite uma avaliacao exploratoria mais defensavel, `50 + 50` ou mais e preferivel, e o tamanho final deve ser justificado por analise de poder quando os dados e o efeito esperado estiverem definidos. Independencia e compatibilidade da coorte sao tao importantes quanto o numero de amostras.
+
+Na coorte externa, o pipeline deve ser executado **sem retreinamento e sem novo ajuste do ranking**. A interpretacao deve considerar conjuntamente:
+
+- correspondencia exata do miRNA maduro, separada de proxy de familia;
+- concordancia da direcao de expressao;
+- AUC e seu intervalo de confianca;
+- tamanho de efeito;
+- FDR para multiplos testes;
+- quantidade de candidatos que reproduzem o sinal segundo os criterios predefinidos.
+
+Se uma coorte externa adequada nao estiver disponivel dentro do prazo, o TCC continua viavel como estudo de descoberta e priorizacao de hipoteses, desde que a ausencia de validacao externa seja declarada como limitacao e trabalho futuro. O formato esperado da nova base e o protocolo operacional estao detalhados em [`docs/FORMATO_COORTE_EXTERNA.md`](docs/FORMATO_COORTE_EXTERNA.md).
 
 ### Fluxo Principal Atual
 
@@ -1276,6 +1317,14 @@ node scripts\validate_mirna_candidates_in_patients_model.js
 node scripts\generate_mirna_rankings_html.js
 node scripts\audit_mirna_discovery_pipeline.js
 ```
+
+Quando a nova base estiver disponivel, seguir `docs/FORMATO_COORTE_EXTERNA.md` e executar:
+
+```powershell
+node scripts\validate_mirna_external_cohort.js caminho\coorte_externa.csv
+```
+
+O validador rejeita sobreposicao de `sample_id` e valores de expressao invalidos, prefere miRNAs maduros exatos, marca separadamente proxies de familia e aplica o ranking congelado sem retreinar na coorte externa. O criterio de reproducao exige no minimo 10 amostras por classe, direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR Benjamini-Hochberg abaixo de 0,05; replicacoes maduras exatas e sinais obtidos por proxy sao contabilizados separadamente. O piso de 10 e tecnico e nao substitui calculo de poder amostral.
 
 Consultar:
 

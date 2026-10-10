@@ -1,86 +1,97 @@
 Modelo 1 - descoberta de candidatos por sequencia madura e ensemble PU
 
 FASTA maduro: data/external/mirbase_mature.fa
-Escopo de features: k-mers maduros, seed, comprimento e fracao GC. Hairpin e estrutura secundaria nao participam do modelo.
+Escopo final de features: positional da sequencia madura; foram comparados core, composicao, k-mers posicionais, motivos terminais e representacao completa. Hairpin e estrutura secundaria nao participam do modelo.
 Marcadores positivos: 43
 Familias de seed positivas: 32
 Candidatos ranqueados: 2613
 Candidatos com expressao para o Modelo 2: 611
-Configuracao final escolhida: k234_mature_seed_l2_003_u050
-Ensemble PU final: 8 bags x 800 nao rotulados
-Pontuacao dos candidatos: out-of-bag (1 a 8 modelos por candidato; fallbacks=0)
-Vocabulario final: 304 features
+Configuracao final escolhida: k234_positional_mature_l2_003_u050
+Ensemble PU final: 20 bags x 800 nao rotulados
+Pontuacao dos candidatos: out-of-bag (6 a 19 modelos por candidato; fallbacks=0)
+Vocabulario final: 783 features
 
 Validacao aninhada por familia de seed (metrica principal por familia):
-Percentil medio por familia=0.6055
+Percentil medio por familia=0.6460
 Recall@1% por familia=0.00% (0/32)
 Recall@5% por familia=3.13% (1/32)
-Recall@10% por familia=9.38% (3/32)
-Recall@20% por familia=28.13% (9/32)
-IC95% bootstrap do percentil medio=0.5187 a 0.6902
-IC95% bootstrap do Recall@10%=0.00% a 21.88%
-p do nulo de ranking para percentil medio=0.0111
-p do nulo de ranking para Recall@10%=0.4723
+Recall@10% por familia=12.50% (4/32)
+Recall@20% por familia=40.63% (13/32)
+IC95% bootstrap do percentil medio=0.5585 a 0.7285
+IC95% bootstrap do Recall@10%=3.13% a 25.00%
+p do nulo de ranking para percentil medio=0.0008
+p do nulo de ranking para Recall@10%=0.2417
 
 Metricas secundarias por marcador:
-Percentil medio por marcador=0.6338
-Recall@10% por marcador=11.63% (5/43)
+Percentil medio por marcador=0.6649
+Recall@10% por marcador=18.60% (8/43)
 
 Comparacao com baselines por familia:
-modelo_pu_maduro	percentil_medio=0.6055	recall@10%=9.38%
+modelo_pu_maduro	percentil_medio=0.6460	recall@10%=12.50%
 similaridade_seed	percentil_medio=0.5308	recall@10%=0.00%
-centroide_kmer_maduro	percentil_medio=0.5119	recall@10%=6.25%
+centroide_kmer_maduro	percentil_medio=0.5135	recall@10%=6.25%
 similaridade_composicao_madura	percentil_medio=0.6354	recall@10%=9.38%
 ranking_aleatorio_deterministico	percentil_medio=0.5434	recall@10%=9.38%
 
+Ablacao pareada de features maduras (mesmos folds e hiperparametros):
+core	percentil_medio=0.6063	recall@10%=9.38%
+composition	percentil_medio=0.5579	recall@10%=6.25%
+positional	percentil_medio=0.6100	recall@10%=6.25%
+terminals	percentil_medio=0.6829	recall@10%=28.13%
+full	percentil_medio=0.6408	recall@10%=18.75%
+composition_vs_core	delta=-0.0484	IC95%=-0.0815 a -0.0184	p=0.0031	FDR_BH=0.0124
+positional_vs_core	delta=0.0037	IC95%=-0.0026 a 0.0100	p=0.2489	FDR_BH=0.3043
+terminals_vs_core	delta=0.0766	IC95%=0.0123 a 0.1496	p=0.0369	FDR_BH=0.0738
+full_vs_core	delta=0.0345	IC95%=-0.0260 a 0.0995	p=0.3043	FDR_BH=0.3043
+
 Top features positivas do modelo final:
-mature:composition:length	peso=0.154858
-mature:kmer:GU	peso=0.077782
-mature:kmer:UGU	peso=0.039888
-mature:kmer:UG	peso=0.038823
-mature:kmer:UA	peso=0.033205
-mature:kmer:CG	peso=0.031931
-mature:kmer:AAU	peso=0.031185
-mature:kmer:AA	peso=0.027251
-mature:kmer:GUU	peso=0.026664
-mature:kmer:CGU	peso=0.025622
-mature:kmer:GUG	peso=0.025108
-mature:kmer:UUGU	peso=0.020747
-mature:kmer:UAG	peso=0.020720
-mature:kmer:UGA	peso=0.020671
-mature:kmer:CGUG	peso=0.017602
+mature:composition:length	peso=0.164044
+mature:kmer:GU	peso=0.078397
+mature:kmer:UG	peso=0.039744
+mature:kmer:UGU	peso=0.039350
+mature:positional:3p:kmer:GU	peso=0.038039
+mature:kmer:CG	peso=0.033824
+mature:positional:5p:kmer:GU	peso=0.033338
+mature:kmer:UA	peso=0.032737
+mature:kmer:AAU	peso=0.030929
+mature:positional:3p:kmer:UG	peso=0.029277
+mature:kmer:AA	peso=0.029124
+mature:kmer:GUG	peso=0.026601
+mature:kmer:GUU	peso=0.026312
+mature:kmer:CGU	peso=0.026227
+mature:kmer:UGA	peso=0.021074
 
 Top candidatos do ranking final:
-1. mir-1277-5p	score=1.0000	pu=0.6950	expressao=nao	referencias=mir-1-3p:0.496, mir-16-5p:0.468, mir-20a-5p:0.387
-2. mir-2054	score=0.9996	pu=0.6948	expressao=nao	referencias=mir-365a-3p:0.555, mir-155-5p:0.552, mir-1-3p:0.488
-3. mir-1277-3p	score=0.9992	pu=0.6887	expressao=nao	referencias=mir-1-3p:0.520, let-7a-5p:0.514, mir-16-5p:0.490
-4. mir-590-3p	score=0.9989	pu=0.6873	expressao=sim	referencias=mir-1-3p:0.600, mir-20a-5p:0.592, mir-155-5p:0.565
-5. mir-548f-3p	score=0.9985	pu=0.6872	expressao=nao	referencias=mir-451a:0.564, mir-365a-3p:0.548, mir-19a-3p:0.524
-6. mir-190a-5p	score=0.9981	pu=0.6864	expressao=nao	referencias=mir-21-5p:0.572, mir-155-5p:0.559, let-7a-5p:0.532
-7. mir-8084	score=0.9977	pu=0.6864	expressao=nao	referencias=mir-365a-3p:0.630, mir-1-3p:0.601, mir-19a-3p:0.532
-8. mir-548g-3p	score=0.9973	pu=0.6862	expressao=nao	referencias=mir-451a:0.593, mir-10b-5p:0.575, mir-200a-3p:0.526
-9. mir-374a-3p	score=0.9969	pu=0.6862	expressao=sim	referencias=mir-21-5p:0.569, mir-1-3p:0.533, mir-10b-5p:0.486
-10. mir-3613-5p	score=0.9966	pu=0.6858	expressao=nao	referencias=mir-1246:0.541, mir-373-3p:0.537, mir-520c-3p:0.502
-11. mir-548aj-3p	score=0.9962	pu=0.6858	expressao=nao	referencias=mir-19a-3p:0.604, mir-365a-3p:0.568, mir-19b-3p:0.566
-12. mir-545-5p	score=0.9958	pu=0.6857	expressao=nao	referencias=mir-21-5p:0.620, mir-1-3p:0.618, mir-155-5p:0.540
-13. mir-95-5p	score=0.9954	pu=0.6849	expressao=sim	referencias=mir-19a-3p:0.566, mir-1-3p:0.564, mir-223-3p:0.557
-14. mir-5700	score=0.9950	pu=0.6847	expressao=nao	referencias=mir-155-5p:0.583, mir-365a-3p:0.571, mir-1-3p:0.529
-15. mir-32-3p	score=0.9946	pu=0.6846	expressao=sim	referencias=mir-206:0.596, mir-373-3p:0.586, let-7b-5p:0.575
-16. mir-4703-5p	score=0.9943	pu=0.6840	expressao=nao	referencias=mir-195-5p:0.620, mir-16-5p:0.606, mir-20a-5p:0.566
-17. mir-633	score=0.9939	pu=0.6839	expressao=nao	referencias=mir-365a-3p:0.575, mir-155-5p:0.499, mir-16-5p:0.493
-18. mir-1252-5p	score=0.9935	pu=0.6838	expressao=sim	referencias=mir-1246:0.519, mir-1-3p:0.484, mir-10b-5p:0.477
-19. mir-4503	score=0.9931	pu=0.6837	expressao=nao	referencias=mir-195-5p:0.602, mir-1246:0.557, mir-520c-3p:0.531
-20. mir-12123	score=0.9927	pu=0.6837	expressao=nao	referencias=mir-520c-3p:0.498, mir-205-5p:0.455, mir-181b-5p:0.453
-21. mir-2053	score=0.9923	pu=0.6836	expressao=nao	referencias=mir-451a:0.620, mir-365a-3p:0.535, mir-155-5p:0.517
-22. mir-369-3p	score=0.9920	pu=0.6836	expressao=sim	referencias=mir-155-5p:0.596, mir-21-5p:0.492, mir-1246:0.462
-23. mir-559	score=0.9916	pu=0.6836	expressao=nao	referencias=mir-19a-3p:0.654, mir-365a-3p:0.651, mir-19b-3p:0.641
-24. mir-3149	score=0.9912	pu=0.6835	expressao=nao	referencias=mir-206:0.678, mir-1-3p:0.632, let-7b-5p:0.595
-25. mir-4777-5p	score=0.9908	pu=0.6834	expressao=nao	referencias=mir-21-5p:0.488, mir-155-5p:0.411, let-7a-5p:0.407
-26. mir-548ab	score=0.9904	pu=0.6834	expressao=nao	referencias=mir-373-3p:0.645, mir-1246:0.618, mir-520c-3p:0.561
+1. mir-2054	score=1.0000	pu=0.6977	expressao=nao	referencias=mir-365a-3p:0.555, mir-155-5p:0.552, mir-1-3p:0.488
+2. mir-1277-5p	score=0.9996	pu=0.6968	expressao=nao	referencias=mir-1-3p:0.496, mir-16-5p:0.468, mir-20a-5p:0.387
+3. mir-1277-3p	score=0.9992	pu=0.6896	expressao=nao	referencias=mir-1-3p:0.520, let-7a-5p:0.514, mir-16-5p:0.490
+4. mir-8084	score=0.9989	pu=0.6877	expressao=nao	referencias=mir-365a-3p:0.630, mir-1-3p:0.601, mir-19a-3p:0.532
+5. mir-374a-3p	score=0.9985	pu=0.6876	expressao=sim	referencias=mir-21-5p:0.569, mir-1-3p:0.533, mir-10b-5p:0.486
+6. mir-3613-5p	score=0.9981	pu=0.6872	expressao=nao	referencias=mir-1246:0.541, mir-373-3p:0.537, mir-520c-3p:0.502
+7. mir-548f-3p	score=0.9977	pu=0.6865	expressao=nao	referencias=mir-451a:0.564, mir-365a-3p:0.548, mir-19a-3p:0.524
+8. mir-548g-3p	score=0.9973	pu=0.6864	expressao=nao	referencias=mir-451a:0.593, mir-10b-5p:0.575, mir-200a-3p:0.526
+9. mir-590-3p	score=0.9969	pu=0.6862	expressao=sim	referencias=mir-1-3p:0.600, mir-20a-5p:0.592, mir-155-5p:0.565
+10. mir-5700	score=0.9966	pu=0.6862	expressao=nao	referencias=mir-155-5p:0.583, mir-365a-3p:0.571, mir-1-3p:0.529
+11. mir-545-5p	score=0.9962	pu=0.6862	expressao=nao	referencias=mir-21-5p:0.620, mir-1-3p:0.618, mir-155-5p:0.540
+12. mir-190a-5p	score=0.9958	pu=0.6855	expressao=nao	referencias=mir-21-5p:0.572, mir-155-5p:0.559, let-7a-5p:0.532
+13. mir-548aj-3p	score=0.9954	pu=0.6855	expressao=nao	referencias=mir-19a-3p:0.604, mir-365a-3p:0.568, mir-19b-3p:0.566
+14. mir-2053	score=0.9950	pu=0.6852	expressao=nao	referencias=mir-451a:0.620, mir-365a-3p:0.535, mir-155-5p:0.517
+15. mir-95-5p	score=0.9946	pu=0.6849	expressao=sim	referencias=mir-19a-3p:0.566, mir-1-3p:0.564, mir-223-3p:0.557
+16. mir-4703-5p	score=0.9943	pu=0.6849	expressao=nao	referencias=mir-195-5p:0.620, mir-16-5p:0.606, mir-20a-5p:0.566
+17. mir-4503	score=0.9939	pu=0.6848	expressao=nao	referencias=mir-195-5p:0.602, mir-1246:0.557, mir-520c-3p:0.531
+18. mir-3149	score=0.9935	pu=0.6847	expressao=nao	referencias=mir-206:0.678, mir-1-3p:0.632, let-7b-5p:0.595
+19. mir-32-3p	score=0.9931	pu=0.6844	expressao=sim	referencias=mir-206:0.596, mir-373-3p:0.586, let-7b-5p:0.575
+20. mir-633	score=0.9927	pu=0.6843	expressao=nao	referencias=mir-365a-3p:0.575, mir-155-5p:0.499, mir-16-5p:0.493
+21. mir-2052	score=0.9923	pu=0.6841	expressao=nao	referencias=mir-1-3p:0.570, mir-200a-3p:0.560, mir-155-5p:0.544
+22. mir-548as-3p	score=0.9920	pu=0.6840	expressao=nao	referencias=mir-223-3p:0.614, mir-10b-5p:0.579, mir-365a-3p:0.570
+23. mir-3145-3p	score=0.9916	pu=0.6839	expressao=sim	referencias=mir-1246:0.693, mir-373-3p:0.667, mir-382-5p:0.556
+24. mir-1252-5p	score=0.9912	pu=0.6836	expressao=sim	referencias=mir-1246:0.519, mir-1-3p:0.484, mir-10b-5p:0.477
+25. mir-12123	score=0.9908	pu=0.6835	expressao=nao	referencias=mir-520c-3p:0.498, mir-205-5p:0.455, mir-181b-5p:0.453
+26. mir-548n	score=0.9904	pu=0.6833	expressao=nao	referencias=mir-373-3p:0.612, mir-1246:0.596, mir-206:0.590
 27. mir-3668	score=0.9900	pu=0.6833	expressao=nao	referencias=mir-1-3p:0.597, mir-19a-3p:0.546, mir-19b-3p:0.542
-28. mir-190a-3p	score=0.9897	pu=0.6832	expressao=nao	referencias=mir-365a-3p:0.482, mir-16-5p:0.416, mir-195-5p:0.405
-29. mir-3134	score=0.9893	pu=0.6831	expressao=nao	referencias=mir-1-3p:0.551, mir-21-5p:0.526, mir-155-5p:0.493
-30. mir-548as-3p	score=0.9889	pu=0.6831	expressao=nao	referencias=mir-223-3p:0.614, mir-10b-5p:0.579, mir-365a-3p:0.570
+28. mir-1244	score=0.9897	pu=0.6832	expressao=nao	referencias=let-7b-5p:0.763, let-7a-5p:0.751, mir-382-5p:0.634
+29. mir-374a-5p	score=0.9893	pu=0.6832	expressao=sim	referencias=mir-155-5p:0.534, mir-20a-5p:0.517, mir-365a-3p:0.503
+30. mir-4777-5p	score=0.9889	pu=0.6832	expressao=nao	referencias=mir-21-5p:0.488, mir-155-5p:0.411, let-7a-5p:0.407
 
 Interpretacao:
 O Modelo 1 usa k-mers da sequencia madura como nucleo, alem de seed, composicao, balanceamento por familia e bagging Positive-Unlabeled.

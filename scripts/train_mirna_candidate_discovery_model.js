@@ -20,7 +20,7 @@ const OUTER_EPOCHS = 150;
 const FINAL_EPOCHS = 420;
 const INNER_PU_BAGS = 1;
 const OUTER_PU_BAGS = 3;
-const FINAL_PU_BAGS = 8;
+const FINAL_PU_BAGS = 20;
 const INNER_BAG_SIZE = 450;
 const OUTER_BAG_SIZE = 650;
 const FINAL_BAG_SIZE = 800;
@@ -30,48 +30,88 @@ const LEARNING_RATE = 0.8;
 
 const MODEL_CONFIGS = [
   {
-    id: "k234_mature_seed_l2_003_u050",
+    id: "k234_core_mature_l2_003_u050",
     kValues: [2, 3, 4],
+    featureSet: "core",
     l2: 0.03,
+    l1: 0,
     unlabeledWeightRatio: 0.5,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k2345_mature_seed_l2_003_u050",
-    kValues: [2, 3, 4, 5],
+    id: "k234_composition_mature_l2_003_u050",
+    kValues: [2, 3, 4],
+    featureSet: "composition",
     l2: 0.03,
+    l1: 0,
     unlabeledWeightRatio: 0.5,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k3456_mature_seed_l2_003_u050",
-    kValues: [3, 4, 5, 6],
+    id: "k234_positional_mature_l2_003_u050",
+    kValues: [2, 3, 4],
+    featureSet: "positional",
     l2: 0.03,
+    l1: 0,
     unlabeledWeightRatio: 0.5,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k2345_mature_seed_l2_002_u045",
-    kValues: [2, 3, 4, 5],
-    l2: 0.02,
-    unlabeledWeightRatio: 0.45,
+    id: "k234_terminals_mature_l2_003_u050",
+    kValues: [2, 3, 4],
+    featureSet: "terminals",
+    l2: 0.03,
+    l1: 0,
+    unlabeledWeightRatio: 0.5,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k2345_mature_seed_l2_003_u040",
-    kValues: [2, 3, 4, 5],
+    id: "k234_full_mature_l2_003_u050",
+    kValues: [2, 3, 4],
+    featureSet: "full",
     l2: 0.03,
+    l1: 0,
+    unlabeledWeightRatio: 0.5,
+    minimumFeatureWeight: 2,
+  },
+  {
+    id: "k234_full_mature_elastic_l1_001",
+    kValues: [2, 3, 4],
+    featureSet: "full",
+    l2: 0.03,
+    l1: 0.01,
+    unlabeledWeightRatio: 0.5,
+    minimumFeatureWeight: 2,
+  },
+  {
+    id: "k2345_full_mature_l2_003_u050",
+    kValues: [2, 3, 4, 5],
+    featureSet: "full",
+    l2: 0.03,
+    l1: 0,
+    unlabeledWeightRatio: 0.5,
+    minimumFeatureWeight: 2,
+  },
+  {
+    id: "k234567_full_mature_elastic_l1_001",
+    kValues: [2, 3, 4, 5, 6, 7],
+    featureSet: "full",
+    l2: 0.05,
+    l1: 0.01,
     unlabeledWeightRatio: 0.4,
     minimumFeatureWeight: 2,
   },
-  {
-    id: "k234567_mature_seed_l2_005_u035",
-    kValues: [2, 3, 4, 5, 6, 7],
-    l2: 0.05,
-    unlabeledWeightRatio: 0.35,
-    minimumFeatureWeight: 2,
-  },
 ];
+
+const MATURE_FEATURE_ABLATIONS = ["core", "composition", "positional", "terminals", "full"].map((featureSet) => ({
+  id: `ablation_k234_${featureSet}`,
+  kValues: [2, 3, 4],
+  featureSet,
+  l2: 0.03,
+  l1: 0,
+  unlabeledWeightRatio: 0.5,
+  minimumFeatureWeight: 2,
+}));
 
 function ensureDirectory(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -268,10 +308,53 @@ function gcFraction(sequence) {
   return [...sequence].filter((base) => base === "G" || base === "C").length / Math.max(1, sequence.length);
 }
 
+function nucleotideFractions(sequence) {
+  const denominator = Math.max(1, sequence.length);
+  return Object.fromEntries(["A", "C", "G", "U"].map((base) => [base, [...sequence].filter((value) => value === base).length / denominator]));
+}
+
+function normalizedSequenceEntropy(sequence) {
+  const fractions = Object.values(nucleotideFractions(sequence));
+  const bits = -fractions.filter((value) => value > 0).reduce((sum, value) => sum + value * Math.log2(value), 0);
+  return bits / 2;
+}
+
+function addPositionalKmers(vector, sequence, kValues) {
+  let total = 0;
+  for (const size of kValues) {
+    for (let index = 0; index <= sequence.length - size; index += 1) {
+      const relativeCenter = (index + size / 2) / Math.max(1, sequence.length);
+      const region = relativeCenter < 1 / 3 ? "5p" : relativeCenter < 2 / 3 ? "center" : "3p";
+      const feature = `mature:positional:${region}:kmer:${sequence.slice(index, index + size)}`;
+      vector.set(feature, (vector.get(feature) ?? 0) + 1);
+      total += 1;
+    }
+  }
+  if (total > 0) {
+    for (const [feature, value] of vector.entries()) {
+      if (feature.startsWith("mature:positional:")) vector.set(feature, value / total);
+    }
+  }
+}
+
+function addTerminalMotifs(vector, sequence) {
+  for (const size of [2, 3, 4]) {
+    if (sequence.length < size) continue;
+    vector.set(`mature:terminal:5p:${size}:${sequence.slice(0, size)}`, 0.25);
+    vector.set(`mature:terminal:3p:${size}:${sequence.slice(-size)}`, 0.25);
+  }
+}
+
 function sequenceVector(entry, config, vocabulary = null) {
   const mature = normalizedSequenceVector(entry.sequence, "mature", config.kValues, true);
   mature.set("mature:composition:length", Math.min(1, entry.sequence.length / 30));
   mature.set("mature:composition:gc_fraction", gcFraction(entry.sequence));
+  if (["composition", "full"].includes(config.featureSet)) {
+    for (const [base, fraction] of Object.entries(nucleotideFractions(entry.sequence))) mature.set(`mature:composition:base_${base}`, fraction);
+    mature.set("mature:composition:entropy", normalizedSequenceEntropy(entry.sequence));
+  }
+  if (["positional", "full"].includes(config.featureSet)) addPositionalKmers(mature, entry.sequence, config.kValues.filter((value) => value <= 4));
+  if (["terminals", "full"].includes(config.featureSet)) addTerminalMotifs(mature, entry.sequence);
   if (!vocabulary) return mature;
   return new Map([...mature.entries()].filter(([feature]) => vocabulary.has(feature)));
 }
@@ -347,7 +430,10 @@ function trainSingleContrastModel(positiveEntries, unlabeledEntries, config, epo
     for (const feature of vocabulary) {
       const current = weights.get(feature) ?? 0;
       const gradient = (gradients.get(feature) ?? 0) / Math.max(1, totalWeight) + config.l2 * current;
-      weights.set(feature, current - learningRate * gradient);
+      const proposed = current - learningRate * gradient;
+      const threshold = learningRate * (config.l1 ?? 0);
+      const regularized = Math.sign(proposed) * Math.max(0, Math.abs(proposed) - threshold);
+      weights.set(feature, regularized);
     }
     bias -= learningRate * biasGradient / Math.max(1, totalWeight);
     if (epoch === 0 || (epoch + 1) % 100 === 0 || epoch === epochs - 1) history.push({ epoch: epoch + 1, weighted_log_loss: weightedLoss / Math.max(1, totalWeight) });
@@ -382,6 +468,31 @@ function outOfBagLogit(model, entry) {
     usedFallback: outOfBagModels.length === 0,
     scoringModels: eligibleModels,
   };
+}
+
+function candidateOutOfBagStability(model, entries) {
+  const percentilesByName = new Map(entries.map((entry) => [entry.normalizedName, []]));
+  for (const member of model.memberModels) {
+    const eligible = entries.filter((entry) => !member.unlabeledNames.has(entry.normalizedName)).map((entry) => ({
+      entry,
+      score: member.bias + dot(member.weights, sequenceVector(entry, model.config, model.vocabulary)),
+    })).sort((left, right) => left.score - right.score || left.entry.normalizedName.localeCompare(right.entry.normalizedName));
+    for (let index = 0; index < eligible.length; index += 1) {
+      const percentile = eligible.length === 1 ? 1 : index / (eligible.length - 1);
+      percentilesByName.get(eligible[index].entry.normalizedName).push(percentile);
+    }
+  }
+  return new Map([...percentilesByName.entries()].map(([name, values]) => [name, {
+    out_of_bag_bags: values.length,
+    median_percentile: quantile(values, 0.5),
+    percentile_q25: quantile(values, 0.25),
+    percentile_q75: quantile(values, 0.75),
+    percentile_iqr: quantile(values, 0.75) - quantile(values, 0.25),
+    top_1_frequency: values.filter((value) => value >= 0.99).length / Math.max(1, values.length),
+    top_5_frequency: values.filter((value) => value >= 0.95).length / Math.max(1, values.length),
+    top_10_frequency: values.filter((value) => value >= 0.9).length / Math.max(1, values.length),
+    top_20_frequency: values.filter((value) => value >= 0.8).length / Math.max(1, values.length),
+  }]));
 }
 
 function cosineSimilarity(left, right) {
@@ -528,9 +639,70 @@ function randomRankingTest(familyMetrics, familyDetails) {
   return { method: "deterministic_random_ranking_monte_carlo_preserving_family_marker_counts", iterations: MONTE_CARLO_ITERATIONS, preserves_marker_count_per_seed_family: true, p_value_mean_percentile: (meanAtLeastObserved + 1) / (MONTE_CARLO_ITERATIONS + 1), p_value_recall_at_10_percent: (recallAtLeastObserved + 1) / (MONTE_CARLO_ITERATIONS + 1) };
 }
 
+function pairedFeatureComparison(reference, alternative, alternativeName) {
+  const alternativeByFamily = new Map(alternative.family_details.map((item) => [item.seed_family, item.percentile]));
+  const deltas = reference.family_details.map((item) => alternativeByFamily.get(item.seed_family) - item.percentile);
+  const observed = mean(deltas);
+  const bootstrapRandom = mulberry32(stableHash(`feature-bootstrap|${alternativeName}`));
+  const bootstrapMeans = [];
+  for (let iteration = 0; iteration < BOOTSTRAP_ITERATIONS; iteration += 1) {
+    bootstrapMeans.push(mean(Array.from({ length: deltas.length }, () => deltas[Math.floor(bootstrapRandom() * deltas.length)])));
+  }
+  const permutationRandom = mulberry32(stableHash(`feature-sign-flip|${alternativeName}`));
+  let atLeastObserved = 0;
+  for (let iteration = 0; iteration < MONTE_CARLO_ITERATIONS; iteration += 1) {
+    const permuted = mean(deltas.map((delta) => (permutationRandom() < 0.5 ? delta : -delta)));
+    if (Math.abs(permuted) >= Math.abs(observed)) atLeastObserved += 1;
+  }
+  return {
+    reference: "core",
+    alternative: alternativeName,
+    mean_paired_delta: observed,
+    bootstrap_95_ci: [quantile(bootstrapMeans, 0.025), quantile(bootstrapMeans, 0.975)],
+    paired_sign_flip_p_value_two_sided: (atLeastObserved + 1) / (MONTE_CARLO_ITERATIONS + 1),
+    families_improved: deltas.filter((value) => value > 1e-12).length,
+    families_tied: deltas.filter((value) => Math.abs(value) <= 1e-12).length,
+    families_worsened: deltas.filter((value) => value < -1e-12).length,
+  };
+}
+
+function addBenjaminiHochbergFdr(comparisons) {
+  const ordered = Object.values(comparisons).sort((left, right) => left.paired_sign_flip_p_value_two_sided - right.paired_sign_flip_p_value_two_sided);
+  let runningMinimum = 1;
+  for (let index = ordered.length - 1; index >= 0; index -= 1) {
+    const adjusted = Math.min(1, ordered[index].paired_sign_flip_p_value_two_sided * ordered.length / (index + 1));
+    runningMinimum = Math.min(runningMinimum, adjusted);
+    ordered[index].paired_sign_flip_fdr_bh = runningMinimum;
+  }
+}
+
+function summarizeFeatureAblation(evaluationsByFeatureSet) {
+  const representations = {};
+  for (const [featureSet, evaluations] of evaluationsByFeatureSet.entries()) {
+    const aggregated = aggregateValidation(evaluations);
+    representations[featureSet] = {
+      marker_metrics: aggregated.marker_metrics,
+      family_metrics: aggregated.family_metrics,
+      family_details: aggregated.family_details,
+      bootstrap_95_ci: bootstrapFamilyIntervals(aggregated.family_details),
+    };
+  }
+  const comparisonsAgainstCore = {};
+  for (const featureSet of Object.keys(representations).filter((name) => name !== "core")) {
+    comparisonsAgainstCore[featureSet] = pairedFeatureComparison(representations.core, representations[featureSet], featureSet);
+  }
+  addBenjaminiHochbergFdr(comparisonsAgainstCore);
+  return {
+    design: "comparacao externa pareada; mesmos folds por familia, background, bags PU, k=2/3/4, L2 e peso nao rotulado; apenas o bloco de features muda; FDR BH corrige as quatro comparacoes contra o core",
+    representations,
+    paired_comparisons_against_core: comparisonsAgainstCore,
+  };
+}
+
 function runNestedFamilyValidation(markerEntries, backgroundEntries) {
   const outerFolds = makeFamilyFolds(markerEntries, OUTER_FOLDS, "outer");
   const evaluationsByMethod = new Map();
+  const featureAblationEvaluations = new Map();
   const foldSelections = [];
   for (let foldIndex = 0; foldIndex < outerFolds.length; foldIndex += 1) {
     const heldFamilies = new Set(outerFolds[foldIndex]);
@@ -544,6 +716,13 @@ function runNestedFamilyValidation(markerEntries, backgroundEntries) {
       current.push(...evaluateScorer(held, backgroundEntries, scorer, foldIndex + 1, config.id));
       evaluationsByMethod.set(method, current);
     }
+    const sharedAblationSalt = `outer-feature-ablation-${foldIndex + 1}`;
+    for (const ablationConfig of MATURE_FEATURE_ABLATIONS) {
+      const ablationModel = trainPuEnsemble(train, backgroundEntries, ablationConfig, { bags: OUTER_PU_BAGS, bagSize: OUTER_BAG_SIZE, epochs: OUTER_EPOCHS, salt: sharedAblationSalt });
+      const current = featureAblationEvaluations.get(ablationConfig.featureSet) ?? [];
+      current.push(...evaluateScorer(held, backgroundEntries, (entry) => modelLogit(ablationModel, entry), foldIndex + 1, ablationConfig.id));
+      featureAblationEvaluations.set(ablationConfig.featureSet, current);
+    }
     foldSelections.push({ outer_fold: foldIndex + 1, held_out_seed_families: [...heldFamilies], held_out_marker_count: held.length, selected_config: config.id, inner_comparison: tuning.comparisons.map((item) => ({ config: item.config.id, family_mean_percentile: item.metrics.family_metrics.mean_percentile, family_recall_at_10_percent: item.metrics.family_metrics.recall_at_10_percent })) });
     console.log(`Validacao externa ${foldIndex + 1}/${outerFolds.length}: ${config.id}`);
   }
@@ -554,7 +733,13 @@ function runNestedFamilyValidation(markerEntries, backgroundEntries) {
     methods.modelo_pu_maduro.family_metrics,
     methods.modelo_pu_maduro.family_details
   );
-  return { outer_folds: outerFolds.length, inner_folds: INNER_FOLDS, fold_selections: foldSelections, methods };
+  return {
+    outer_folds: outerFolds.length,
+    inner_folds: INNER_FOLDS,
+    fold_selections: foldSelections,
+    methods,
+    mature_feature_ablation: summarizeFeatureAblation(featureAblationEvaluations),
+  };
 }
 
 function chooseFinalConfiguration(foldSelections) {
@@ -615,13 +800,14 @@ function main() {
   const finalConfig = chooseFinalConfiguration(nestedValidation.fold_selections);
   console.log(`Configuracao final: ${finalConfig.id}`);
   const model = trainPuEnsemble(markerEntries, candidateEntries, finalConfig, { bags: FINAL_PU_BAGS, bagSize: FINAL_BAG_SIZE, epochs: FINAL_EPOCHS, salt: `final-${finalConfig.id}` });
+  const stabilityByName = candidateOutOfBagStability(model, candidateEntries);
   const preRanked = candidateEntries.map((candidate) => {
     const outOfBag = outOfBagLogit(model, candidate);
-    return { candidate, rawLogit: outOfBag.logit, outOfBagModelCount: outOfBag.modelCount, usedOutOfBagFallback: outOfBag.usedFallback, scoringModels: outOfBag.scoringModels };
+    return { candidate, rawLogit: outOfBag.logit, outOfBagModelCount: outOfBag.modelCount, usedOutOfBagFallback: outOfBag.usedFallback, scoringModels: outOfBag.scoringModels, stability: stabilityByName.get(candidate.normalizedName) };
   });
   const orderedAscending = [...preRanked].sort((left, right) => left.rawLogit - right.rawLogit || left.candidate.normalizedName.localeCompare(right.candidate.normalizedName));
   const percentileByName = new Map(orderedAscending.map((item, index) => [item.candidate.normalizedName, orderedAscending.length === 1 ? 1 : index / (orderedAscending.length - 1)]));
-  const ranked = preRanked.map(({ candidate, rawLogit, outOfBagModelCount, usedOutOfBagFallback, scoringModels }) => ({ ...candidate, rawLogit, outOfBagModelCount, usedOutOfBagFallback, probability: sigmoid(rawLogit), sequenceScore: percentileByName.get(candidate.normalizedName) ?? 0, nearest: nearestMarkers(candidate, markerEntries, model), topFeatures: topContributingFeatures(model, candidate, 10, scoringModels) })).sort((left, right) => right.sequenceScore - left.sequenceScore || left.normalizedName.localeCompare(right.normalizedName));
+  const ranked = preRanked.map(({ candidate, rawLogit, outOfBagModelCount, usedOutOfBagFallback, scoringModels, stability }) => ({ ...candidate, rawLogit, outOfBagModelCount, usedOutOfBagFallback, stability, probability: sigmoid(rawLogit), sequenceScore: percentileByName.get(candidate.normalizedName) ?? 0, nearest: nearestMarkers(candidate, markerEntries, model), topFeatures: topContributingFeatures(model, candidate, 10, scoringModels) })).sort((left, right) => right.sequenceScore - left.sequenceScore || left.normalizedName.localeCompare(right.normalizedName));
 
   ensureDirectory(OUTPUT_MODEL);
   ensureDirectory(OUTPUT_RANKING);
@@ -631,11 +817,11 @@ function main() {
   const finalPositiveWeights = balancedPositiveWeights(markerEntries);
   const modelArtifact = {
     type: "bagged_positive_unlabeled_mature_sequence_model",
-    purpose: "Priorizar miRNAs por padroes de k-mers, seed e composicao da sequencia madura aprendidos dos marcadores associados ao cancer de mama; nao e classificador clinico.",
+    purpose: "Priorizar miRNAs por padroes globais, posicionais e terminais da sequencia madura, incluindo k-mers, seed e composicao, aprendidos dos marcadores associados ao cancer de mama; nao e classificador clinico.",
     training_design: "Ensemble PU por bagging deterministico. Cada bag usa todos os positivos e uma amostra diferente do universo nao rotulado como contraste temporario; candidatos do conjunto nao rotulado sao ranqueados e explicados apenas pelos modelos out-of-bag.",
     source_fasta: projectPath(FASTA_PATH), source_dataset_for_expression_filter: projectPath(DATASET_CSV), positive_markers_csv: projectPath(POSITIVE_MARKERS_CSV), training_policy_csv: projectPath(TRAINING_POLICY_CSV),
     candidate_pool_definition: "Todos os miRNAs humanos maduros do miRBase, removendo os positivos conhecidos; a validacao usa todo o background elegivel.",
-    feature_scope: { active: ["k-mers da sequencia madura", "seed (posicoes 2-8)", "comprimento normalizado", "fracao GC"], excluded: ["precursor hairpin", "estrutura secundaria", "MFE"], rationale: "escopo simplificado e alinhado ao foco do TCC em miRNAs maduros" },
+    feature_scope: { active_final_configuration: finalConfig.featureSet, mature_blocks_evaluated: ["k-mers globais", "seed (posicoes 2-8)", "comprimento", "fracao GC", "composicao A/U/C/G", "entropia", "k-mers posicionais", "motivos terminais 5p/3p"], excluded: ["precursor hairpin", "estrutura secundaria", "MFE"], rationale: "todos os blocos avaliados pertencem exclusivamente a sequencia madura" },
     positive_weighting: "peso_de_evidencia dividido pelo numero de positivos da mesma familia de seed e reescalado para preservar o peso total",
     hyperparameter_selection: { method: "nested_group_cross_validation_by_seed_family", outer_folds: OUTER_FOLDS, inner_folds: INNER_FOLDS, candidate_configurations: MODEL_CONFIGS, final_configuration: finalConfig, rule: "maior percentil medio por familia na validacao interna; recall@10% e id usados como desempate" },
     pu_ensemble: { bags: FINAL_PU_BAGS, unlabeled_per_bag: model.bagSize, epochs_per_bag: FINAL_EPOCHS, deterministic: true, candidate_scoring: "media dos logits apenas dos modelos em que o candidato nao foi usado como contraste temporario (out-of-bag)", out_of_bag_models_per_candidate_min: Math.min(...ranked.map((candidate) => candidate.outOfBagModelCount)), out_of_bag_models_per_candidate_max: Math.max(...ranked.map((candidate) => candidate.outOfBagModelCount)), out_of_bag_fallback_count: ranked.filter((candidate) => candidate.usedOutOfBagFallback).length },
@@ -646,6 +832,8 @@ function main() {
     missing_marker_sequences: missingMarkers,
     candidate_count: ranked.length, candidate_count_global_mirbase: ranked.length, candidate_count_with_expression_available: candidatesWithExpressionCount,
     training_history: model.histories,
+    ranking_stability: { method: "percentis por bag apenas quando o candidato esta out-of-bag", bags: FINAL_PU_BAGS, fields: ["median_percentile", "percentile_q25", "percentile_q75", "top_1_frequency", "top_5_frequency", "top_10_frequency", "top_20_frequency"] },
+    mature_feature_ablation: nestedValidation.mature_feature_ablation,
     internal_recovery_validation: {
       method: "nested_group_cross_validation_by_seed_family_against_full_unlabeled_background", primary_unit: "seed_family", seed_family_count: primaryValidation.family_metrics.count, marker_count: primaryValidation.marker_metrics.count,
       marker_metrics: primaryValidation.marker_metrics, family_metrics: primaryValidation.family_metrics, bootstrap_95_ci: primaryValidation.bootstrap_95_ci, random_ranking_test: primaryValidation.random_ranking_test,
@@ -659,10 +847,10 @@ function main() {
   };
   fs.writeFileSync(OUTPUT_MODEL, JSON.stringify(modelArtifact, null, 2), "utf8");
 
-  const outputHeader = ["rank", "mirna", "accession", "sequence", "tem_expressao_no_dataset", "score_modelo_sequencial", "probabilidade_pu_consenso_bruta", "probabilidade_contrastiva_bruta", "numero_modelos_oob", "logit_modelo_sequencial", "features_expressao_associadas", "features_modelo_mais_influentes", "features_kmer_mais_influentes", "marcadores_referencia_mais_proximos"];
+  const outputHeader = ["rank", "mirna", "accession", "sequence", "tem_expressao_no_dataset", "score_modelo_sequencial", "probabilidade_pu_consenso_bruta", "probabilidade_contrastiva_bruta", "numero_modelos_oob", "logit_modelo_sequencial", "percentil_mediano_bags_oob", "percentil_q25_bags_oob", "percentil_q75_bags_oob", "iqr_percentil_bags_oob", "frequencia_top_1_bags_oob", "frequencia_top_5_bags_oob", "frequencia_top_10_bags_oob", "frequencia_top_20_bags_oob", "features_expressao_associadas", "features_modelo_mais_influentes", "features_kmer_mais_influentes", "marcadores_referencia_mais_proximos"];
   const outputRows = ranked.map((candidate, index) => {
     const influential = candidate.topFeatures.map((item) => `${item.feature}:${item.contribution.toFixed(4)}`).join("; ");
-    return [index + 1, markerDisplayName(candidate.name), candidate.accession, candidate.sequence, candidate.associatedFeatures.length ? "sim" : "nao", candidate.sequenceScore.toFixed(6), candidate.probability.toFixed(6), candidate.probability.toFixed(6), candidate.outOfBagModelCount, candidate.rawLogit.toFixed(6), candidate.associatedFeatures.join("; "), influential, influential, candidate.nearest.map((item) => `${item.marker}:${item.similarity.toFixed(3)}`).join("; ")];
+    return [index + 1, markerDisplayName(candidate.name), candidate.accession, candidate.sequence, candidate.associatedFeatures.length ? "sim" : "nao", candidate.sequenceScore.toFixed(6), candidate.probability.toFixed(6), candidate.probability.toFixed(6), candidate.outOfBagModelCount, candidate.rawLogit.toFixed(6), candidate.stability.median_percentile.toFixed(6), candidate.stability.percentile_q25.toFixed(6), candidate.stability.percentile_q75.toFixed(6), candidate.stability.percentile_iqr.toFixed(6), candidate.stability.top_1_frequency.toFixed(6), candidate.stability.top_5_frequency.toFixed(6), candidate.stability.top_10_frequency.toFixed(6), candidate.stability.top_20_frequency.toFixed(6), candidate.associatedFeatures.join("; "), influential, influential, candidate.nearest.map((item) => `${item.marker}:${item.similarity.toFixed(3)}`).join("; ")];
   });
   fs.writeFileSync(OUTPUT_RANKING, [outputHeader, ...outputRows].map((row) => row.map(csvCell).join(",")).join("\n"), "utf8");
 
@@ -671,7 +859,7 @@ function main() {
   const report = [
     "Modelo 1 - descoberta de candidatos por sequencia madura e ensemble PU", "",
     `FASTA maduro: ${projectPath(FASTA_PATH)}`,
-    "Escopo de features: k-mers maduros, seed, comprimento e fracao GC. Hairpin e estrutura secundaria nao participam do modelo.",
+    `Escopo final de features: ${finalConfig.featureSet} da sequencia madura; foram comparados core, composicao, k-mers posicionais, motivos terminais e representacao completa. Hairpin e estrutura secundaria nao participam do modelo.`,
     `Marcadores positivos: ${markerEntries.length}`, `Familias de seed positivas: ${familyMetrics.count}`, `Candidatos ranqueados: ${ranked.length}`, `Candidatos com expressao para o Modelo 2: ${candidatesWithExpressionCount}`, `Configuracao final escolhida: ${finalConfig.id}`, `Ensemble PU final: ${FINAL_PU_BAGS} bags x ${model.bagSize} nao rotulados`, `Pontuacao dos candidatos: out-of-bag (${Math.min(...ranked.map((candidate) => candidate.outOfBagModelCount))} a ${Math.max(...ranked.map((candidate) => candidate.outOfBagModelCount))} modelos por candidato; fallbacks=${ranked.filter((candidate) => candidate.usedOutOfBagFallback).length})`, `Vocabulario final: ${model.vocabulary.size} features`, "",
     "Validacao aninhada por familia de seed (metrica principal por familia):",
     `Percentil medio por familia=${familyMetrics.mean_percentile.toFixed(4)}`,
@@ -686,6 +874,9 @@ function main() {
     "Metricas secundarias por marcador:", `Percentil medio por marcador=${markerMetrics.mean_percentile.toFixed(4)}`, `Recall@10% por marcador=${percent(markerMetrics.recall_at_10_percent)} (${markerMetrics.recovered_at_10_percent}/${markerMetrics.count})`, "",
     "Comparacao com baselines por familia:",
     ...Object.entries(nestedValidation.methods).map(([name, value]) => `${name}\tpercentil_medio=${value.family_metrics.mean_percentile.toFixed(4)}\trecall@10%=${percent(value.family_metrics.recall_at_10_percent)}`), "",
+    "Ablacao pareada de features maduras (mesmos folds e hiperparametros):",
+    ...Object.entries(nestedValidation.mature_feature_ablation.representations).map(([name, value]) => `${name}\tpercentil_medio=${value.family_metrics.mean_percentile.toFixed(4)}\trecall@10%=${percent(value.family_metrics.recall_at_10_percent)}`),
+    ...Object.entries(nestedValidation.mature_feature_ablation.paired_comparisons_against_core).map(([name, value]) => `${name}_vs_core\tdelta=${value.mean_paired_delta.toFixed(4)}\tIC95%=${value.bootstrap_95_ci.map((item) => item.toFixed(4)).join(" a ")}\tp=${value.paired_sign_flip_p_value_two_sided.toFixed(4)}\tFDR_BH=${value.paired_sign_flip_fdr_bh.toFixed(4)}`), "",
     "Top features positivas do modelo final:", ...sortedWeights.slice(0, 15).map(([feature, weight]) => `${feature}\tpeso=${weight.toFixed(6)}`), "",
     "Top candidatos do ranking final:", ...ranked.slice(0, TOP_REPORT_COUNT).map((candidate, index) => `${index + 1}. ${markerDisplayName(candidate.name)}\tscore=${candidate.sequenceScore.toFixed(4)}\tpu=${candidate.probability.toFixed(4)}\texpressao=${candidate.associatedFeatures.length ? "sim" : "nao"}\treferencias=${candidate.nearest.map((item) => `${item.marker}:${item.similarity.toFixed(3)}`).join(", ")}`), "",
     "Interpretacao:", "O Modelo 1 usa k-mers da sequencia madura como nucleo, alem de seed, composicao, balanceamento por familia e bagging Positive-Unlabeled.", "Hairpin e estrutura secundaria foram excluidos deliberadamente para manter o escopo do TCC no miRNA maduro.", "A metrica principal e calculada nas familias de seed externas, que nao participam nem do treino nem da escolha de hiperparametros.", "O score e uma prioridade relativa para pesquisa, nao probabilidade de cancer, diagnostico ou validacao clinica.", "",

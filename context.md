@@ -52,7 +52,7 @@ O objetivo inicial foi:
 - treinar modelos de IA;
 - documentar tudo.
 
-O objetivo principal atual evoluiu para descoberta de candidatos ao cancer de mama. O fluxo vigente mantem os classificadores antigos como historico e usa dois modelos: o Modelo 1 e um ensemble PU que aprende k-mers, seed, hairpin e estrutura a partir de 43 biomarcadores balanceados por familia; o Modelo 2 valida por expressao, com predicoes out-of-fold em 5 folds, os candidatos que existem no dataset de pacientes. A especificacao vigente esta em `docs/METODOLOGIA_MODELOS_MIRNA.md`.
+O objetivo principal atual evoluiu para descoberta de candidatos ao cancer de mama. O fluxo vigente mantem os classificadores antigos como historico e usa dois modelos: o Modelo 1 e um ensemble PU que aprende somente padroes da sequencia madura — k-mers globais e posicionais, seed, composicao e motivos terminais — a partir de 43 biomarcadores balanceados por familia; o Modelo 2 avalia a expressao com predicoes out-of-fold em 5 folds. Hairpin e estrutura foram removidos do fluxo ativo. A especificacao vigente esta em `docs/METODOLOGIA_MODELOS_MIRNA.md`.
 
 ## Ambiente
 
@@ -992,7 +992,7 @@ Estado atual:
 
 ```text
 scripts/discover_mirna_sequence_candidates.js usa mirbase_mature.fa
-mirbase_hairpin.fa era apenas complementar nesta camada historica; o Modelo 1 principal atual ja usa padroes de precursores
+mirbase_hairpin.fa era complementar na camada historica descrita aqui; o experimento posterior com precursores tambem se tornou historico e o Modelo 1 vigente usa somente sequencia madura
 ```
 
 Novo script:
@@ -1787,7 +1787,7 @@ mir-26a-2-3p score_final=0.9190
 Interpretacao:
 
 ```text
-Modelo 1 = prioriza candidatos por um ensemble PU de sequencia madura, seed, hairpin e estrutura no universo humano do miRBase.
+Modelo 1 desta versao historica = priorizava candidatos por um ensemble PU de sequencia madura, seed, hairpin e estrutura no universo humano do miRBase. O fluxo vigente, descrito ao final deste documento, removeu hairpin e estrutura.
 Modelo 2 = testa com predicoes out-of-fold, entre esses candidatos, quais aparecem e tem associacao com pacientes doentes no dataset atual.
 ```
 
@@ -1891,7 +1891,7 @@ O PDF atual foi impresso localmente em A4 a partir do HTML e deve ser atualizado
 Para o TCC, descrever o pipeline principal assim:
 
 ```text
-Foi desenvolvido um fluxo em dois modelos. O primeiro e um ensemble Positive-Unlabeled por bagging que aprende k-mers de sequencias maduras e hairpin, seed e features estruturais a partir de 43 miRNAs associados ao cancer de mama. Os pesos de evidencia sao balanceados por familia. A avaliacao usa validacao aninhada por familia de seed, background completo, baselines, bootstrap e teste nulo. O segundo modelo recebe os 611 candidatos com expressao disponivel e realiza validacao cruzada estratificada de 5 folds, usando predicoes out-of-fold para testar associacao com amostras doentes em relacao a saudaveis. Os dois modelos priorizam hipoteses e nao confirmam biomarcadores.
+Foi desenvolvido um fluxo em dois modelos. O primeiro e um ensemble Positive-Unlabeled por bagging que aprende apenas padroes da sequencia madura: k-mers globais e posicionais, seed, composicao e motivos terminais. Os pesos de evidencia sao balanceados por familia. A avaliacao usa validacao aninhada por familia de seed, background completo, baselines, bootstrap e teste nulo. O segundo modelo recebe os candidatos com expressao disponivel e realiza validacao cruzada estratificada de 5 folds, usando predicoes out-of-fold para testar associacao com amostras doentes em relacao a saudaveis. Os dois modelos priorizam hipoteses e nao confirmam biomarcadores.
 ```
 
 Evitar dizer:
@@ -1970,3 +1970,49 @@ node scripts\audit_mirna_discovery_pipeline.js
 ```
 
 O FASTA de hairpins, o CSV estrutural derivado e o gerador Nussinov/RNAfold foram removidos do estado vigente. Permanecem recuperaveis pelo historico do Git, mas nao sao dependencias do pipeline acima.
+
+## Atualizacao: Features Maduras Avancadas e Preparacao da Coorte Externa
+
+> Atualizado em 10/10/2026, depois do baseline madura-only `c0b5527` ter sido enviado ao GitHub.
+
+O Modelo 1 passou a comparar oito configuracoes exclusivamente maduras. Alem do core de k-mers, seed, comprimento e GC, foram avaliadas composicao A/U/C/G, entropia, k-mers posicionais e motivos das extremidades 5p/3p. A selecao continua aninhada por familia; nenhum bloco foi escolhido olhando diretamente o resultado externo.
+
+Resultado vigente:
+
+```text
+Configuracao final: k234_positional_mature_l2_003_u050
+Vocabulario final: 783 features
+Ensemble final: 20 bags x 800 nao rotulados
+Modelos OOB por candidato: 6 a 19
+Percentil medio por familia: 0.6460
+IC95%: 0.5585 a 0.7285
+p do nulo: 0.0008
+Recall@10%: 4/32 (12.50%)
+p do nulo do Recall@10%: 0.2417
+Recall@20%: 13/32 (40.63%)
+```
+
+A ablação pareada, com os mesmos folds, bags e hiperparametros, encontrou:
+
+```text
+core         0.6063  Recall@10=9.38%
+composition  0.5579  Recall@10=6.25%
+positional   0.6100  Recall@10=6.25%
+terminals    0.6829  Recall@10=28.13%
+full         0.6408  Recall@10=18.75%
+```
+
+Motivos terminais tiveram delta de +0.0766 contra o core, IC95% 0.0123 a 0.1496, p pareado nominal de 0.0369 e FDR BH de 0.0738. O resultado e promissor e exploratorio, mas nao permanece significativo a 5% depois da correcao das quatro comparacoes; nao substitui uma nova avaliacao ou mais positivos.
+
+O ranking do Modelo 1 passou a registrar mediana, quartis, IQR e frequencias de top 1/5/10/20% entre os 20 bags out-of-bag.
+
+O Modelo 2 agora inclui IC aproximado de AUC, p unilateral para AUC > 0,5, FDR Benjamini-Hochberg por hipotese de expressao unica, Cliff's delta, Hedges g, intervalo da diferenca media log1p, alerta de ambiguidade 5p/3p, cenarios de integracao 75/25 e 25/75 e fronteira de Pareto. Foram avaliadas 325 hipoteses unicas; 278 ficaram com FDR < 0,05 e correspondem a 531 candidatos. Esses calculos continuam internos, e a quantidade excepcionalmente alta reforca a suspeita de lote/fonte.
+
+Foi criado o validador externo:
+
+```text
+scripts/validate_mirna_external_cohort.js
+docs/FORMATO_COORTE_EXTERNA.md
+```
+
+Ele exige `sample_id` e `classe`, rejeita IDs presentes na base interna e valores de expressao invalidos, prefere correspondencia madura exata, identifica proxy de familia e aplica ranking/direcao congelados sem retreinar. As hipoteses externas distintas recebem FDR Benjamini-Hochberg. O rotulo de sinal reproduzido exige ao menos 10 amostras por classe, direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR abaixo de 0,05; o piso tecnico nao substitui calculo de poder. Replicacoes maduras exatas e proxies sao contabilizados separadamente. Um teste sintetico de ponta a ponta foi executado e os arquivos sinteticos foram removidos em seguida.
