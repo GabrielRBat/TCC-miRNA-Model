@@ -3,6 +3,7 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const fromRoot = (...parts) => path.join(ROOT, ...parts);
+const projectPath = (filePath) => path.relative(ROOT, filePath).split(path.sep).join("/");
 
 const DATASET_CSV = fromRoot("data", "processed", "dataset_mirna_balanceado_colunas_comuns.csv");
 const CANDIDATE_RANKING_CSV = fromRoot("data", "processed", "mirna_candidate_discovery_model_ranking.csv");
@@ -13,9 +14,10 @@ const OUTPUT_CSV = fromRoot("data", "processed", "mirna_patient_candidate_valida
 const OUTPUT_INTEGRATED_CSV = fromRoot("data", "processed", "mirna_patient_candidate_integrated_ranking.csv");
 const OUTPUT_REPORT = fromRoot("reports", "modelo_mirna_patient_candidate_validation_report.txt");
 
-const TRAIN_EPOCHS = 900;
-const LEARNING_RATE = 0.15;
+const TRAIN_MAX_ITERATIONS = 50;
+const CONVERGENCE_TOLERANCE = 1e-8;
 const L2 = 0.01;
+const CV_FOLDS = 5;
 const TOP_REPORT_COUNT = 30;
 
 function ensureDirectory(filePath) {
@@ -147,7 +149,16 @@ function metricsFromPredictions(items) {
   };
 }
 
-function stratifiedSplit(samples) {
+function stableHash(value) {
+  let hash = 2166136261;
+  for (const character of String(value ?? "")) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function stratifiedFolds(samples, foldCount = CV_FOLDS) {
   const byLabel = new Map();
   for (const sample of samples) {
     const current = byLabel.get(sample.label) ?? [];
@@ -155,15 +166,16 @@ function stratifiedSplit(samples) {
     byLabel.set(sample.label, current);
   }
 
-  const train = [];
-  const test = [];
+  const folds = Array.from({ length: foldCount }, () => []);
   for (const group of byLabel.values()) {
-    group.forEach((sample, index) => {
-      if (index % 5 === 0) test.push(sample);
-      else train.push(sample);
+    const deterministicOrder = [...group].sort(
+      (a, b) => stableHash(a.sampleId) - stableHash(b.sampleId) || a.sampleId.localeCompare(b.sampleId)
+    );
+    deterministicOrder.forEach((sample, index) => {
+      folds[index % foldCount].push(sample);
     });
   }
-  return { train, test };
+  return folds;
 }
 
 function trainUnivariateLogistic(trainSamples) {
@@ -173,10 +185,14 @@ function trainUnivariateLogistic(trainSamples) {
   let weight = 0;
   let bias = 0;
   const history = [];
+  const regularization = L2 * Math.max(1, trainSamples.length);
 
-  for (let epoch = 0; epoch < TRAIN_EPOCHS; epoch += 1) {
+  for (let iteration = 0; iteration < TRAIN_MAX_ITERATIONS; iteration += 1) {
     let gradWeight = 0;
     let gradBias = 0;
+    let hessianWeight = regularization;
+    let hessianBias = 0;
+    let hessianCross = 0;
     let loss = 0;
     for (const sample of trainSamples) {
       const x = (sample.value - center) / scale;
@@ -186,15 +202,24 @@ function trainUnivariateLogistic(trainSamples) {
       const error = probability - sample.label;
       gradWeight += error * x;
       gradBias += error;
+      const curvature = probability * (1 - probability);
+      hessianWeight += curvature * x * x;
+      hessianBias += curvature;
+      hessianCross += curvature * x;
     }
 
-    const lr = LEARNING_RATE / Math.sqrt(1 + epoch / 100);
-    weight -= lr * (gradWeight / Math.max(1, trainSamples.length) + L2 * weight);
-    bias -= lr * (gradBias / Math.max(1, trainSamples.length));
+    gradWeight += regularization * weight;
+    loss += 0.5 * regularization * weight * weight;
+    const determinant = hessianWeight * hessianBias - hessianCross * hessianCross;
+    if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-12) break;
 
-    if (epoch === 0 || (epoch + 1) % 150 === 0 || epoch === TRAIN_EPOCHS - 1) {
-      history.push({ epoch: epoch + 1, log_loss: loss / Math.max(1, trainSamples.length) });
-    }
+    const deltaWeight = (hessianBias * gradWeight - hessianCross * gradBias) / determinant;
+    const deltaBias = (hessianWeight * gradBias - hessianCross * gradWeight) / determinant;
+    weight -= deltaWeight;
+    bias -= deltaBias;
+
+    history.push({ iteration: iteration + 1, log_loss: loss / Math.max(1, trainSamples.length) });
+    if (Math.max(Math.abs(deltaWeight), Math.abs(deltaBias)) < CONVERGENCE_TOLERANCE) break;
   }
 
   return { weight, bias, center, scale, history };
@@ -205,6 +230,39 @@ function predict(model, value) {
   return sigmoid(model.weight * x + model.bias);
 }
 
+function crossValidateUnivariate(samples, foldCount = CV_FOLDS) {
+  const folds = stratifiedFolds(samples, foldCount);
+  for (let index = 0; index < folds.length; index += 1) {
+    const labels = new Set(folds[index].map((sample) => sample.label));
+    if (labels.size !== 2) throw new Error(`Fold ${index + 1} nao contem as duas classes`);
+  }
+  const outOfFoldPredictions = [];
+  const foldMetrics = [];
+
+  for (let foldIndex = 0; foldIndex < folds.length; foldIndex += 1) {
+    const test = folds[foldIndex];
+    const train = folds.flatMap((fold, index) => (index === foldIndex ? [] : fold));
+    const foldModel = trainUnivariateLogistic(train);
+    const predictions = test.map((sample) => ({
+      ...sample,
+      probability: predict(foldModel, sample.value),
+    }));
+    outOfFoldPredictions.push(...predictions);
+    foldMetrics.push({
+      fold: foldIndex + 1,
+      train_size: train.length,
+      validation_size: test.length,
+      metrics: metricsFromPredictions(predictions),
+    });
+  }
+
+  return {
+    metrics: metricsFromPredictions(outOfFoldPredictions),
+    foldMetrics,
+    predictionCount: outOfFoldPredictions.length,
+  };
+}
+
 function expressionValueForRow(row, dataset, features) {
   return (
     features.reduce((sum, feature) => sum + (Number(row[dataset.indexByName.get(feature)]) || 0), 0) /
@@ -213,7 +271,7 @@ function expressionValueForRow(row, dataset, features) {
 }
 
 function validationEvidenceScore(item) {
-  const aucSignal = Math.max(0, (item.testMetrics.auc - 0.5) * 2);
+  const aucSignal = Math.max(0, (item.cvMetrics.auc - 0.5) * 2);
   const foldSignal = Math.min(1, Math.abs(item.log2FoldChange) / 3);
   const detectionSignal = Math.min(1, Math.abs(item.diseaseNonzeroPct - item.healthyNonzeroPct) / 50);
   return 0.7 * aucSignal + 0.2 * foldSignal + 0.1 * detectionSignal;
@@ -233,10 +291,35 @@ function main() {
   const dataset = readCsv(DATASET_CSV);
   const candidates = readCsv(CANDIDATE_RANKING_CSV);
   const sequenceModel = JSON.parse(fs.readFileSync(SEQUENCE_MODEL_JSON, "utf8"));
+  for (const column of [
+    "rank",
+    "mirna",
+    "score_modelo_sequencial",
+    "features_expressao_associadas",
+    "marcadores_referencia_mais_proximos",
+  ]) {
+    if (!candidates.indexByName.has(column)) {
+      throw new Error(`Coluna obrigatoria ausente em ${CANDIDATE_RANKING_CSV}: ${column}`);
+    }
+  }
+  if (!candidates.indexByName.has("features_modelo_mais_influentes") && !candidates.indexByName.has("features_kmer_mais_influentes")) {
+    throw new Error(`Coluna de features influentes ausente em ${CANDIDATE_RANKING_CSV}`);
+  }
   const classIndex = dataset.indexByName.get("classe");
+  const sampleIdIndex = dataset.indexByName.get("sample_id");
   if (typeof classIndex !== "number") throw new Error(`Coluna classe ausente em ${DATASET_CSV}`);
+  if (typeof sampleIdIndex !== "number") throw new Error(`Coluna sample_id ausente em ${DATASET_CSV}`);
+
+  const sampleIds = dataset.rows.map((row) => row[sampleIdIndex]?.trim());
+  if (sampleIds.some((sampleId) => !sampleId)) throw new Error(`sample_id vazio em ${DATASET_CSV}`);
+  if (new Set(sampleIds).size !== sampleIds.length) throw new Error(`sample_id duplicado em ${DATASET_CSV}`);
+  const labels = new Set(dataset.rows.map((row) => Number(row[classIndex])));
+  if (labels.size !== 2 || !labels.has(0) || !labels.has(1)) {
+    throw new Error(`Classes esperadas 0 e 1 nao encontradas em ${DATASET_CSV}`);
+  }
 
   const datasetSamples = dataset.rows.map((row) => ({
+    sampleId: row[sampleIdIndex],
     label: Number(row[classIndex]),
     row,
   }));
@@ -259,17 +342,15 @@ function main() {
 
     const samples = datasetSamples.map((sample, index) => ({
       index,
+      sampleId: sample.sampleId,
       label: sample.label,
       value: Math.log1p(Math.max(0, expressionValueForRow(sample.row, dataset, features))),
       rawValue: expressionValueForRow(sample.row, dataset, features),
     }));
 
-    const { train, test } = stratifiedSplit(samples);
-    const model = trainUnivariateLogistic(train);
-    const trainPredictions = train.map((sample) => ({ ...sample, probability: predict(model, sample.value) }));
-    const testPredictions = test.map((sample) => ({ ...sample, probability: predict(model, sample.value) }));
-    const trainMetrics = metricsFromPredictions(trainPredictions);
-    const testMetrics = metricsFromPredictions(testPredictions);
+    const crossValidation = crossValidateUnivariate(samples);
+    const finalModel = trainUnivariateLogistic(samples);
+    const cvMetrics = crossValidation.metrics;
 
     const diseaseRaw = samples.filter((sample) => sample.label === 1).map((sample) => sample.rawValue);
     const healthyRaw = samples.filter((sample) => sample.label === 0).map((sample) => sample.rawValue);
@@ -284,9 +365,9 @@ function main() {
       sequenceRank: Number(get("rank")) || 0,
       sequenceScore: Number(get("score_modelo_sequencial")) || 0,
       features,
-      model,
-      trainMetrics,
-      testMetrics,
+      model: finalModel,
+      cvMetrics,
+      foldMetrics: crossValidation.foldMetrics,
       diseaseMean,
       healthyMean,
       diseaseMedian: median(diseaseRaw),
@@ -294,9 +375,9 @@ function main() {
       log2FoldChange,
       diseaseNonzeroPct,
       healthyNonzeroPct,
-      direction: directionFromWeight(model.weight),
+      direction: directionFromWeight(finalModel.weight),
       nearestMarkers: get("marcadores_referencia_mais_proximos"),
-      influentialKmers: get("features_kmer_mais_influentes"),
+      influentialKmers: get("features_modelo_mais_influentes") || get("features_kmer_mais_influentes"),
     };
     result.validationScore = validationEvidenceScore(result);
     result.finalDiscoveryScore = 0.5 * result.sequenceScore + 0.5 * result.validationScore;
@@ -308,14 +389,19 @@ function main() {
       features,
       model: {
         type: "univariate_logistic_expression_validation",
-        weight: model.weight,
-        bias: model.bias,
-        center_log1p: model.center,
-        scale_log1p: model.scale,
+        training_scope: "modelo_final_ajustado_em_todas_as_amostras_apos_validacao_cruzada",
+        weight: finalModel.weight,
+        bias: finalModel.bias,
+        center_log1p: finalModel.center,
+        scale_log1p: finalModel.scale,
         direction: result.direction,
       },
-      train_metrics: trainMetrics,
-      test_metrics: testMetrics,
+      cross_validation: {
+        method: "stratified_5_fold_out_of_fold",
+        folds: CV_FOLDS,
+        out_of_fold_metrics: cvMetrics,
+        fold_metrics: crossValidation.foldMetrics,
+      },
       validation_score: result.validationScore,
       final_discovery_score: result.finalDiscoveryScore,
     });
@@ -324,7 +410,7 @@ function main() {
   const validationRanked = [...candidateResults].sort(
     (a, b) =>
       b.validationScore - a.validationScore ||
-      b.testMetrics.auc - a.testMetrics.auc ||
+      b.cvMetrics.auc - a.cvMetrics.auc ||
       Math.abs(b.log2FoldChange) - Math.abs(a.log2FoldChange) ||
       b.sequenceScore - a.sequenceScore
   );
@@ -356,17 +442,25 @@ function main() {
     type: "patient_candidate_validation_models_per_candidate",
     purpose:
       "Validar computacionalmente candidatos do Modelo 1 no dataset de pacientes, medindo se a expressao do candidato ajuda a separar doentes e saudaveis.",
-    input_candidate_ranking: CANDIDATE_RANKING_CSV,
-    input_sequence_model: SEQUENCE_MODEL_JSON,
-    input_dataset: DATASET_CSV,
-    output_validation_ranking: OUTPUT_CSV,
-    output_integrated_ranking: OUTPUT_INTEGRATED_CSV,
+    input_candidate_ranking: projectPath(CANDIDATE_RANKING_CSV),
+    input_sequence_model: projectPath(SEQUENCE_MODEL_JSON),
+    input_dataset: projectPath(DATASET_CSV),
+    output_validation_ranking: projectPath(OUTPUT_CSV),
+    output_integrated_ranking: projectPath(OUTPUT_INTEGRATED_CSV),
     candidate_count: candidateResults.length,
     candidate_count_from_sequence_ranking: candidates.rows.length,
     candidate_count_skipped_without_expression: skippedWithoutExpression,
-    train_test_split: "estratificado deterministico 80/20 por classe",
+    validation_design:
+      "validacao cruzada estratificada deterministica em 5 folds; amostras sao ordenadas por hash estavel do sample_id dentro de cada classe e cada amostra recebe predicao out-of-fold",
+    cross_validation_folds: CV_FOLDS,
+    optimizer: {
+      method: "newton_raphson_for_univariate_logistic_regression",
+      max_iterations: TRAIN_MAX_ITERATIONS,
+      convergence_tolerance: CONVERGENCE_TOLERANCE,
+      l2: L2,
+    },
     per_candidate_model:
-      "Para cada candidato, treina regressao logistica univariada usando log1p(expressao media das features associadas).",
+      "Para cada candidato, valida regressao logistica univariada com predicoes out-of-fold usando log1p(expressao media das features associadas); depois ajusta um modelo final em todas as amostras apenas para serializacao.",
     validation_score_formula:
       "score_validacao_pacientes = 0.70*AUC_signal + 0.20*|log2FC|_signal + 0.10*detection_presence_signal",
     final_score_formula: "score_final_descoberta = 0.50*score_modelo_sequencial + 0.50*score_validacao_pacientes",
@@ -387,7 +481,7 @@ function main() {
     },
     candidates: candidateModels,
     warning:
-      "Esta validacao e computacional. Ela testa associacao no dataset atual, mas pode capturar efeito de lote/fonte e nao substitui validacao laboratorial.",
+      "Esta validacao e computacional. A validacao cruzada reduz o otimismo de uma unica divisao, mas o ranking ainda e selecionado no mesmo dataset e pode capturar efeito de lote/fonte. Nao substitui coorte externa nem validacao laboratorial.",
   };
   fs.writeFileSync(OUTPUT_MODEL, JSON.stringify(modelArtifact, null, 2), "utf8");
 
@@ -401,16 +495,16 @@ function main() {
     "rank_modelo_sequencial",
     "features_expressao",
     "direcao_aprendida_no_paciente",
-    "test_auc",
-    "test_accuracy",
-    "test_precision",
-    "test_recall_sensibilidade",
-    "test_specificity",
-    "test_f1",
-    "test_tp",
-    "test_fp",
-    "test_fn",
-    "test_tn",
+    "cv_oof_auc",
+    "cv_oof_accuracy",
+    "cv_oof_precision",
+    "cv_oof_recall_sensibilidade",
+    "cv_oof_specificity",
+    "cv_oof_f1",
+    "cv_oof_tp",
+    "cv_oof_fp",
+    "cv_oof_fn",
+    "cv_oof_tn",
     "log2_fc_doente_vs_saudavel",
     "media_doente",
     "media_saudavel",
@@ -419,6 +513,7 @@ function main() {
     "pct_doentes_maior_que_zero",
     "pct_saudaveis_maior_que_zero",
     "marcadores_referencia_mais_proximos",
+    "features_modelo_mais_influentes",
     "features_kmer_mais_influentes",
   ];
 
@@ -432,16 +527,16 @@ function main() {
     item.sequenceRank,
     item.features.join("; "),
     item.direction,
-    item.testMetrics.auc.toFixed(6),
-    item.testMetrics.accuracy.toFixed(6),
-    item.testMetrics.precision.toFixed(6),
-    item.testMetrics.recall.toFixed(6),
-    item.testMetrics.specificity.toFixed(6),
-    item.testMetrics.f1.toFixed(6),
-    item.testMetrics.tp,
-    item.testMetrics.fp,
-    item.testMetrics.fn,
-    item.testMetrics.tn,
+    item.cvMetrics.auc.toFixed(6),
+    item.cvMetrics.accuracy.toFixed(6),
+    item.cvMetrics.precision.toFixed(6),
+    item.cvMetrics.recall.toFixed(6),
+    item.cvMetrics.specificity.toFixed(6),
+    item.cvMetrics.f1.toFixed(6),
+    item.cvMetrics.tp,
+    item.cvMetrics.fp,
+    item.cvMetrics.fn,
+    item.cvMetrics.tn,
     item.log2FoldChange.toFixed(6),
     item.diseaseMean.toFixed(6),
     item.healthyMean.toFixed(6),
@@ -450,6 +545,7 @@ function main() {
     item.diseaseNonzeroPct.toFixed(2),
     item.healthyNonzeroPct.toFixed(2),
     item.nearestMarkers,
+    item.influentialKmers,
     item.influentialKmers,
   ]);
   fs.writeFileSync(OUTPUT_CSV, [outputHeader, ...rowsFor(validationRanked)].map((row) => row.map(csvCell).join(",")).join("\n"), "utf8");
@@ -464,11 +560,11 @@ function main() {
   const report = [
     "Modelo de validacao computacional de candidatos em pacientes",
     "",
-    `Ranking de candidatos do Modelo 1: ${CANDIDATE_RANKING_CSV}`,
-    `Modelo sequencial usado: ${SEQUENCE_MODEL_JSON}`,
-    `Dataset de pacientes: ${DATASET_CSV}`,
-    `Ranking puro do Modelo 2: ${OUTPUT_CSV}`,
-    `Ranking integrado Modelo 1 + Modelo 2: ${OUTPUT_INTEGRATED_CSV}`,
+    `Ranking de candidatos do Modelo 1: ${projectPath(CANDIDATE_RANKING_CSV)}`,
+    `Modelo sequencial usado: ${projectPath(SEQUENCE_MODEL_JSON)}`,
+    `Dataset de pacientes: ${projectPath(DATASET_CSV)}`,
+    `Ranking puro do Modelo 2: ${projectPath(OUTPUT_CSV)}`,
+    `Ranking integrado Modelo 1 + Modelo 2: ${projectPath(OUTPUT_INTEGRATED_CSV)}`,
     `Candidatos recebidos do ranking sequencial global: ${candidates.rows.length}`,
     `Candidatos validados: ${candidateResults.length}`,
     `Candidatos ignorados por falta de expressao no dataset: ${skippedWithoutExpression}`,
@@ -479,7 +575,9 @@ function main() {
     "Como o Modelo 2 funciona:",
     "Para cada candidato do Modelo 1, o script localiza as features correspondentes no dataset de pacientes.",
     "Candidatos do ranking sequencial global sem feature de expressao no dataset atual sao mantidos no Modelo 1, mas ignorados nesta validacao.",
-    "Depois treina uma regressao logistica univariada usando apenas a expressao log1p daquele candidato para separar classe=1 de classe=0.",
+    "Para cada candidato, executa validacao cruzada estratificada em 5 folds com regressao logistica univariada e expressao log1p.",
+    "Cada amostra recebe uma predicao out-of-fold de um modelo que nao a utilizou no treinamento; as metricas CV-OOF agregam essas predicoes.",
+    "Depois da avaliacao, um modelo final e ajustado em todas as amostras apenas para ser armazenado no artefato JSON.",
     "Isso funciona como uma prova computacional: verifica se o candidato aparece e se sua expressao tem associacao com pacientes doentes no dataset atual.",
     "",
     "Formula de validacao em pacientes:",
@@ -497,9 +595,9 @@ function main() {
         `validacao=${item.validationScore.toFixed(4)}\t` +
         `score_final=${item.finalDiscoveryScore.toFixed(4)}\t` +
         `seq=${item.sequenceScore.toFixed(4)}\t` +
-        `test_auc=${item.testMetrics.auc.toFixed(3)}\t` +
-        `test_acc=${item.testMetrics.accuracy.toFixed(3)}\t` +
-        `precision=${item.testMetrics.precision.toFixed(3)}\t` +
+        `cv_oof_auc=${item.cvMetrics.auc.toFixed(3)}\t` +
+        `cv_oof_acc=${item.cvMetrics.accuracy.toFixed(3)}\t` +
+        `cv_oof_precision=${item.cvMetrics.precision.toFixed(3)}\t` +
         `log2FC=${item.log2FoldChange.toFixed(3)}\t` +
         `direcao=${item.direction}\t` +
         `features=${item.features.join(", ")}`
@@ -513,9 +611,9 @@ function main() {
         `score_final=${item.finalDiscoveryScore.toFixed(4)}\t` +
         `seq=${item.sequenceScore.toFixed(4)}\t` +
         `validacao=${item.validationScore.toFixed(4)}\t` +
-        `test_auc=${item.testMetrics.auc.toFixed(3)}\t` +
-        `test_acc=${item.testMetrics.accuracy.toFixed(3)}\t` +
-        `precision=${item.testMetrics.precision.toFixed(3)}\t` +
+        `cv_oof_auc=${item.cvMetrics.auc.toFixed(3)}\t` +
+        `cv_oof_acc=${item.cvMetrics.accuracy.toFixed(3)}\t` +
+        `cv_oof_precision=${item.cvMetrics.precision.toFixed(3)}\t` +
         `log2FC=${item.log2FoldChange.toFixed(3)}\t` +
         `direcao=${item.direction}\t` +
         `features=${item.features.join(", ")}`
@@ -528,7 +626,8 @@ function main() {
     "Isso nao prova causalidade nem valida clinicamente o biomarcador; apenas prioriza hipoteses para investigacao.",
     "",
     "Aviso cientifico:",
-    "A validacao usa o dataset atual e pode refletir efeito de lote/fonte. Validacao laboratorial ou coorte externa independente continua necessaria.",
+    "A validacao cruzada reduz dependencia de uma unica divisao treino/teste, mas o ranking continua sendo escolhido no mesmo dataset.",
+    "Os dados podem refletir efeito de lote/fonte. Coorte externa independente e validacao laboratorial continuam necessarias.",
     "",
   ].join("\n");
 

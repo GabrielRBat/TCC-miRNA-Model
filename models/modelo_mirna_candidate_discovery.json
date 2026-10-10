@@ -1,1036 +1,1214 @@
 {
-  "type": "trained_contrastive_one_class_kmer_model",
-  "purpose": "Priorizar miRNAs candidatos por semelhanca aprendida com miRNAs associados ao cancer de mama; nao classifica cancerigeno vs nao cancerigeno.",
-  "training_design": "Marcadores positivos conhecidos recebem rotulo positivo. Os demais miRNAs humanos maduros do miRBase sao usados como background nao rotulado, nao como negativos biologicos. A disponibilidade de expressao no dataset e usada apenas na validacao posterior.",
-  "source_fasta": "C:\\Users\\ACS INFO PC\\Downloads\\miRNA\\data\\external\\mirbase_mature.fa",
-  "source_dataset_for_expression_filter": "C:\\Users\\ACS INFO PC\\Downloads\\miRNA\\data\\processed\\dataset_mirna_balanceado_colunas_comuns.csv",
-  "positive_markers_csv": "C:\\Users\\ACS INFO PC\\Downloads\\miRNA\\data\\external\\breast_cancer_mirna_positive_markers.csv",
-  "candidate_pool_definition": "Todos os miRNAs humanos maduros do miRBase, removendo os positivos conhecidos usados no treino.",
-  "k_values": [
-    2,
-    3,
-    4,
-    5
-  ],
-  "vocabulary_size": 608,
-  "epochs": 900,
-  "lopo_epochs": 220,
-  "lopo_background_limit": 500,
-  "regularization_l2": 0.015,
-  "unlabeled_background_total_weight_ratio": 0.5,
-  "bias": 0.7124043779872046,
+  "type": "bagged_positive_unlabeled_mature_hairpin_structure_model",
+  "purpose": "Priorizar miRNAs por padroes de k-mers, seed, hairpin e estrutura aprendidos dos marcadores associados ao cancer de mama; nao e classificador clinico.",
+  "training_design": "Ensemble PU por bagging deterministico. Cada bag usa todos os positivos e uma amostra diferente do universo nao rotulado como contraste temporario; candidatos do conjunto nao rotulado sao ranqueados e explicados apenas pelos modelos out-of-bag.",
+  "source_fasta": "data/external/mirbase_mature.fa",
+  "source_hairpin_fasta": "data/external/mirbase_hairpin.fa",
+  "source_hairpin_structure_features": "data/processed/mirna_hairpin_structure_features.csv",
+  "source_dataset_for_expression_filter": "data/processed/dataset_mirna_balanceado_colunas_comuns.csv",
+  "positive_markers_csv": "data/external/breast_cancer_mirna_positive_markers.csv",
+  "training_policy_csv": "data/external/breast_cancer_mirna_training_policy.csv",
+  "candidate_pool_definition": "Todos os miRNAs humanos maduros do miRBase, removendo os positivos conhecidos; a validacao usa todo o background elegivel.",
+  "structure_features": {
+    "methods": [
+      "nussinov_weighted_pairing_proxy"
+    ],
+    "row_count": 1917,
+    "columns": [
+      "gc_fraction",
+      "paired_fraction",
+      "unpaired_fraction",
+      "stem_density",
+      "longest_stem_fraction",
+      "mean_stem_fraction",
+      "hairpin_loop_density",
+      "internal_bulge_density",
+      "pair_au_fraction",
+      "pair_gc_fraction",
+      "pair_gu_fraction"
+    ],
+    "warning": "RNAfold nao estava disponivel; a execucao usa proxy Nussinov de pareamento ponderado e nao inclui MFE termodinamica."
+  },
+  "positive_weighting": "peso_de_evidencia dividido pelo numero de positivos da mesma familia de seed e reescalado para preservar o peso total",
+  "hyperparameter_selection": {
+    "method": "nested_group_cross_validation_by_seed_family",
+    "outer_folds": 5,
+    "inner_folds": 3,
+    "candidate_configurations": [
+      {
+        "id": "k234_mature70_hairpin20_structure10",
+        "kValues": [
+          2,
+          3,
+          4
+        ],
+        "matureWeight": 0.7,
+        "hairpinWeight": 0.2,
+        "structureWeight": 0.1,
+        "l2": 0.03,
+        "unlabeledWeightRatio": 0.5,
+        "minimumFeatureWeight": 2
+      },
+      {
+        "id": "k2345_mature70_hairpin20_structure10",
+        "kValues": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "matureWeight": 0.7,
+        "hairpinWeight": 0.2,
+        "structureWeight": 0.1,
+        "l2": 0.03,
+        "unlabeledWeightRatio": 0.5,
+        "minimumFeatureWeight": 2
+      },
+      {
+        "id": "k3456_mature70_hairpin20_structure10",
+        "kValues": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "matureWeight": 0.7,
+        "hairpinWeight": 0.2,
+        "structureWeight": 0.1,
+        "l2": 0.03,
+        "unlabeledWeightRatio": 0.5,
+        "minimumFeatureWeight": 2
+      },
+      {
+        "id": "k2345_mature60_hairpin25_structure15",
+        "kValues": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "matureWeight": 0.6,
+        "hairpinWeight": 0.25,
+        "structureWeight": 0.15,
+        "l2": 0.02,
+        "unlabeledWeightRatio": 0.45,
+        "minimumFeatureWeight": 2
+      },
+      {
+        "id": "k2345_balanced50_hairpin30_structure20",
+        "kValues": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "matureWeight": 0.5,
+        "hairpinWeight": 0.3,
+        "structureWeight": 0.2,
+        "l2": 0.03,
+        "unlabeledWeightRatio": 0.4,
+        "minimumFeatureWeight": 2
+      },
+      {
+        "id": "k234567_structure25_mature50_hairpin25",
+        "kValues": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "matureWeight": 0.5,
+        "hairpinWeight": 0.25,
+        "structureWeight": 0.25,
+        "l2": 0.05,
+        "unlabeledWeightRatio": 0.35,
+        "minimumFeatureWeight": 2
+      }
+    ],
+    "final_configuration": {
+      "id": "k234_mature70_hairpin20_structure10",
+      "kValues": [
+        2,
+        3,
+        4
+      ],
+      "matureWeight": 0.7,
+      "hairpinWeight": 0.2,
+      "structureWeight": 0.1,
+      "l2": 0.03,
+      "unlabeledWeightRatio": 0.5,
+      "minimumFeatureWeight": 2
+    },
+    "rule": "maior percentil medio por familia na validacao interna; recall@10% e id usados como desempate"
+  },
+  "pu_ensemble": {
+    "bags": 8,
+    "unlabeled_per_bag": 800,
+    "epochs_per_bag": 420,
+    "deterministic": true,
+    "candidate_scoring": "media dos logits apenas dos modelos em que o candidato nao foi usado como contraste temporario (out-of-bag)",
+    "out_of_bag_models_per_candidate_min": 2,
+    "out_of_bag_models_per_candidate_max": 8,
+    "out_of_bag_fallback_count": 0
+  },
+  "vocabulary_size": 650,
+  "bias": 0.713002075602859,
   "weights": {
-    "kmer:GU": 0.09122596486569709,
-    "kmer:UGU": 0.04742872448798066,
-    "kmer:UA": 0.04472663902222368,
-    "kmer:GUG": 0.040780588793404425,
-    "kmer:UAG": 0.037947561708545956,
-    "kmer:GUGC": 0.036474407224364194,
-    "seed:AAAGUGC": 0.03493525371765449,
-    "kmer:AAU": 0.03415163767724082,
-    "seed:AGCAGCA": 0.032800817684549066,
-    "kmer:AGUGC": 0.03215341621896736,
-    "kmer:UUGU": 0.03198269224994744,
-    "kmer:GUAG": 0.030072410884872912,
-    "kmer:CGU": 0.029323541135974546,
-    "kmer:AA": 0.026565421260730557,
-    "kmer:UGUG": 0.026457777116492286,
-    "kmer:AAA": 0.023826609429400274,
-    "kmer:GGUAG": 0.023505414583123576,
-    "kmer:AGGUA": 0.02222620746350521,
-    "kmer:GUGCA": 0.0219343749989782,
-    "kmer:CGUG": 0.021924040649065626,
-    "kmer:UAGC": 0.021784196215562043,
-    "kmer:GUA": 0.02161634104638546,
-    "kmer:CUUA": 0.02160134744394125,
-    "kmer:AGCA": 0.02152375537742393,
-    "seed:CCCUGAG": 0.021361517843429455,
-    "kmer:GUU": 0.02123242154558507,
-    "seed:AUUGCAC": 0.02091806056356621,
-    "kmer:AAUC": 0.020584869143406907,
-    "kmer:AAGUG": 0.019751214768177316,
-    "kmer:GGUA": 0.0195373064837454,
-    "kmer:GCUUA": 0.01884076105586543,
-    "kmer:CUUGU": 0.018537458540846895,
-    "kmer:AGCAG": 0.018535721165425244,
-    "kmer:AAAU": 0.018446550474957097,
-    "kmer:AAAUA": 0.01786460551320375,
-    "kmer:UUGUG": 0.017813131217454318,
-    "kmer:UAA": 0.017429338210565817,
-    "kmer:AGUG": 0.01734253321211988,
-    "kmer:UGCA": 0.016898555100188107,
-    "kmer:AAUCC": 0.016883346674119202,
-    "kmer:UCGUG": 0.016761312109331076,
-    "kmer:GUGCU": 0.016606572067067484,
-    "kmer:CAGCA": 0.01623885176022084,
-    "seed:AGCUUAU": 0.0159727139284204,
-    "seed:GUGCAAA": 0.015684143141540676,
-    "kmer:CAAA": 0.015651730112095162,
-    "kmer:ACCC": 0.015644944734540766,
-    "seed:UCCAGUU": 0.015283731624583524,
-    "seed:ACCCUGU": 0.015134563975394713,
-    "kmer:GCA": 0.015118483325847684,
-    "kmer:CUUAU": 0.014891499373548927,
-    "kmer:GCAGC": 0.01483457441392702,
-    "kmer:UAUUG": 0.014828192967663594,
-    "seed:GAGGUAG": 0.014749025069166035,
-    "seed:UAAUGCU": 0.014648501165336732,
-    "kmer:UGUC": 0.014608683868522857,
-    "kmer:AGU": 0.014588938600647606,
-    "kmer:UUA": 0.014546238305528895,
-    "kmer:ACUUG": 0.014538890889546057,
-    "kmer:ACUGA": 0.014280808144022149,
-    "kmer:ACCCU": 0.014233807537252131,
-    "kmer:GAAU": 0.014136429323775176,
-    "kmer:UCGU": 0.014119276500397644,
-    "kmer:ACCG": 0.014086041676036125,
-    "kmer:UGCUU": 0.01402480648210364,
-    "kmer:GCAG": 0.014012342760726552,
-    "kmer:UCG": 0.014012029598610039,
-    "kmer:AGGU": 0.013858706584747573,
-    "kmer:AAGU": 0.013748898818037984,
-    "kmer:UAGCU": 0.013619479339268048,
-    "kmer:GCAC": 0.013584683575053715,
-    "kmer:GCAGG": 0.013521650168119674,
-    "kmer:GGAAU": 0.013510901592459107,
-    "kmer:CUGA": 0.01344469668943691,
-    "kmer:AAAGU": 0.013045270105784915,
-    "kmer:AGUU": 0.012977341650797667,
-    "kmer:UUG": 0.012705278106426472,
-    "kmer:CAGGU": 0.012275041989270208,
-    "kmer:CGAU": 0.012173968211180216,
-    "kmer:GUUG": 0.012145803985870826,
-    "kmer:GCAAA": 0.01200441994274058,
-    "kmer:UUGUC": 0.011895820366978121,
-    "kmer:GUUGU": 0.011767958678191979,
-    "kmer:AACCG": 0.011600987231909289,
-    "kmer:UGCU": 0.01147491301467226,
-    "seed:GGAAUGU": 0.011464934351538673,
-    "kmer:AGCAC": 0.0114397055447399,
-    "kmer:AAUG": 0.01131378601690153,
-    "kmer:AAUAU": 0.0110806593026361,
-    "kmer:UGCAA": 0.011039749087044772,
-    "kmer:CAGUU": 0.010885674053324735,
-    "kmer:UAGCA": 0.010861663380139167,
-    "kmer:GACCC": 0.010769907425352703,
-    "seed:UGUGCGU": 0.01074514747834262,
-    "seed:AACCGUU": 0.010716845577145258,
-    "seed:GUCAGUU": 0.01070442872451225,
-    "kmer:CAAAU": 0.01064628982675521,
-    "kmer:CUAA": 0.010584742576931221,
-    "kmer:AAUA": 0.010529147686430906,
-    "kmer:GUUGA": 0.010468088600538399,
-    "kmer:AUCC": 0.010364485226188064,
-    "kmer:AUAUU": 0.010326385663855346,
-    "seed:GGCAGUG": 0.01029925097389208,
-    "seed:AAGUGCU": 0.010266204834535834,
-    "seed:AUGACAC": 0.010257156750933557,
-    "kmer:UUUGU": 0.010161886011448523,
-    "kmer:UAAC": 0.010133495071021705,
-    "kmer:UACCC": 0.010124568855543832,
-    "kmer:UUCG": 0.0101104013686594,
-    "kmer:CAGC": 0.010075971697520152,
-    "kmer:AGUUU": 0.010002338024481755,
-    "kmer:AUAG": 0.00992373114537665,
-    "kmer:UCCC": 0.009883010720712562,
-    "kmer:AUUGG": 0.009754824899568464,
-    "kmer:CAGU": 0.009453789021489405,
-    "kmer:CCGUU": 0.00939872535719919,
-    "kmer:CGA": 0.009398229688062257,
-    "kmer:UCGGU": 0.0093647977766429,
-    "kmer:UUGGC": 0.009346688256358857,
-    "kmer:AUGC": 0.009314287104075685,
-    "kmer:CCUAA": 0.009301753647980365,
-    "kmer:UGA": 0.009275031227192466,
-    "kmer:GAAUC": 0.009203989804569847,
-    "kmer:CCCU": 0.009065960756494086,
-    "kmer:CGGC": 0.0090200912430132,
-    "kmer:UCCCU": 0.008918639720293884,
-    "kmer:GCUU": 0.00885801075582451,
-    "kmer:AUUGC": 0.008675770173767347,
-    "kmer:UGCAC": 0.008665814153031864,
-    "kmer:CAGGA": 0.008635979617641282,
-    "kmer:AAAUC": 0.008623273111855562,
-    "kmer:CCCUG": 0.008520470599520054,
-    "seed:GGCGCGA": 0.008445064494770237,
-    "kmer:UAAUG": 0.008427040798409143,
-    "kmer:UACC": 0.00831122262293391,
-    "kmer:CGAUC": 0.00827964916151194,
-    "kmer:UGUGA": 0.00826215543488374,
-    "kmer:GUGUG": 0.008105678154834985,
-    "kmer:CCCUA": 0.008054088357242532,
-    "kmer:AUUG": 0.008007132462197124,
-    "kmer:UAGGU": 0.007969654028193085,
-    "kmer:UUAU": 0.007960740437539499,
-    "kmer:UAAA": 0.007897186137084957,
-    "kmer:ACGAU": 0.007882063383585889,
-    "kmer:UAUU": 0.007852927829478464,
-    "kmer:UUAC": 0.007835268206026784,
-    "kmer:GCACA": 0.007819377416540244,
-    "kmer:UGUCU": 0.007816698784805788,
-    "kmer:AAC": 0.007797691588976573,
-    "kmer:AAUGC": 0.0075850184604350085,
-    "kmer:GGUU": 0.007526221697174512,
-    "kmer:UUCGU": 0.007498311701085332,
-    "kmer:AACC": 0.007482496524651938,
-    "kmer:AUGCU": 0.007481200052239097,
-    "kmer:AGACC": 0.007471707346664058,
-    "kmer:UAAU": 0.007469889665712371,
-    "seed:AUGGAUU": 0.0073853384315063055,
-    "kmer:UCCCG": 0.007317403279670422,
-    "kmer:CGAAU": 0.007303733755693459,
-    "seed:GGCAAGA": 0.007277269037946874,
-    "kmer:CGUU": 0.00725522424431327,
-    "kmer:GAAGU": 0.007186347766818953,
-    "kmer:AUCCC": 0.007083085970188984,
-    "kmer:GCACG": 0.0069868007328347526,
-    "kmer:GUUCG": 0.006979110261591616,
-    "kmer:CACG": 0.006960054897487871,
-    "kmer:AGGAA": 0.006918691231880611,
-    "kmer:CCCGU": 0.006855160468419058,
-    "kmer:CCGU": 0.0068046826736866736,
-    "kmer:CCUGU": 0.006793259292900326,
-    "kmer:UGGUU": 0.006779444057600445,
-    "kmer:GGUUG": 0.006773186051069047,
-    "kmer:CCGAA": 0.006731423042812013,
-    "seed:CCUUCAU": 0.006725648044415106,
-    "kmer:GCGUG": 0.006724213284831715,
-    "seed:GAGGGAC": 0.006696178027953571,
-    "kmer:GCGU": 0.006659065159873429,
-    "kmer:CUAAC": 0.0066277135148752634,
-    "kmer:GAUGU": 0.006622085241250524,
-    "kmer:CACGU": 0.00660598073633135,
-    "kmer:CGUGA": 0.006604400517772388,
-    "kmer:AAUCG": 0.0065136460942723925,
-    "kmer:CCGA": 0.006495525361904609,
-    "kmer:GUAGG": 0.006491318171769754,
-    "kmer:ACCGA": 0.006460683607353724,
-    "kmer:CCCG": 0.006416873566288886,
-    "kmer:CCGGC": 0.006377874481711182,
-    "kmer:CGUGU": 0.006320486395096176,
-    "kmer:UGACA": 0.006313315915608472,
-    "seed:GGCUCAG": 0.006309611806601556,
-    "kmer:CGGUC": 0.006297760124707391,
-    "kmer:UAAUC": 0.006273178003802567,
-    "kmer:AACUU": 0.0062519393393874485,
-    "kmer:AUC": 0.006186575679030305,
-    "seed:ACCCGUA": 0.006172099812119737,
-    "seed:CUCGGCG": 0.0061567726171550775,
-    "kmer:UGGCG": 0.006129454443897871,
-    "kmer:UGUCA": 0.006122988453528928,
-    "seed:CUGGGUA": 0.006098982431402912,
-    "seed:AACGGAA": 0.006086199982671049,
-    "kmer:ACCGG": 0.006084189214581714,
-    "seed:AAUGCCC": 0.00606706201574936,
-    "kmer:UCCAG": 0.006055165624936326,
-    "kmer:ACAG": 0.006040052674560571,
-    "kmer:UGCAG": 0.006004909441850977,
-    "kmer:UGUGC": 0.0060015651036331216,
-    "kmer:AUCGU": 0.0059943216046877525,
-    "kmer:UUAAU": 0.005957627944657526,
-    "kmer:GAUAG": 0.005921349994233714,
-    "kmer:UAACU": 0.005904899557442389,
-    "kmer:AUAGU": 0.005900531627831445,
-    "seed:AACACUG": 0.005891733097652812,
-    "kmer:UAUAG": 0.005886921210318502,
-    "seed:AAGUUGU": 0.005885124729022346,
-    "kmer:UAGUA": 0.005877813768027978,
-    "kmer:GUAAA": 0.005872115049058074,
-    "kmer:CGUA": 0.005790814082261083,
-    "kmer:CUUAC": 0.0057841498630696936,
-    "kmer:CGGCC": 0.005756994335555476,
-    "kmer:UUAUC": 0.00574542465623821,
-    "kmer:CGAA": 0.005709202337720603,
-    "kmer:CUAAU": 0.005611376863317199,
-    "kmer:GAGAC": 0.005606975836177812,
-    "kmer:UACAG": 0.005568644518053444,
-    "kmer:UUACA": 0.0054996103578114275,
-    "kmer:CAAAA": 0.0054653229852860905,
-    "kmer:UAAAG": 0.005455152534553716,
-    "kmer:CCAGU": 0.005447996178417649,
-    "seed:CUACAGU": 0.005444053744354013,
-    "kmer:UAUCA": 0.005422534069383872,
-    "kmer:AAUUU": 0.005369315718146279,
-    "kmer:CGUUA": 0.0052675979340185185,
-    "kmer:ACGA": 0.005240522163270385,
-    "kmer:AUGUA": 0.005218345114375601,
-    "kmer:GCUAA": 0.005128147736313178,
-    "kmer:CAUU": 0.005116128081675093,
-    "kmer:CGUAA": 0.005073173394004895,
-    "kmer:CCCGG": 0.00505571289094992,
-    "kmer:UCGG": 0.00496795054907801,
-    "kmer:GAAAU": 0.0048966630390650905,
-    "seed:ACAUUCA": 0.004885760077520078,
-    "kmer:CAGUG": 0.0048797074632980315,
-    "kmer:UCCA": 0.004838766876264053,
-    "kmer:CACUU": 0.004827524446622123,
-    "kmer:CCAGG": 0.004797522409435292,
-    "kmer:CCUGA": 0.0047727973855054675,
-    "kmer:GUCCA": 0.00476543303736091,
-    "kmer:CCGG": 0.004690024534018037,
-    "kmer:CAGG": 0.004683854390740678,
-    "kmer:AUAGG": 0.004645625106949273,
-    "kmer:UAGU": 0.004632210360557537,
-    "kmer:GCAA": 0.004612914157410854,
-    "kmer:GUGGU": 0.004593064595876755,
-    "kmer:ACGUA": 0.004579878470359256,
-    "kmer:UGCGU": 0.004556334282801857,
-    "kmer:GUAGA": 0.004525882077238136,
-    "kmer:CUGAG": 0.004468467104495525,
-    "kmer:GAACC": 0.004467136172144147,
-    "kmer:CCG": 0.004427251685674872,
-    "kmer:GUAGU": 0.004414504696742996,
-    "kmer:GCACU": 0.004403835258495969,
-    "kmer:ACAGU": 0.004328553757147954,
-    "kmer:CUCGG": 0.004313257127517329,
-    "kmer:CAUUG": 0.004312235464573649,
-    "kmer:UGAGA": 0.004296584055796471,
-    "kmer:UGCUA": 0.00427611468827047,
-    "kmer:AUACC": 0.004273885532115475,
-    "kmer:UUUUC": 0.004263437687725872,
-    "kmer:ACAGA": 0.004245941403374031,
-    "kmer:UGAUA": 0.004243107320663501,
-    "kmer:CACGA": 0.004232924895767517,
-    "kmer:CGUUG": 0.004226184539596056,
-    "kmer:CAGAA": 0.0041553823091326735,
-    "kmer:UCUCG": 0.004149779329003651,
-    "kmer:GAAUU": 0.004139008369765456,
-    "kmer:AGCUU": 0.004130697751339322,
-    "kmer:GUGCG": 0.004117875323788681,
-    "kmer:CAGAC": 0.004054575869225948,
-    "kmer:AUUUG": 0.004023764968236858,
-    "kmer:GUCAA": 0.004002137766217288,
-    "kmer:UAGAA": 0.0039865773980192675,
-    "kmer:GUCUG": 0.003964125537861571,
-    "kmer:GACC": 0.003937270356535801,
-    "kmer:GUCG": 0.003925533242401423,
-    "kmer:ACCGU": 0.0039051717153540067,
-    "kmer:UCAGU": 0.003842748893576715,
-    "kmer:GUGU": 0.0038210970165685285,
-    "kmer:AAACU": 0.0038186635989860664,
-    "kmer:AGAAA": 0.0037975897783422887,
-    "kmer:AUCAG": 0.003797021243052121,
-    "kmer:AUGUU": 0.003795069195440955,
-    "kmer:CGGCG": 0.0037941265661909076,
-    "kmer:GUGUC": 0.0037650883895876197,
-    "kmer:GUCGG": 0.0037538308948132904,
-    "kmer:UUAUA": 0.0037463330936372756,
-    "kmer:CAGCG": 0.003716775048451837,
-    "kmer:AGUAG": 0.003701781415727385,
-    "kmer:AUGCA": 0.0036673829553789017,
-    "kmer:AAAG": 0.0036058318702557467,
-    "kmer:GUCU": 0.003578782896470005,
-    "kmer:UAAAU": 0.0035675737951446846,
-    "kmer:ACACG": 0.0035492913424227147,
-    "kmer:GUUUG": 0.0035135983476697282,
-    "kmer:AUUUU": 0.0035117547068079535,
-    "kmer:CUGAU": 0.0034867741100481947,
-    "kmer:AUGAC": 0.0033929911502144873,
-    "kmer:GUUAC": 0.0033467979300481504,
-    "kmer:UAU": 0.003329738001543678,
-    "kmer:UUAGC": 0.0033069916362460134,
-    "kmer:UCUUA": 0.003268537891411456,
-    "kmer:UUAA": 0.0032677836168266685,
-    "kmer:AGAAC": 0.0032660631182719895,
-    "kmer:CGUGC": 0.0032575419367910368,
-    "kmer:AGCGG": 0.0032493279713885037,
-    "kmer:AAUAC": 0.0032492689711563923,
-    "kmer:AAAAC": 0.0031796797600103996,
-    "kmer:GAAUG": 0.00317147694277108,
-    "kmer:UCCCA": 0.0031303412697523936,
-    "kmer:UGGC": 0.0030901586116105356,
-    "kmer:UACCA": 0.0030703016387194993,
-    "kmer:AUCG": 0.0030628302406061503,
-    "kmer:CAUUC": 0.0030100822437671526,
-    "kmer:CUUAG": 0.0030081179359536894,
-    "kmer:CGUGG": 0.002953151555916145,
-    "kmer:GUAA": 0.0029526614047141802,
-    "kmer:GUCUC": 0.002951110595791769,
-    "kmer:CG": 0.002914680088498088,
-    "kmer:UUGCA": 0.0028920083370729574,
-    "kmer:UAGG": 0.0028596769103531555,
-    "kmer:ACGU": 0.0028565736248988027,
-    "kmer:UAGGG": 0.0027582698080435668,
-    "kmer:UGUAA": 0.0027527817534226855,
-    "kmer:GAUUU": 0.0027227582285435643,
-    "kmer:UGUUC": 0.00270334261233931,
-    "kmer:UCCUU": 0.002695752198318473,
-    "kmer:UUACC": 0.0026510784527558253,
-    "kmer:AACU": 0.002636227482310678,
-    "kmer:AUCCA": 0.002605493693934794,
-    "kmer:GAUCA": 0.0025192225512369972,
-    "kmer:UUCAU": 0.0024691391221593278,
-    "kmer:AUGU": 0.0024414331120865915,
-    "kmer:UCAAA": 0.002430119701188858,
-    "kmer:CAUUA": 0.0024234730059671614,
-    "kmer:CCAUU": 0.00240995507576262,
-    "kmer:AAUGA": 0.0023421150202492195,
-    "kmer:AGGUU": 0.002325456626918548,
-    "kmer:CAAAG": 0.0023229023119802276,
-    "kmer:AACG": 0.0023130077130819964,
-    "kmer:GACAC": 0.002311640660778685,
-    "kmer:CAG": 0.002287290982873978,
-    "kmer:UCAUU": 0.00228178554104377,
-    "kmer:ACCAU": 0.0022757848855351173,
-    "kmer:CUGU": 0.0022660849749099295,
-    "kmer:ACUG": 0.0022601771741345405,
-    "kmer:UGUUG": 0.002216417937613541,
-    "kmer:UGAUG": 0.002195963497304375,
-    "kmer:AAACC": 0.0021642725072133014,
-    "kmer:GGGGU": 0.0021581659111283443,
-    "kmer:UGGCA": 0.0021176590771816817,
-    "kmer:AGAC": 0.0021017817734823832,
-    "kmer:AUCAC": 0.0020952220335641483,
-    "kmer:GAGUU": 0.0020931909067235213,
-    "kmer:AAUGU": 0.002066627133558437,
-    "kmer:AAAA": 0.0020622968258425427,
-    "kmer:ACACU": 0.00204603031927795,
-    "kmer:GUGAU": 0.0019406605941453174,
-    "kmer:AACUG": 0.0019071302132245645,
-    "kmer:CAUGC": 0.0019046707943011583,
-    "kmer:CGGU": 0.0018939801348866437,
-    "kmer:AGACU": 0.00189372641671611,
-    "kmer:GAUC": 0.0018509097305368421,
-    "kmer:CGGCU": 0.001845214258418325,
-    "kmer:CUUG": 0.0017829746686052852,
-    "kmer:UUUCC": 0.0017822168871437206,
-    "kmer:UAGUG": 0.0017245001113980164,
-    "kmer:AGUGU": 0.0016992159601856769,
-    "kmer:GACAG": 0.0016675352330576976,
-    "kmer:GUUUU": 0.0016395019743533938,
-    "kmer:CUGUA": 0.0015541557266364205,
-    "kmer:AUUU": 0.0015210171098392416,
-    "kmer:ACC": 0.0015107969398707594,
-    "kmer:UGUGG": 0.0014777497041009514,
-    "kmer:AAAC": 0.0014645888761771805,
-    "kmer:UCAGA": 0.0014462364199090965,
-    "kmer:GCGGC": 0.0014234278350170229,
-    "kmer:UCCAU": 0.0014107580423452825,
-    "kmer:UGCUG": 0.0013933397068185982,
-    "kmer:UGUGU": 0.0013883427863466918,
-    "kmer:UGUAG": 0.0013759798569589648,
-    "kmer:GUGA": 0.0013262140505335572,
-    "kmer:GUGAC": 0.0012685296305727793,
-    "kmer:UACUG": 0.0012577777224688316,
-    "kmer:AUUAC": 0.0012469425070538629,
-    "kmer:GGGUU": 0.0011993267448959996,
-    "kmer:ACAGC": 0.0011305828194296014,
-    "kmer:CUGGU": 0.0010792861829901016,
-    "kmer:ACCCC": 0.001063327553840832,
-    "kmer:UAUC": 0.0010003186651931604,
-    "kmer:GUC": 0.0009837701652087177,
-    "kmer:GCUGU": 0.0009815727737980556,
-    "kmer:UGAGG": 0.0009653753864769504,
-    "kmer:GUCUU": 0.0008939707895752544,
-    "kmer:ACUCC": 0.000884310287643647,
-    "kmer:CCUA": 0.000860190611726357,
-    "kmer:CACUC": 0.0007707055081164158,
-    "kmer:UUGA": 0.0007659313277233551,
-    "kmer:GGAUU": 0.000753644930319151,
-    "kmer:UGUA": 0.0007083071310804817,
-    "kmer:AAAAG": 0.0007040681300964298,
-    "kmer:AUCA": 0.0006818527172414752,
-    "kmer:GGU": 0.0006802304567167193,
-    "kmer:UUACU": 0.0006127407114197593,
-    "kmer:UGUAU": 0.00059530914002084,
-    "kmer:CUGUG": 0.0005594304136546523,
-    "kmer:GACUG": 0.0005293232645094442,
-    "kmer:UGGAU": 0.0004900376991061221,
-    "kmer:UUCCC": 0.00044223706901905615,
-    "kmer:UUUGG": 0.00043540372036986777,
-    "kmer:CACAG": 0.0004341824115743594,
-    "kmer:GUCAG": 0.00038730328829393747,
-    "kmer:AUAU": 0.0002767485809317724,
-    "kmer:UCACU": 0.0002695727431667871,
-    "kmer:CCCAG": 0.00008126928789735871,
-    "kmer:GAGGU": -0.00003211979957462401,
-    "kmer:AUU": -0.000059066159224819636,
-    "kmer:CACU": -0.00032608386650380877,
-    "kmer:GUCCC": -0.0003390646556445599,
-    "kmer:UGUCC": -0.00037036780880423683,
-    "kmer:CUCCA": -0.0003975730405710479,
-    "kmer:ACUU": -0.00042776445490834094,
-    "kmer:CCAUG": -0.000491659568447256,
-    "kmer:CUCG": -0.0005284924760812281,
-    "kmer:GCUUC": -0.0005311080983128094,
-    "kmer:ACUGU": -0.0007161966992722132,
-    "kmer:GAAC": -0.0007418966345400355,
-    "kmer:GGCCU": -0.0009974413590037503,
-    "kmer:CUGUU": -0.0010040084232958463,
-    "kmer:UGAGU": -0.0010125749523011063,
-    "kmer:GUCC": -0.0010750326478059947,
-    "kmer:AUA": -0.0011080985697373346,
-    "kmer:UGGAA": -0.0011153852076017541,
-    "kmer:AGCUG": -0.0011155686456291254,
-    "kmer:GGUCU": -0.001138235293076757,
-    "kmer:GAUA": -0.0011616488108619205,
-    "kmer:GGAA": -0.001244903652517825,
-    "kmer:AGAA": -0.0012529940098059812,
-    "kmer:UGAU": -0.0012707964164190427,
-    "kmer:CACUG": -0.0013224594429175264,
-    "kmer:GUAU": -0.001366005973563035,
-    "kmer:ACG": -0.0014265266815988306,
-    "kmer:ACAC": -0.0014758332931261386,
-    "kmer:GGCG": -0.001543499149205328,
-    "kmer:CUGUC": -0.001608928386723935,
-    "kmer:CCUUU": -0.001751275753619147,
-    "kmer:UAUA": -0.0017706763142849046,
-    "kmer:GUUU": -0.0018287721730389065,
-    "kmer:GGCUC": -0.0019651168177892407,
-    "kmer:AGGGG": -0.0020198756859161142,
-    "kmer:AGCU": -0.002269107707163061,
-    "kmer:GCUGA": -0.0023076508859173595,
-    "kmer:GUUA": -0.0023707454184059454,
-    "kmer:UACA": -0.002384690199600979,
-    "kmer:UGCG": -0.002428763955453571,
-    "kmer:GCUA": -0.002474502202807367,
-    "kmer:CGGA": -0.0025480199193631432,
-    "kmer:GUUC": -0.002571828310196004,
-    "kmer:UCUGA": -0.0025759740795892293,
-    "kmer:GUCA": -0.0025914999490091882,
-    "kmer:GCAGU": -0.002660285900317226,
-    "kmer:AGCG": -0.0026667733721981073,
-    "kmer:UUAG": -0.0027417413321787487,
-    "kmer:GGUGG": -0.002967064027009944,
-    "kmer:UGGGU": -0.003017783543715614,
-    "kmer:AUUC": -0.0030740586481063695,
-    "kmer:AUAC": -0.00309485909979222,
-    "kmer:UUUU": -0.003119774472785954,
-    "kmer:UUUG": -0.0032465341281653634,
-    "kmer:AGUA": -0.003469248179787169,
-    "kmer:CCCCA": -0.003558727328740786,
-    "kmer:AACA": -0.003643984547125491,
-    "kmer:UCAA": -0.0037471910021593053,
-    "kmer:GCCUG": -0.00392521375755045,
-    "kmer:GACA": -0.0039516086555587355,
-    "kmer:UAGA": -0.004000731455923727,
-    "kmer:UUUUG": -0.004148153813003061,
-    "kmer:AUUA": -0.004325826901421987,
-    "kmer:CCAU": -0.004400090206599529,
-    "kmer:GCUGG": -0.0045510739461553625,
-    "kmer:UUUA": -0.004854811149363836,
-    "kmer:GAUU": -0.004988151872204352,
-    "kmer:UGAG": -0.0053037087843177885,
-    "kmer:UGUU": -0.005338230444988987,
-    "kmer:UGAC": -0.005404506007229844,
-    "kmer:GGCAG": -0.005672463924016795,
-    "kmer:GUGGG": -0.005696931116893201,
-    "kmer:AGC": -0.005732756983756601,
-    "kmer:UCAG": -0.0057629068727984185,
-    "kmer:UUGG": -0.0057783900638830425,
-    "kmer:AAUU": -0.00600834831343703,
-    "kmer:CUCCC": -0.006211704971218215,
-    "kmer:AUCU": -0.0063404253820833695,
-    "kmer:GAAA": -0.006395193874720259,
-    "kmer:UUCA": -0.006484730292191893,
-    "kmer:GGGU": -0.006500806179876503,
-    "kmer:GAUG": -0.0065882223628837,
-    "kmer:CGG": -0.006711368034825636,
-    "kmer:ACUC": -0.006840674437821,
-    "kmer:GAGGG": -0.006923022934726463,
-    "kmer:CAGA": -0.006984524544917462,
-    "kmer:CCCA": -0.006986123641143432,
-    "kmer:UGGU": -0.006994583780401586,
-    "kmer:UG": -0.007059147592702213,
-    "kmer:UAC": -0.007093573837934573,
-    "kmer:UGC": -0.007305929248995967,
-    "kmer:UAUG": -0.007317669457492839,
-    "kmer:GGUC": -0.007401911439715859,
-    "kmer:UCAU": -0.0077456992565537435,
-    "kmer:CCAG": -0.007997989970309427,
-    "kmer:UGGGG": -0.008279256661381027,
-    "kmer:CACA": -0.008386807423250653,
-    "kmer:UACU": -0.008556839028740703,
-    "kmer:UUCC": -0.00863692334080097,
-    "kmer:GGCUG": -0.008646120311432727,
-    "kmer:UCUA": -0.008657205712574298,
-    "kmer:AUGA": -0.008930983820577885,
-    "kmer:ACCA": -0.009145564757669805,
-    "kmer:AGAU": -0.009582685841092129,
-    "kmer:AAGA": -0.009607667247750936,
-    "kmer:GUGG": -0.009724367712940418,
-    "kmer:GAA": -0.010357337357677647,
-    "kmer:CCUG": -0.010567146980642747,
-    "kmer:GAGU": -0.010841493106495967,
-    "kmer:CCC": -0.011139094908571082,
-    "kmer:UUGC": -0.011466017333053788,
-    "kmer:GCG": -0.011542335390884288,
-    "kmer:GACU": -0.011798622595808154,
-    "kmer:GCUG": -0.011800280019618144,
-    "kmer:UCAC": -0.011853038874272089,
-    "kmer:UCC": -0.011945086804252252,
-    "kmer:UCUU": -0.01196981119571453,
-    "kmer:CAA": -0.012482088071480511,
-    "kmer:GCGG": -0.012507892535767378,
-    "kmer:GAGA": -0.012775310930690717,
-    "kmer:CCUU": -0.013216541474637892,
-    "kmer:AGGA": -0.013380004789451025,
-    "kmer:CAUG": -0.013487455065608125,
-    "kmer:UUUC": -0.013840841441629337,
-    "kmer:GAU": -0.0140890581629227,
-    "kmer:GGAU": -0.014319588180854563,
-    "kmer:GGCA": -0.014371997795648682,
-    "kmer:GAAG": -0.014721390311355184,
-    "kmer:CUUC": -0.015285256863362502,
-    "kmer:GGCC": -0.015624565054011871,
-    "kmer:GCUC": -0.015767720798592785,
-    "kmer:CCCC": -0.016378019570327768,
-    "kmer:GCCC": -0.01728832345953935,
-    "kmer:ACU": -0.017370565957905225,
-    "kmer:UGGA": -0.018788957625530737,
-    "kmer:CAC": -0.01902831701898837,
-    "kmer:UCCU": -0.01915463560258528,
-    "kmer:CUU": -0.019404580929619795,
-    "kmer:GGUG": -0.019419354612449747,
-    "kmer:GCCU": -0.019565564697879324,
-    "kmer:AUG": -0.019675356361532944,
-    "kmer:AU": -0.020620108855594843,
-    "kmer:GAC": -0.020861892367811705,
-    "kmer:GGCU": -0.02128364188144066,
-    "kmer:CUA": -0.021377159986531644,
-    "kmer:UCUC": -0.021471173664758775,
-    "kmer:ACA": -0.021597603589116998,
-    "kmer:CUCC": -0.021997042787039518,
-    "kmer:GCU": -0.0231639041230567,
-    "kmer:CUUU": -0.02332743712812976,
-    "kmer:GGGG": -0.024005177998727086,
-    "kmer:AGGG": -0.02619263042709224,
-    "kmer:UCUG": -0.027049383574339367,
-    "kmer:CUGG": -0.02875884540337291,
-    "kmer:GAGG": -0.029042276149629606,
-    "kmer:UUU": -0.0308013819743295,
-    "kmer:AAG": -0.031525847749906744,
-    "kmer:CAU": -0.032238813930381485,
-    "kmer:UCA": -0.03330380409494069,
-    "kmer:CCA": -0.034170472158935344,
-    "kmer:GGAG": -0.034202927526685876,
-    "kmer:UGGG": -0.03534826386369819,
-    "kmer:AGA": -0.038724747519185074,
-    "kmer:UU": -0.03982597475957049,
-    "kmer:UUC": -0.04003111264375964,
-    "kmer:AC": -0.046427065819158786,
-    "kmer:CUG": -0.048067122402650445,
-    "kmer:AGG": -0.04816235465640153,
-    "kmer:GGC": -0.048953528249893546,
-    "kmer:CCU": -0.05101200926120463,
-    "kmer:UGG": -0.061127769879978,
-    "kmer:GCC": -0.07167097393550424,
-    "kmer:GGA": -0.07264385018266828,
-    "kmer:CA": -0.0735280184515315,
-    "kmer:UCU": -0.07494286948445437,
-    "kmer:GAG": -0.07763433660888563,
-    "kmer:CUC": -0.08135758828737073,
-    "kmer:AG": -0.08664962282577518,
-    "kmer:GA": -0.09561141795246904,
-    "kmer:GC": -0.10063892040132419,
-    "kmer:GGG": -0.10298035621349264,
-    "kmer:CC": -0.10584972817292629,
-    "kmer:UC": -0.118483508506059,
-    "kmer:CU": -0.17781405291199173,
-    "kmer:GG": -0.22847256430273616
+    "mature:composition:length": 0.12042313179891197,
+    "mature:kmer:GU": 0.05653699005302058,
+    "mature:kmer:UGU": 0.02868690055670438,
+    "mature:kmer:UG": 0.02611594648520578,
+    "mature:kmer:UA": 0.025438999916230623,
+    "mature:kmer:AA": 0.024753293153461673,
+    "mature:kmer:AAU": 0.02304230698167905,
+    "mature:kmer:CG": 0.02297242194411896,
+    "mature:kmer:GUU": 0.019477604122911395,
+    "mature:kmer:GUG": 0.018702796490586912,
+    "mature:kmer:CGU": 0.01855418696097975,
+    "mature:kmer:UUGU": 0.015127042543242417,
+    "mature:kmer:UAG": 0.014808931579368396,
+    "mature:kmer:AU": 0.014516456227780966,
+    "mature:kmer:UGA": 0.013936100279687303,
+    "structure:pair_gu_fraction": 0.013755961608133709,
+    "mature:kmer:UGUG": 0.012703640812243682,
+    "mature:kmer:CGUG": 0.012686523300072791,
+    "mature:kmer:AAUC": 0.012542976682621576,
+    "mature:kmer:AUC": 0.012160324967092942,
+    "mature:kmer:ACC": 0.011251334289072159,
+    "mature:kmer:UU": 0.01104595194340275,
+    "mature:kmer:UUA": 0.010997950580460077,
+    "structure:paired_fraction": 0.010567618317556307,
+    "mature:kmer:UGUC": 0.010317286395185185,
+    "mature:kmer:AGUU": 0.010284834110380097,
+    "mature:kmer:AAC": 0.010088106249875214,
+    "mature:kmer:CCC": 0.00994958776935466,
+    "mature:kmer:ACCC": 0.009878211919049756,
+    "mature:kmer:UAA": 0.00984122830395292,
+    "mature:seed:AGCUUAU": 0.00972030013753251,
+    "mature:kmer:UUG": 0.009694489798671251,
+    "mature:kmer:CCG": 0.009672587378412726,
+    "mature:kmer:UCG": 0.009507330447481189,
+    "mature:kmer:UAGC": 0.009502655945554536,
+    "mature:kmer:GUC": 0.009437255754683514,
+    "mature:seed:UCCAGUU": 0.009422046051577388,
+    "mature:seed:ACCCUGU": 0.009331929140121733,
+    "mature:kmer:ACCG": 0.009268571982301766,
+    "mature:kmer:GUUG": 0.009234267995321446,
+    "mature:kmer:GUAG": 0.00904443633808354,
+    "mature:kmer:CUUA": 0.009016644609466178,
+    "mature:kmer:UCCC": 0.009009759570331689,
+    "mature:kmer:GAAU": 0.008981036496022018,
+    "mature:seed:UAAUGCU": 0.008907871957697825,
+    "mature:kmer:CUGA": 0.008635665567613929,
+    "mature:kmer:CGA": 0.008149971748795806,
+    "mature:kmer:AAA": 0.007989371595352457,
+    "mature:kmer:AAUG": 0.007987648629662211,
+    "mature:kmer:UACC": 0.00797194938821085,
+    "mature:kmer:CAGU": 0.007820378746338032,
+    "mature:kmer:GUGC": 0.007198891439792351,
+    "mature:kmer:UCGU": 0.007121559043107869,
+    "mature:kmer:CCCU": 0.007117895801004414,
+    "mature:kmer:UAAU": 0.0071006179625202935,
+    "mature:kmer:AUCC": 0.007079076205405491,
+    "mature:kmer:AAAU": 0.006950540896382966,
+    "mature:kmer:CAG": 0.006854840032103455,
+    "mature:kmer:AACC": 0.006766667934183363,
+    "mature:seed:UGUGCGU": 0.006732367449484079,
+    "mature:seed:AGCAGCA": 0.006681894928251031,
+    "mature:seed:GUCAGUU": 0.00655405667804335,
+    "mature:seed:AACCGUU": 0.00652338074640689,
+    "mature:seed:GGCAGUG": 0.006506813055824054,
+    "mature:kmer:CGAU": 0.006478370173666803,
+    "mature:kmer:CGGC": 0.00642134317431015,
+    "mature:kmer:CAAA": 0.00638493491169725,
+    "mature:seed:AUUGCAC": 0.006369539559122865,
+    "mature:seed:CCCUGAG": 0.006349584473378664,
+    "mature:seed:AUGACAC": 0.00630049777790667,
+    "mature:kmer:AUGC": 0.0062580373872101296,
+    "mature:seed:GUGCAAA": 0.006218418062760904,
+    "mature:kmer:CUAA": 0.006013322061658398,
+    "mature:kmer:UCC": 0.005801889972945192,
+    "mature:kmer:CCGU": 0.00577173604819459,
+    "mature:kmer:AGU": 0.005756538730928049,
+    "mature:seed:AAAGUGC": 0.005232280791730956,
+    "hairpin:kmer:GU": 0.005215424818246714,
+    "mature:kmer:CGUU": 0.005213807689240625,
+    "mature:kmer:AUAG": 0.005162371098965839,
+    "mature:kmer:GGUU": 0.005046811320088645,
+    "mature:kmer:CCCG": 0.005035823131151879,
+    "mature:kmer:GCGU": 0.004929639871568015,
+    "mature:kmer:ACUG": 0.00487739503916938,
+    "mature:kmer:UCCA": 0.00482211556144041,
+    "mature:kmer:CCGA": 0.004677233968431378,
+    "mature:kmer:GUA": 0.004607922446498143,
+    "mature:kmer:AC": 0.004494947586351245,
+    "structure:pair_au_fraction": 0.004375929276805609,
+    "mature:seed:GAGGUAG": 0.004351486423435795,
+    "mature:kmer:AGCA": 0.004309142251917424,
+    "mature:kmer:UAAC": 0.004303811071815553,
+    "mature:kmer:UUAU": 0.004253638335413194,
+    "mature:kmer:CAUU": 0.004247733335461712,
+    "hairpin:kmer:AU": 0.004173401594163233,
+    "hairpin:kmer:UA": 0.0041675531198113345,
+    "hairpin:kmer:UG": 0.004149711593651667,
+    "mature:kmer:UUAC": 0.004136872754929773,
+    "mature:kmer:CGG": 0.004117982301960047,
+    "mature:seed:GGCGCGA": 0.004113569864436306,
+    "mature:kmer:GUGU": 0.0040087947074978715,
+    "mature:kmer:CGAA": 0.003946410577478549,
+    "mature:kmer:GGUA": 0.003946160758799145,
+    "mature:seed:AUGGAUU": 0.003881234721993728,
+    "mature:kmer:AUCA": 0.003802726945929458,
+    "mature:kmer:ACGA": 0.0037980166941346378,
+    "mature:kmer:CACG": 0.003785883252541685,
+    "mature:kmer:UUCG": 0.0036305674617802108,
+    "mature:kmer:GUCU": 0.0035807607430189737,
+    "mature:kmer:UUGA": 0.0035239526525626757,
+    "mature:seed:GGCAAGA": 0.0035165276560832374,
+    "mature:kmer:GUCG": 0.0034801448632000025,
+    "mature:seed:GAGGGAC": 0.003454780018567461,
+    "mature:seed:CUGGGUA": 0.0034043762428207012,
+    "mature:seed:CUCGGCG": 0.0033995403207747053,
+    "mature:kmer:CCGG": 0.003394647933072745,
+    "hairpin:kmer:CG": 0.0033463447725970807,
+    "mature:seed:GGCUCAG": 0.0033455774034425625,
+    "mature:seed:CCUUCAU": 0.003344897863272826,
+    "mature:seed:AAGUUGU": 0.003311696595581866,
+    "mature:kmer:AAUA": 0.0032918459665179103,
+    "mature:kmer:AGCU": 0.0032670600340309625,
+    "mature:kmer:AUU": 0.0032640310220790015,
+    "mature:kmer:UAGG": 0.003254760548397062,
+    "mature:seed:GGAAUGU": 0.0032332607757620964,
+    "mature:kmer:GAUC": 0.0032242498973380084,
+    "mature:seed:AAUGCCC": 0.0032235568624646204,
+    "mature:seed:AACACUG": 0.003203363887381943,
+    "mature:kmer:UCGG": 0.0031909063834901453,
+    "mature:seed:ACCCGUA": 0.003181253676154982,
+    "mature:seed:AACGGAA": 0.003170867229036957,
+    "mature:seed:CUACAGU": 0.003166025434660384,
+    "hairpin:kmer:UGU": 0.0031653825622470454,
+    "mature:kmer:GAU": 0.0031323702161729066,
+    "mature:kmer:UUAA": 0.0030109011434545805,
+    "mature:kmer:UGAU": 0.0030096056148240596,
+    "mature:kmer:GCAA": 0.0029829577103964453,
+    "mature:kmer:CUGU": 0.002966099821620994,
+    "mature:kmer:AUCG": 0.0029485602684226593,
+    "mature:seed:ACAUUCA": 0.0028884989997947767,
+    "hairpin:kmer:GUU": 0.002819898866000811,
+    "mature:kmer:CAGC": 0.0028130363586003205,
+    "hairpin:kmer:AC": 0.002703686824213713,
+    "mature:kmer:GAAC": 0.002699841714537369,
+    "mature:kmer:GGAA": 0.0026753550526795174,
+    "mature:kmer:CAGG": 0.002665334938183506,
+    "mature:kmer:AUUU": 0.002645496379961984,
+    "mature:kmer:UAC": 0.0026389121731481948,
+    "mature:seed:AAGUGCU": 0.0026259965683933426,
+    "mature:kmer:GUGA": 0.0026215116911652743,
+    "mature:kmer:ACG": 0.0025841076152299035,
+    "mature:kmer:AUGU": 0.0025612387341558043,
+    "mature:kmer:UGCU": 0.002518963336283948,
+    "mature:kmer:GCUU": 0.0025101100455249717,
+    "mature:kmer:UGCA": 0.00249051333069813,
+    "mature:kmer:UCAG": 0.0024775051247148275,
+    "mature:kmer:UAUC": 0.002474501257664269,
+    "mature:kmer:GAA": 0.0024741863915559025,
+    "hairpin:kmer:UUG": 0.002308511360179336,
+    "mature:kmer:CCAG": 0.0023078476766079754,
+    "mature:kmer:AACG": 0.0022459815155556197,
+    "mature:kmer:AGAC": 0.0021938781685242894,
+    "mature:kmer:AAAC": 0.002186058479452002,
+    "mature:kmer:ACAG": 0.002174937143624431,
+    "mature:kmer:GCAC": 0.0021625156920113122,
+    "mature:kmer:CCCA": 0.0021250566952757343,
+    "mature:kmer:GACC": 0.002017256967064855,
+    "hairpin:kmer:GUUG": 0.0019972049628238747,
+    "mature:kmer:GGU": 0.001987078021073917,
+    "hairpin:kmer:AAU": 0.0019767304545467135,
+    "hairpin:kmer:UAU": 0.001973968071254778,
+    "mature:kmer:GUCA": 0.0019487789528600836,
+    "mature:kmer:GACA": 0.0019379915765160005,
+    "mature:kmer:GUUU": 0.0019119544954298157,
+    "hairpin:kmer:ACUG": 0.001871099964921254,
+    "mature:kmer:UGGC": 0.0018476222130254173,
+    "hairpin:kmer:AUA": 0.0018396830151388036,
+    "hairpin:kmer:UCG": 0.0017868308465900568,
+    "mature:kmer:AAAA": 0.0017711632870990937,
+    "mature:kmer:CGUA": 0.0017443061385657712,
+    "hairpin:kmer:CGU": 0.0017014398192348639,
+    "mature:kmer:CGGU": 0.001678917706782712,
+    "hairpin:kmer:AAUC": 0.001641395420105846,
+    "mature:kmer:UUUG": 0.00162551100971061,
+    "mature:kmer:GCAG": 0.001616001518681398,
+    "mature:kmer:UUUU": 0.0015555007379568198,
+    "hairpin:kmer:GAAU": 0.001547442017891937,
+    "hairpin:kmer:AGU": 0.0015053702352442462,
+    "hairpin:kmer:AUGG": 0.0014870314571240034,
+    "mature:kmer:GAUA": 0.0014738460621609452,
+    "mature:kmer:UAAA": 0.0014248464098372711,
+    "mature:kmer:GUCC": 0.0014024863844033014,
+    "hairpin:kmer:UAG": 0.0013390432603335323,
+    "mature:kmer:GCA": 0.0013309935353309366,
+    "hairpin:kmer:CGA": 0.001311950746494401,
+    "hairpin:kmer:GCAA": 0.0012430557681943973,
+    "hairpin:kmer:UGUC": 0.0012388225987743763,
+    "hairpin:kmer:UAUA": 0.0012363477967771844,
+    "hairpin:kmer:UGC": 0.0012279563140199967,
+    "hairpin:kmer:CGAU": 0.0012154029991716382,
+    "mature:kmer:AGGU": 0.0012105497388524812,
+    "hairpin:kmer:GUCG": 0.001201871681396138,
+    "mature:kmer:UGUA": 0.0011877790244050708,
+    "mature:kmer:GCG": 0.001178586036428346,
+    "hairpin:kmer:GGAA": 0.0011696819254254829,
+    "hairpin:kmer:UGUU": 0.001158043543213156,
+    "hairpin:kmer:UU": 0.0011488531241967016,
+    "hairpin:kmer:CUGU": 0.001145565208794503,
+    "hairpin:kmer:AGUG": 0.0011330122772526597,
+    "hairpin:kmer:UUGU": 0.0011247130747972026,
+    "mature:kmer:ACAC": 0.001118593083653253,
+    "hairpin:kmer:AUG": 0.0011159833510636214,
+    "hairpin:kmer:ACCG": 0.0011135205870784327,
+    "hairpin:kmer:AUC": 0.0010944761284223494,
+    "hairpin:kmer:AAUG": 0.0010703774727480737,
+    "hairpin:kmer:AUAU": 0.001064327786172924,
+    "mature:kmer:GCUA": 0.0010498566552025667,
+    "hairpin:kmer:CUUG": 0.0010440888807783644,
+    "mature:kmer:ACGU": 0.001017278269310286,
+    "hairpin:kmer:GCA": 0.0009804429739625046,
+    "mature:kmer:AACU": 0.0009791203493501382,
+    "mature:kmer:GGCG": 0.0009599479783364633,
+    "hairpin:kmer:UAGU": 0.0009532014005624122,
+    "hairpin:kmer:UGAC": 0.0009482671497997099,
+    "hairpin:kmer:GUA": 0.0009417311544416423,
+    "hairpin:kmer:GAC": 0.0009335549289891641,
+    "hairpin:kmer:UUGA": 0.0009056492826437632,
+    "hairpin:kmer:CAGU": 0.0008996205494603845,
+    "mature:kmer:AUUG": 0.0008935882694359483,
+    "hairpin:kmer:CGUU": 0.0008823617273917594,
+    "hairpin:kmer:ACC": 0.0008720174002620897,
+    "hairpin:kmer:CCG": 0.0008598323339078635,
+    "hairpin:kmer:GUC": 0.0008482721590312591,
+    "mature:kmer:UAGA": 0.0008456536253860164,
+    "hairpin:kmer:ACU": 0.0008448219562227718,
+    "hairpin:kmer:UCC": 0.0008261076268479199,
+    "hairpin:kmer:UAGC": 0.0008204247921301385,
+    "hairpin:kmer:UCGA": 0.0008183211126408667,
+    "hairpin:kmer:GACA": 0.0008166914264997507,
+    "hairpin:kmer:UAC": 0.0008081122882931018,
+    "hairpin:kmer:CUA": 0.000806900977958975,
+    "hairpin:kmer:AUAC": 0.0007897860796036064,
+    "hairpin:kmer:GAU": 0.0007882385559762971,
+    "mature:kmer:AAGU": 0.000786097582037548,
+    "hairpin:kmer:GUG": 0.0007855604024112518,
+    "hairpin:kmer:CGUG": 0.0007797190546281504,
+    "hairpin:kmer:AUGC": 0.0007718389510615959,
+    "hairpin:kmer:UAAC": 0.000771155571672353,
+    "hairpin:kmer:AAC": 0.000769386802759087,
+    "hairpin:kmer:CAA": 0.0007639301642882184,
+    "hairpin:kmer:UCGU": 0.0007636419918493823,
+    "hairpin:kmer:UGUG": 0.000754992398932647,
+    "hairpin:kmer:UCCA": 0.000747731411124063,
+    "hairpin:kmer:ACCC": 0.0007472677479554861,
+    "hairpin:kmer:UGCU": 0.000738548251498632,
+    "hairpin:kmer:UUA": 0.0007355369122257697,
+    "hairpin:kmer:CACG": 0.0007224909277124375,
+    "hairpin:kmer:CUUA": 0.0007050447718876398,
+    "mature:kmer:UGCG": 0.0007005266039196638,
+    "hairpin:kmer:GGUA": 0.0006928065372746898,
+    "hairpin:kmer:GGCA": 0.0006881223232347236,
+    "hairpin:kmer:UACC": 0.0006848352055578208,
+    "hairpin:kmer:CUAU": 0.0006804651465516523,
+    "hairpin:kmer:GCUA": 0.000672915333902673,
+    "mature:kmer:GUUA": 0.000633123905326887,
+    "mature:kmer:UAUU": 0.0006210440131706681,
+    "hairpin:kmer:UUAG": 0.0006178456224325279,
+    "hairpin:kmer:CCGU": 0.0006165154847222097,
+    "hairpin:kmer:GUGC": 0.0006055221210776816,
+    "hairpin:kmer:CGG": 0.0006022652688572858,
+    "hairpin:kmer:GUAU": 0.0006004283896210086,
+    "hairpin:kmer:AUUC": 0.0005980298251488061,
+    "hairpin:kmer:AUCC": 0.0005887302996154169,
+    "hairpin:kmer:CCAG": 0.0005844903302682989,
+    "hairpin:kmer:CAAC": 0.0005832267671539938,
+    "hairpin:kmer:CAUA": 0.000583069202858919,
+    "hairpin:kmer:GUAG": 0.0005804823865483771,
+    "mature:kmer:AUUC": 0.0005786347310772435,
+    "hairpin:kmer:ACA": 0.0005761231192917242,
+    "hairpin:kmer:CGGC": 0.0005747213867226197,
+    "hairpin:kmer:GUUU": 0.0005691645256534626,
+    "hairpin:kmer:ACAC": 0.0005449796082669132,
+    "mature:kmer:AUA": 0.0005433660423840208,
+    "mature:kmer:UAU": 0.0005420898858948492,
+    "mature:kmer:AGUG": 0.0005295867714114364,
+    "hairpin:kmer:GUGU": 0.0005261483597749501,
+    "hairpin:kmer:AUUA": 0.0005199003782356059,
+    "hairpin:kmer:AUAG": 0.0005141097842870063,
+    "hairpin:kmer:GCAC": 0.0005024251510320539,
+    "hairpin:kmer:GCU": 0.0004913395530677391,
+    "mature:kmer:AGC": 0.0004882829010076457,
+    "hairpin:kmer:GAUG": 0.0004875611220991253,
+    "hairpin:kmer:CUGA": 0.0004805729812613684,
+    "hairpin:kmer:GGUU": 0.0004798688398526172,
+    "mature:kmer:UGAC": 0.0004776891453402971,
+    "mature:kmer:CCUA": 0.00047082173326683355,
+    "hairpin:kmer:UACU": 0.0004644833962536256,
+    "hairpin:kmer:AUCG": 0.000463497243610464,
+    "hairpin:kmer:GAUU": 0.0004579599749897846,
+    "hairpin:kmer:UCGG": 0.00045790975492680786,
+    "mature:kmer:AGCG": 0.0004391046126202373,
+    "mature:kmer:GUAA": 0.00042936328710608943,
+    "hairpin:kmer:CAUU": 0.0004291558340003316,
+    "mature:kmer:UAGU": 0.0004146531692401335,
+    "hairpin:kmer:CUCC": 0.0004132361129655009,
+    "hairpin:kmer:UCUU": 0.00041047058463097695,
+    "hairpin:kmer:CCUA": 0.0004093032618710158,
+    "hairpin:kmer:ACG": 0.0004079932865405605,
+    "hairpin:kmer:GUAA": 0.0004033762768180744,
+    "hairpin:kmer:CGCU": 0.0003989746184752847,
+    "mature:kmer:CACU": 0.00037666643627863117,
+    "hairpin:kmer:UUAC": 0.00036931120153881986,
+    "hairpin:kmer:UGGU": 0.00034573223518026937,
+    "hairpin:kmer:AACA": 0.0003409723817154393,
+    "mature:kmer:CUUG": 0.00033917059513080517,
+    "hairpin:kmer:AGUU": 0.0003320196371089419,
+    "hairpin:kmer:CGGA": 0.0003313626174676975,
+    "hairpin:kmer:CAAU": 0.00032847522157837886,
+    "hairpin:kmer:UUCG": 0.0003280363690575255,
+    "hairpin:kmer:UAUC": 0.00032359919268005837,
+    "hairpin:kmer:CCCG": 0.0003207200195149995,
+    "mature:kmer:GAUG": 0.0003202974551393234,
+    "hairpin:kmer:UUGC": 0.00031120094857886555,
+    "mature:kmer:AACA": 0.0003100117156992076,
+    "hairpin:kmer:CUAC": 0.00029122811674719756,
+    "mature:kmer:UCAA": 0.00027348105060220993,
+    "hairpin:kmer:UAAU": 0.000264229105820712,
+    "hairpin:kmer:CCGA": 0.0002577765870825692,
+    "hairpin:kmer:AGCA": 0.0002546756999025471,
+    "hairpin:kmer:GCG": 0.00025334707810340684,
+    "hairpin:kmer:UAUU": 0.0002527604781449507,
+    "hairpin:kmer:CGUA": 0.00025197157004762513,
+    "hairpin:kmer:GCGC": 0.0002340496089871049,
+    "hairpin:kmer:GCAU": 0.00023222063395651933,
+    "hairpin:kmer:UGCC": 0.00022960930364132953,
+    "hairpin:kmer:UCUA": 0.00022819271699017773,
+    "hairpin:kmer:CACU": 0.00022763854099456553,
+    "hairpin:kmer:UAUG": 0.0002217628691634295,
+    "hairpin:kmer:AGAU": 0.0002202768097961028,
+    "hairpin:kmer:CAAG": 0.0002195211255951154,
+    "mature:kmer:CUCG": 0.0002169713689522974,
+    "mature:kmer:GGGU": 0.0002154816711208781,
+    "hairpin:kmer:GACC": 0.00020922057397093806,
+    "mature:kmer:UUAG": 0.00019799494643341447,
+    "hairpin:kmer:ACGU": 0.0001940827922204067,
+    "hairpin:kmer:AUU": 0.00019343368258268326,
+    "hairpin:kmer:ACGA": 0.00019336527413828212,
+    "hairpin:kmer:CUAA": 0.00018530406451430326,
+    "hairpin:kmer:UGCG": 0.00018438621995242482,
+    "hairpin:kmer:AACU": 0.000177486017085659,
+    "hairpin:kmer:AACG": 0.00015575152064262128,
+    "hairpin:kmer:UCCG": 0.0001555652900081494,
+    "hairpin:kmer:AGUC": 0.0001535160875573899,
+    "hairpin:kmer:GCGU": 0.00015088361410362604,
+    "hairpin:kmer:AUCA": 0.0001400248351356406,
+    "mature:kmer:AUAC": 0.00012712468344608344,
+    "hairpin:kmer:UAA": 0.00012303727426701429,
+    "hairpin:kmer:CGCG": 0.0001194910700816403,
+    "hairpin:kmer:CGAC": 0.00011479184718724266,
+    "hairpin:kmer:CCGG": 0.00010999365881471428,
+    "hairpin:kmer:GUUA": 0.00010724742195914252,
+    "hairpin:kmer:GGAC": 0.00010695366564369574,
+    "structure:longest_stem_fraction": 0.00010502264044731234,
+    "hairpin:kmer:CGAA": 0.00010476332199927814,
+    "hairpin:kmer:UGA": 0.00008766044842300954,
+    "hairpin:kmer:AGCU": 0.00008231694618644079,
+    "hairpin:kmer:GCGA": 0.00007480825786472382,
+    "hairpin:kmer:AAUA": 0.00007141089604094981,
+    "hairpin:kmer:ACGG": 0.00006661664384438997,
+    "hairpin:kmer:AGCG": 0.00006434011300962416,
+    "hairpin:kmer:GACU": 0.00006302259545120488,
+    "hairpin:kmer:UUGG": 0.00005193828006694257,
+    "hairpin:kmer:UUAA": 0.00005066791798554834,
+    "hairpin:kmer:GCUU": 0.00004288844282333954,
+    "hairpin:kmer:CCAA": 0.000041314996179233855,
+    "hairpin:kmer:UGGA": 0.000040458210242732076,
+    "hairpin:kmer:CGGU": 0.000035130464714107654,
+    "hairpin:kmer:UGUA": 0.00003501932258123306,
+    "hairpin:kmer:GCUC": 0.00002312405546704389,
+    "hairpin:kmer:GUCC": 0.00002023775814828292,
+    "hairpin:kmer:CGCA": 0.000017723484298253755,
+    "mature:kmer:AUG": 0.000016833586136108975,
+    "hairpin:kmer:ACAA": 0.000013782440233704137,
+    "hairpin:kmer:GAUA": 0.0000047311576059455615,
+    "hairpin:kmer:UGAU": 2.1110205145105892e-7,
+    "hairpin:kmer:AACC": -5.647257382670041e-7,
+    "hairpin:kmer:CCAU": -0.0000028331960231495343,
+    "hairpin:kmer:CAC": -0.0000036748879102035926,
+    "hairpin:kmer:UGCA": -0.000007082323500563964,
+    "hairpin:kmer:CCCA": -0.000008885864956455956,
+    "hairpin:kmer:UAGG": -0.000014492667468880964,
+    "hairpin:kmer:ACGC": -0.000019688499379268845,
+    "hairpin:kmer:AUGU": -0.00002040948617401917,
+    "hairpin:kmer:GAA": -0.000031862083469458925,
+    "hairpin:kmer:AUCU": -0.00003283351446632664,
+    "mature:kmer:AGAA": -0.000035290461067909244,
+    "hairpin:kmer:GGCG": -0.00004092447118106112,
+    "hairpin:kmer:UUUU": -0.0000418661150620312,
+    "hairpin:kmer:GAGU": -0.000045485616566611314,
+    "hairpin:kmer:AGUA": -0.000047331346573221454,
+    "mature:kmer:AUUA": -0.00006056403138316756,
+    "hairpin:kmer:GUCU": -0.00006395172648313149,
+    "hairpin:kmer:AAAU": -0.00007584286630395884,
+    "hairpin:kmer:UACA": -0.00008767649074936662,
+    "hairpin:kmer:UCCU": -0.00008920132230395081,
+    "hairpin:kmer:CGAG": -0.00009460304080580485,
+    "hairpin:kmer:CCGC": -0.00009706985828414757,
+    "mature:kmer:CGGA": -0.00010051639614458268,
+    "hairpin:kmer:UUCC": -0.0001072518709449931,
+    "hairpin:kmer:AAAC": -0.00011129556017740415,
+    "hairpin:kmer:GAUC": -0.00011456511471207991,
+    "hairpin:kmer:UUUC": -0.00012005763982658994,
+    "hairpin:kmer:GUGA": -0.00012038265087222378,
+    "hairpin:kmer:ACUU": -0.00012324613346093336,
+    "hairpin:kmer:UGGC": -0.0001362867177809049,
+    "hairpin:kmer:UUUG": -0.00013846221763472833,
+    "hairpin:kmer:GUUC": -0.00013938837092623556,
+    "mature:kmer:AAUU": -0.00014488348393158578,
+    "hairpin:kmer:AGAC": -0.00015952565886682716,
+    "hairpin:kmer:GCGG": -0.00017041009757113158,
+    "hairpin:kmer:CGC": -0.00017407808556070897,
+    "hairpin:kmer:CUCG": -0.0001889406965807266,
+    "hairpin:kmer:CGUC": -0.0002022111726869395,
+    "hairpin:kmer:AAGC": -0.0002152210209250528,
+    "hairpin:kmer:UCCC": -0.00021920239176409354,
+    "hairpin:kmer:GCUG": -0.0002200416387272919,
+    "hairpin:kmer:AAGU": -0.00022165787635874062,
+    "hairpin:kmer:GUCA": -0.00022606725828099424,
+    "hairpin:kmer:UAGA": -0.00023333604818595618,
+    "hairpin:kmer:UUAU": -0.000239074382056893,
+    "hairpin:kmer:UCAU": -0.0002404325627235344,
+    "hairpin:kmer:GACG": -0.0002464886472525484,
+    "hairpin:kmer:UCGC": -0.00024755980438988793,
+    "hairpin:kmer:CAAA": -0.0002552757033214607,
+    "hairpin:kmer:CUG": -0.00025609539337561276,
+    "hairpin:kmer:UGAG": -0.00026153866897022076,
+    "hairpin:kmer:CCUG": -0.0002784495607913907,
+    "hairpin:kmer:ACCA": -0.0002945327692711109,
+    "hairpin:kmer:ACAU": -0.0003163084268654223,
+    "hairpin:kmer:CUAG": -0.0003197899822291624,
+    "hairpin:kmer:ACAG": -0.0003206893636588951,
+    "hairpin:kmer:CA": -0.0003210291589547709,
+    "hairpin:kmer:UAAG": -0.0003252732907294243,
+    "hairpin:kmer:CAU": -0.0003260359477594645,
+    "hairpin:kmer:CCA": -0.0003271795623683378,
+    "hairpin:kmer:CACC": -0.0003402398892342635,
+    "hairpin:kmer:GGUC": -0.00034909559443097667,
+    "hairpin:kmer:CGGG": -0.000357364067533807,
+    "hairpin:kmer:AUUU": -0.00038769532551539407,
+    "mature:kmer:CCAU": -0.0003913953430663041,
+    "hairpin:kmer:ACUC": -0.00039889463100404763,
+    "hairpin:kmer:GAAC": -0.0004124548479234907,
+    "hairpin:kmer:AGGU": -0.0004429116416093968,
+    "hairpin:kmer:UCAA": -0.00046556574303961565,
+    "hairpin:kmer:ACUA": -0.0004692983118261781,
+    "hairpin:kmer:AUUG": -0.00047102787271670826,
+    "hairpin:kmer:UGG": -0.0004802982120511155,
+    "hairpin:kmer:AUAA": -0.0004806551186612798,
+    "hairpin:kmer:CAGA": -0.000487521491677217,
+    "hairpin:kmer:CACA": -0.0004903543611871116,
+    "hairpin:kmer:AAGA": -0.0004927821487706069,
+    "hairpin:kmer:GUGG": -0.0004928996674363922,
+    "hairpin:kmer:GAAG": -0.000518976221598949,
+    "hairpin:kmer:GCCC": -0.0005204263483698121,
+    "hairpin:kmer:CUGC": -0.0005233360421401148,
+    "mature:kmer:UGGU": -0.0005306655139353137,
+    "hairpin:kmer:CCCU": -0.0005328026073773664,
+    "hairpin:kmer:UGAA": -0.0005329798269903467,
+    "hairpin:kmer:UUUA": -0.0005488560805378311,
+    "hairpin:kmer:UAAA": -0.0005498473229474967,
+    "hairpin:kmer:GGCU": -0.0005614963455602167,
+    "hairpin:kmer:UCAG": -0.0005650212684835717,
+    "hairpin:kmer:CAUG": -0.0005752961346451282,
+    "hairpin:kmer:UCAC": -0.0005828613806861569,
+    "hairpin:kmer:GAAA": -0.0005830706779687105,
+    "mature:kmer:UUCC": -0.0005864933550628142,
+    "hairpin:kmer:ACCU": -0.0005913601174182638,
+    "hairpin:kmer:GGAU": -0.0005973458914747845,
+    "hairpin:kmer:CUU": -0.000598088962945102,
+    "mature:kmer:UUCA": -0.000609076798554421,
+    "hairpin:kmer:AGGC": -0.0006450143021809742,
+    "mature:kmer:AGGA": -0.0006564806830037736,
+    "hairpin:kmer:CAGC": -0.0006612236893064265,
+    "mature:kmer:UGUU": -0.0006694011729975298,
+    "hairpin:kmer:UUCA": -0.0006886748427955141,
+    "hairpin:kmer:CAUC": -0.0007043028814588195,
+    "hairpin:kmer:GGGU": -0.0007068024227732087,
+    "hairpin:kmer:GUAC": -0.000707353455771429,
+    "hairpin:kmer:UUCU": -0.0007227163533660033,
+    "hairpin:kmer:UGGG": -0.0007387070764412461,
+    "mature:kmer:GAUU": -0.0007393481781033127,
+    "mature:kmer:GUUC": -0.000755339362008958,
+    "hairpin:kmer:GGGC": -0.0007624543228168752,
+    "hairpin:kmer:GCCG": -0.0007776166676098518,
+    "hairpin:kmer:CGCC": -0.0007801231242340685,
+    "hairpin:kmer:CAGG": -0.0007997751655648704,
+    "hairpin:kmer:CCAC": -0.0008134453145321941,
+    "hairpin:kmer:GGCC": -0.0008379674905848677,
+    "hairpin:kmer:GGGA": -0.0008517689538735517,
+    "hairpin:kmer:AAGG": -0.000880375754891058,
+    "hairpin:kmer:GCCU": -0.0008822524410587109,
+    "hairpin:kmer:GGC": -0.000883358578574268,
+    "hairpin:kmer:CUCA": -0.0008876626564684928,
+    "hairpin:kmer:AGAA": -0.0008939857464247316,
+    "hairpin:kmer:AAUU": -0.0009028915693360213,
+    "hairpin:kmer:GGU": -0.0009151669765615108,
+    "hairpin:kmer:AAAA": -0.0009157064252661055,
+    "hairpin:kmer:UUU": -0.0009476992681479605,
+    "hairpin:kmer:GCCA": -0.0009510196770247766,
+    "hairpin:kmer:CCUC": -0.0009633859852040143,
+    "mature:kmer:ACUC": -0.000979712992294799,
+    "hairpin:kmer:AGGA": -0.000986392825713287,
+    "hairpin:kmer:GAGA": -0.0009963791686336907,
+    "hairpin:kmer:GCAG": -0.0010030678852481095,
+    "hairpin:kmer:CUUU": -0.0010033962213160186,
+    "hairpin:kmer:CCC": -0.001048121944514144,
+    "hairpin:kmer:UUC": -0.00104857832143099,
+    "hairpin:kmer:AUGA": -0.0010596933489131282,
+    "hairpin:kmer:CCCC": -0.0010777174475937415,
+    "mature:kmer:AUCU": -0.0011367743519598316,
+    "structure:mean_stem_fraction": -0.0011513447853685767,
+    "hairpin:kmer:AGGG": -0.001158055389597176,
+    "hairpin:kmer:AAAG": -0.001161617366867262,
+    "hairpin:kmer:UCUC": -0.0011796724085551998,
+    "hairpin:kmer:CCUU": -0.001188855123216379,
+    "hairpin:kmer:GGGG": -0.001238119663137062,
+    "hairpin:kmer:GGA": -0.0012472395455507199,
+    "mature:kmer:ACUU": -0.0012474662688588781,
+    "hairpin:kmer:GAGC": -0.0012737717383348337,
+    "hairpin:kmer:AGC": -0.001298586137789395,
+    "hairpin:kmer:CUUC": -0.0013234690468314752,
+    "mature:kmer:CC": -0.001368623922740215,
+    "hairpin:kmer:CUGG": -0.0013885102303791354,
+    "hairpin:kmer:CAG": -0.0014256853120242048,
+    "mature:kmer:GUGG": -0.001446794467832347,
+    "hairpin:kmer:GC": -0.0014551640798060286,
+    "mature:kmer:UCUA": -0.0014798626536027962,
+    "hairpin:kmer:GAGG": -0.001520021455355906,
+    "mature:kmer:CAGA": -0.0015626067897773104,
+    "mature:kmer:UACA": -0.0015737256923908322,
+    "hairpin:kmer:AGCC": -0.001573749695786629,
+    "mature:kmer:GAC": -0.0015747663110090423,
+    "mature:kmer:ACU": -0.0015914820118848546,
+    "mature:kmer:CAA": -0.0016072335320353845,
+    "mature:kmer:ACCA": -0.001630686511002525,
+    "mature:kmer:UGAG": -0.0016558131174239964,
+    "hairpin:kmer:GGUG": -0.0016564520771212132,
+    "hairpin:kmer:UCA": -0.0017069059195645353,
+    "hairpin:kmer:CUCU": -0.001721359591384456,
+    "hairpin:kmer:AGAG": -0.001761759742958371,
+    "hairpin:kmer:AA": -0.0017790119028726007,
+    "mature:kmer:UCAU": -0.0018353565282353541,
+    "hairpin:kmer:GGAG": -0.0018638954104983028,
+    "hairpin:kmer:AAG": -0.0018721451687115363,
+    "mature:kmer:GCUG": -0.001891358621718708,
+    "mature:kmer:AGUA": -0.0018977453396726578,
+    "mature:kmer:AUGA": -0.0019004665776655477,
+    "hairpin:kmer:UC": -0.0019039995261175729,
+    "mature:kmer:UAUG": -0.00190993470299331,
+    "hairpin:kmer:CCU": -0.0019790917741355383,
+    "mature:kmer:AUAU": -0.0020027067853183415,
+    "hairpin:kmer:UCUG": -0.0020118537432156198,
+    "hairpin:kmer:CC": -0.002059727883049096,
+    "hairpin:kmer:GA": -0.002062081405299865,
+    "mature:kmer:UACU": -0.002114641850170554,
+    "mature:kmer:GGUC": -0.002194807292436817,
+    "mature:kmer:AGAU": -0.0022056866758185796,
+    "mature:kmer:AAAG": -0.0022233085040468574,
+    "mature:kmer:UCUU": -0.002317273704969845,
+    "hairpin:kmer:AGA": -0.002351440421377396,
+    "hairpin:kmer:AAA": -0.0023516999099722057,
+    "mature:kmer:GAGU": -0.0023727179880350304,
+    "structure:internal_bulge_density": -0.002487534731607822,
+    "hairpin:kmer:CUC": -0.002504637761268931,
+    "mature:kmer:GACU": -0.002547250089565281,
+    "structure:hairpin_loop_density": -0.002636493846599317,
+    "mature:kmer:GCGG": -0.0026598228843511635,
+    "hairpin:kmer:UCU": -0.002683388495586372,
+    "hairpin:kmer:CU": -0.0027025367246674985,
+    "mature:kmer:CCUG": -0.002715998971853562,
+    "mature:kmer:UCAC": -0.0027272046252963776,
+    "mature:kmer:UUUC": -0.002761739722724433,
+    "mature:kmer:AAGA": -0.0027629663721508877,
+    "mature:kmer:GGCA": -0.002769117125581717,
+    "mature:kmer:CCA": -0.00280669768657428,
+    "hairpin:kmer:GCC": -0.0030753826176018093,
+    "mature:kmer:GCU": -0.003144868702984767,
+    "mature:kmer:CCCC": -0.003209312033203524,
+    "mature:kmer:UCA": -0.003330169467783593,
+    "hairpin:kmer:AGG": -0.0033433068969260554,
+    "mature:kmer:UUGG": -0.0036189950325211826,
+    "hairpin:kmer:GGG": -0.003621426332948629,
+    "mature:kmer:GGAU": -0.003642697198461376,
+    "mature:kmer:CUA": -0.0037085406850488343,
+    "hairpin:kmer:GAG": -0.0038382292006999483,
+    "mature:kmer:UUU": -0.003880854565621821,
+    "mature:kmer:CCUU": -0.003964878030806801,
+    "mature:kmer:UUGC": -0.004237839026569692,
+    "mature:kmer:GCUC": -0.004633013409647583,
+    "mature:kmer:GCCC": -0.0047061888261217535,
+    "mature:kmer:GAGA": -0.004816787881842689,
+    "mature:kmer:GAAG": -0.004964633896005544,
+    "mature:kmer:UGGA": -0.00505540154936667,
+    "mature:kmer:CUCC": -0.0050961352143942765,
+    "mature:kmer:GGUG": -0.005108828125358563,
+    "structure:stem_density": -0.00512402857820714,
+    "mature:kmer:ACA": -0.005135998618891527,
+    "mature:kmer:GGCC": -0.005176985333207633,
+    "mature:kmer:CUUC": -0.005194296203207654,
+    "mature:kmer:GGCU": -0.005345805264862012,
+    "mature:kmer:CAC": -0.005471543868057731,
+    "mature:kmer:GGGG": -0.005684736245109522,
+    "mature:kmer:CUU": -0.005996548975766514,
+    "mature:kmer:UGC": -0.006053483550721004,
+    "hairpin:kmer:AG": -0.006116182542063843,
+    "mature:kmer:UCCU": -0.006131850125964647,
+    "hairpin:kmer:GG": -0.00681348513757358,
+    "mature:kmer:UCUC": -0.006995844573403086,
+    "mature:kmer:GA": -0.0070761473011108755,
+    "mature:kmer:AGGG": -0.007184419096556744,
+    "mature:kmer:CUGG": -0.0075549762907832696,
+    "mature:kmer:CUG": -0.007925518658748038,
+    "mature:kmer:CAU": -0.008319947259595156,
+    "mature:kmer:UCUG": -0.009312786717776385,
+    "mature:kmer:UUC": -0.009891483766473592,
+    "structure:gc_fraction": -0.010045771522639855,
+    "mature:kmer:GAGG": -0.010129082407644372,
+    "mature:kmer:AGA": -0.010154613104186942,
+    "structure:unpaired_fraction": -0.010376416826572699,
+    "mature:kmer:GGAG": -0.010555581156005776,
+    "mature:kmer:UGGG": -0.010895603077958279,
+    "mature:kmer:CA": -0.011517542032143339,
+    "mature:kmer:GGC": -0.012172325517851346,
+    "mature:kmer:AGG": -0.013075259414031513,
+    "mature:kmer:CCU": -0.013575078316791871,
+    "mature:kmer:AAG": -0.01366837123441442,
+    "mature:kmer:UC": -0.014644619090703397,
+    "mature:kmer:UGG": -0.01603171206160026,
+    "structure:pair_gc_fraction": -0.017940689393955718,
+    "mature:kmer:GGA": -0.018327679858050734,
+    "mature:kmer:UCU": -0.0221359275338536,
+    "mature:kmer:AG": -0.023328684253303318,
+    "mature:kmer:GCC": -0.023821831562787277,
+    "mature:kmer:CUC": -0.025232096134352795,
+    "mature:kmer:GAG": -0.025481312188453155,
+    "mature:kmer:GGG": -0.028442128347739473,
+    "mature:kmer:GC": -0.029002475866509992,
+    "mature:kmer:CU": -0.04290794911673357,
+    "mature:kmer:GG": -0.057039982601086114,
+    "mature:composition:gc_fraction": -0.2359918470058946
   },
   "top_positive_features": [
     {
-      "feature": "kmer:GU",
-      "weight": 0.09122596486569709
+      "feature": "mature:composition:length",
+      "weight": 0.12042313179891197
     },
     {
-      "feature": "kmer:UGU",
-      "weight": 0.04742872448798066
+      "feature": "mature:kmer:GU",
+      "weight": 0.05653699005302058
     },
     {
-      "feature": "kmer:UA",
-      "weight": 0.04472663902222368
+      "feature": "mature:kmer:UGU",
+      "weight": 0.02868690055670438
     },
     {
-      "feature": "kmer:GUG",
-      "weight": 0.040780588793404425
+      "feature": "mature:kmer:UG",
+      "weight": 0.02611594648520578
     },
     {
-      "feature": "kmer:UAG",
-      "weight": 0.037947561708545956
+      "feature": "mature:kmer:UA",
+      "weight": 0.025438999916230623
     },
     {
-      "feature": "kmer:GUGC",
-      "weight": 0.036474407224364194
+      "feature": "mature:kmer:AA",
+      "weight": 0.024753293153461673
     },
     {
-      "feature": "seed:AAAGUGC",
-      "weight": 0.03493525371765449
+      "feature": "mature:kmer:AAU",
+      "weight": 0.02304230698167905
     },
     {
-      "feature": "kmer:AAU",
-      "weight": 0.03415163767724082
+      "feature": "mature:kmer:CG",
+      "weight": 0.02297242194411896
     },
     {
-      "feature": "seed:AGCAGCA",
-      "weight": 0.032800817684549066
+      "feature": "mature:kmer:GUU",
+      "weight": 0.019477604122911395
     },
     {
-      "feature": "kmer:AGUGC",
-      "weight": 0.03215341621896736
+      "feature": "mature:kmer:GUG",
+      "weight": 0.018702796490586912
     },
     {
-      "feature": "kmer:UUGU",
-      "weight": 0.03198269224994744
+      "feature": "mature:kmer:CGU",
+      "weight": 0.01855418696097975
     },
     {
-      "feature": "kmer:GUAG",
-      "weight": 0.030072410884872912
+      "feature": "mature:kmer:UUGU",
+      "weight": 0.015127042543242417
     },
     {
-      "feature": "kmer:CGU",
-      "weight": 0.029323541135974546
+      "feature": "mature:kmer:UAG",
+      "weight": 0.014808931579368396
     },
     {
-      "feature": "kmer:AA",
-      "weight": 0.026565421260730557
+      "feature": "mature:kmer:AU",
+      "weight": 0.014516456227780966
     },
     {
-      "feature": "kmer:UGUG",
-      "weight": 0.026457777116492286
+      "feature": "mature:kmer:UGA",
+      "weight": 0.013936100279687303
     },
     {
-      "feature": "kmer:AAA",
-      "weight": 0.023826609429400274
+      "feature": "structure:pair_gu_fraction",
+      "weight": 0.013755961608133709
     },
     {
-      "feature": "kmer:GGUAG",
-      "weight": 0.023505414583123576
+      "feature": "mature:kmer:UGUG",
+      "weight": 0.012703640812243682
     },
     {
-      "feature": "kmer:AGGUA",
-      "weight": 0.02222620746350521
+      "feature": "mature:kmer:CGUG",
+      "weight": 0.012686523300072791
     },
     {
-      "feature": "kmer:GUGCA",
-      "weight": 0.0219343749989782
+      "feature": "mature:kmer:AAUC",
+      "weight": 0.012542976682621576
     },
     {
-      "feature": "kmer:CGUG",
-      "weight": 0.021924040649065626
+      "feature": "mature:kmer:AUC",
+      "weight": 0.012160324967092942
     },
     {
-      "feature": "kmer:UAGC",
-      "weight": 0.021784196215562043
+      "feature": "mature:kmer:ACC",
+      "weight": 0.011251334289072159
     },
     {
-      "feature": "kmer:GUA",
-      "weight": 0.02161634104638546
+      "feature": "mature:kmer:UU",
+      "weight": 0.01104595194340275
     },
     {
-      "feature": "kmer:CUUA",
-      "weight": 0.02160134744394125
+      "feature": "mature:kmer:UUA",
+      "weight": 0.010997950580460077
     },
     {
-      "feature": "kmer:AGCA",
-      "weight": 0.02152375537742393
+      "feature": "structure:paired_fraction",
+      "weight": 0.010567618317556307
     },
     {
-      "feature": "seed:CCCUGAG",
-      "weight": 0.021361517843429455
+      "feature": "mature:kmer:UGUC",
+      "weight": 0.010317286395185185
     },
     {
-      "feature": "kmer:GUU",
-      "weight": 0.02123242154558507
+      "feature": "mature:kmer:AGUU",
+      "weight": 0.010284834110380097
     },
     {
-      "feature": "seed:AUUGCAC",
-      "weight": 0.02091806056356621
+      "feature": "mature:kmer:AAC",
+      "weight": 0.010088106249875214
     },
     {
-      "feature": "kmer:AAUC",
-      "weight": 0.020584869143406907
+      "feature": "mature:kmer:CCC",
+      "weight": 0.00994958776935466
     },
     {
-      "feature": "kmer:AAGUG",
-      "weight": 0.019751214768177316
+      "feature": "mature:kmer:ACCC",
+      "weight": 0.009878211919049756
     },
     {
-      "feature": "kmer:GGUA",
-      "weight": 0.0195373064837454
+      "feature": "mature:kmer:UAA",
+      "weight": 0.00984122830395292
     },
     {
-      "feature": "kmer:GCUUA",
-      "weight": 0.01884076105586543
+      "feature": "mature:seed:AGCUUAU",
+      "weight": 0.00972030013753251
     },
     {
-      "feature": "kmer:CUUGU",
-      "weight": 0.018537458540846895
+      "feature": "mature:kmer:UUG",
+      "weight": 0.009694489798671251
     },
     {
-      "feature": "kmer:AGCAG",
-      "weight": 0.018535721165425244
+      "feature": "mature:kmer:CCG",
+      "weight": 0.009672587378412726
     },
     {
-      "feature": "kmer:AAAU",
-      "weight": 0.018446550474957097
+      "feature": "mature:kmer:UCG",
+      "weight": 0.009507330447481189
     },
     {
-      "feature": "kmer:AAAUA",
-      "weight": 0.01786460551320375
+      "feature": "mature:kmer:UAGC",
+      "weight": 0.009502655945554536
     },
     {
-      "feature": "kmer:UUGUG",
-      "weight": 0.017813131217454318
+      "feature": "mature:kmer:GUC",
+      "weight": 0.009437255754683514
     },
     {
-      "feature": "kmer:UAA",
-      "weight": 0.017429338210565817
+      "feature": "mature:seed:UCCAGUU",
+      "weight": 0.009422046051577388
     },
     {
-      "feature": "kmer:AGUG",
-      "weight": 0.01734253321211988
+      "feature": "mature:seed:ACCCUGU",
+      "weight": 0.009331929140121733
     },
     {
-      "feature": "kmer:UGCA",
-      "weight": 0.016898555100188107
+      "feature": "mature:kmer:ACCG",
+      "weight": 0.009268571982301766
     },
     {
-      "feature": "kmer:AAUCC",
-      "weight": 0.016883346674119202
+      "feature": "mature:kmer:GUUG",
+      "weight": 0.009234267995321446
     },
     {
-      "feature": "kmer:UCGUG",
-      "weight": 0.016761312109331076
+      "feature": "mature:kmer:GUAG",
+      "weight": 0.00904443633808354
     },
     {
-      "feature": "kmer:GUGCU",
-      "weight": 0.016606572067067484
+      "feature": "mature:kmer:CUUA",
+      "weight": 0.009016644609466178
     },
     {
-      "feature": "kmer:CAGCA",
-      "weight": 0.01623885176022084
+      "feature": "mature:kmer:UCCC",
+      "weight": 0.009009759570331689
     },
     {
-      "feature": "seed:AGCUUAU",
-      "weight": 0.0159727139284204
+      "feature": "mature:kmer:GAAU",
+      "weight": 0.008981036496022018
     },
     {
-      "feature": "seed:GUGCAAA",
-      "weight": 0.015684143141540676
+      "feature": "mature:seed:UAAUGCU",
+      "weight": 0.008907871957697825
     },
     {
-      "feature": "kmer:CAAA",
-      "weight": 0.015651730112095162
+      "feature": "mature:kmer:CUGA",
+      "weight": 0.008635665567613929
     },
     {
-      "feature": "kmer:ACCC",
-      "weight": 0.015644944734540766
+      "feature": "mature:kmer:CGA",
+      "weight": 0.008149971748795806
     },
     {
-      "feature": "seed:UCCAGUU",
-      "weight": 0.015283731624583524
+      "feature": "mature:kmer:AAA",
+      "weight": 0.007989371595352457
     },
     {
-      "feature": "seed:ACCCUGU",
-      "weight": 0.015134563975394713
+      "feature": "mature:kmer:AAUG",
+      "weight": 0.007987648629662211
     },
     {
-      "feature": "kmer:GCA",
-      "weight": 0.015118483325847684
+      "feature": "mature:kmer:UACC",
+      "weight": 0.00797194938821085
     }
   ],
   "top_negative_features": [
     {
-      "feature": "kmer:GG",
-      "weight": -0.22847256430273616
+      "feature": "mature:composition:gc_fraction",
+      "weight": -0.2359918470058946
     },
     {
-      "feature": "kmer:CU",
-      "weight": -0.17781405291199173
+      "feature": "mature:kmer:GG",
+      "weight": -0.057039982601086114
     },
     {
-      "feature": "kmer:UC",
-      "weight": -0.118483508506059
+      "feature": "mature:kmer:CU",
+      "weight": -0.04290794911673357
     },
     {
-      "feature": "kmer:CC",
-      "weight": -0.10584972817292629
+      "feature": "mature:kmer:GC",
+      "weight": -0.029002475866509992
     },
     {
-      "feature": "kmer:GGG",
-      "weight": -0.10298035621349264
+      "feature": "mature:kmer:GGG",
+      "weight": -0.028442128347739473
     },
     {
-      "feature": "kmer:GC",
-      "weight": -0.10063892040132419
+      "feature": "mature:kmer:GAG",
+      "weight": -0.025481312188453155
     },
     {
-      "feature": "kmer:GA",
-      "weight": -0.09561141795246904
+      "feature": "mature:kmer:CUC",
+      "weight": -0.025232096134352795
     },
     {
-      "feature": "kmer:AG",
-      "weight": -0.08664962282577518
+      "feature": "mature:kmer:GCC",
+      "weight": -0.023821831562787277
     },
     {
-      "feature": "kmer:CUC",
-      "weight": -0.08135758828737073
+      "feature": "mature:kmer:AG",
+      "weight": -0.023328684253303318
     },
     {
-      "feature": "kmer:GAG",
-      "weight": -0.07763433660888563
+      "feature": "mature:kmer:UCU",
+      "weight": -0.0221359275338536
     },
     {
-      "feature": "kmer:UCU",
-      "weight": -0.07494286948445437
+      "feature": "mature:kmer:GGA",
+      "weight": -0.018327679858050734
     },
     {
-      "feature": "kmer:CA",
-      "weight": -0.0735280184515315
+      "feature": "structure:pair_gc_fraction",
+      "weight": -0.017940689393955718
     },
     {
-      "feature": "kmer:GGA",
-      "weight": -0.07264385018266828
+      "feature": "mature:kmer:UGG",
+      "weight": -0.01603171206160026
     },
     {
-      "feature": "kmer:GCC",
-      "weight": -0.07167097393550424
+      "feature": "mature:kmer:UC",
+      "weight": -0.014644619090703397
     },
     {
-      "feature": "kmer:UGG",
-      "weight": -0.061127769879978
+      "feature": "mature:kmer:AAG",
+      "weight": -0.01366837123441442
     },
     {
-      "feature": "kmer:CCU",
-      "weight": -0.05101200926120463
+      "feature": "mature:kmer:CCU",
+      "weight": -0.013575078316791871
     },
     {
-      "feature": "kmer:GGC",
-      "weight": -0.048953528249893546
+      "feature": "mature:kmer:AGG",
+      "weight": -0.013075259414031513
     },
     {
-      "feature": "kmer:AGG",
-      "weight": -0.04816235465640153
+      "feature": "mature:kmer:GGC",
+      "weight": -0.012172325517851346
     },
     {
-      "feature": "kmer:CUG",
-      "weight": -0.048067122402650445
+      "feature": "mature:kmer:CA",
+      "weight": -0.011517542032143339
     },
     {
-      "feature": "kmer:AC",
-      "weight": -0.046427065819158786
+      "feature": "mature:kmer:UGGG",
+      "weight": -0.010895603077958279
     },
     {
-      "feature": "kmer:UUC",
-      "weight": -0.04003111264375964
+      "feature": "mature:kmer:GGAG",
+      "weight": -0.010555581156005776
     },
     {
-      "feature": "kmer:UU",
-      "weight": -0.03982597475957049
+      "feature": "structure:unpaired_fraction",
+      "weight": -0.010376416826572699
     },
     {
-      "feature": "kmer:AGA",
-      "weight": -0.038724747519185074
+      "feature": "mature:kmer:AGA",
+      "weight": -0.010154613104186942
     },
     {
-      "feature": "kmer:UGGG",
-      "weight": -0.03534826386369819
+      "feature": "mature:kmer:GAGG",
+      "weight": -0.010129082407644372
     },
     {
-      "feature": "kmer:GGAG",
-      "weight": -0.034202927526685876
+      "feature": "structure:gc_fraction",
+      "weight": -0.010045771522639855
     },
     {
-      "feature": "kmer:CCA",
-      "weight": -0.034170472158935344
+      "feature": "mature:kmer:UUC",
+      "weight": -0.009891483766473592
     },
     {
-      "feature": "kmer:UCA",
-      "weight": -0.03330380409494069
+      "feature": "mature:kmer:UCUG",
+      "weight": -0.009312786717776385
     },
     {
-      "feature": "kmer:CAU",
-      "weight": -0.032238813930381485
+      "feature": "mature:kmer:CAU",
+      "weight": -0.008319947259595156
     },
     {
-      "feature": "kmer:AAG",
-      "weight": -0.031525847749906744
+      "feature": "mature:kmer:CUG",
+      "weight": -0.007925518658748038
     },
     {
-      "feature": "kmer:UUU",
-      "weight": -0.0308013819743295
+      "feature": "mature:kmer:CUGG",
+      "weight": -0.0075549762907832696
     },
     {
-      "feature": "kmer:GAGG",
-      "weight": -0.029042276149629606
+      "feature": "mature:kmer:AGGG",
+      "weight": -0.007184419096556744
     },
     {
-      "feature": "kmer:CUGG",
-      "weight": -0.02875884540337291
+      "feature": "mature:kmer:GA",
+      "weight": -0.0070761473011108755
     },
     {
-      "feature": "kmer:UCUG",
-      "weight": -0.027049383574339367
+      "feature": "mature:kmer:UCUC",
+      "weight": -0.006995844573403086
     },
     {
-      "feature": "kmer:AGGG",
-      "weight": -0.02619263042709224
+      "feature": "hairpin:kmer:GG",
+      "weight": -0.00681348513757358
     },
     {
-      "feature": "kmer:GGGG",
-      "weight": -0.024005177998727086
+      "feature": "mature:kmer:UCCU",
+      "weight": -0.006131850125964647
     },
     {
-      "feature": "kmer:CUUU",
-      "weight": -0.02332743712812976
+      "feature": "hairpin:kmer:AG",
+      "weight": -0.006116182542063843
     },
     {
-      "feature": "kmer:GCU",
-      "weight": -0.0231639041230567
+      "feature": "mature:kmer:UGC",
+      "weight": -0.006053483550721004
     },
     {
-      "feature": "kmer:CUCC",
-      "weight": -0.021997042787039518
+      "feature": "mature:kmer:CUU",
+      "weight": -0.005996548975766514
     },
     {
-      "feature": "kmer:ACA",
-      "weight": -0.021597603589116998
+      "feature": "mature:kmer:GGGG",
+      "weight": -0.005684736245109522
     },
     {
-      "feature": "kmer:UCUC",
-      "weight": -0.021471173664758775
+      "feature": "mature:kmer:CAC",
+      "weight": -0.005471543868057731
     },
     {
-      "feature": "kmer:CUA",
-      "weight": -0.021377159986531644
+      "feature": "mature:kmer:GGCU",
+      "weight": -0.005345805264862012
     },
     {
-      "feature": "kmer:GGCU",
-      "weight": -0.02128364188144066
+      "feature": "mature:kmer:CUUC",
+      "weight": -0.005194296203207654
     },
     {
-      "feature": "kmer:GAC",
-      "weight": -0.020861892367811705
+      "feature": "mature:kmer:GGCC",
+      "weight": -0.005176985333207633
     },
     {
-      "feature": "kmer:AU",
-      "weight": -0.020620108855594843
+      "feature": "mature:kmer:ACA",
+      "weight": -0.005135998618891527
     },
     {
-      "feature": "kmer:AUG",
-      "weight": -0.019675356361532944
+      "feature": "structure:stem_density",
+      "weight": -0.00512402857820714
     },
     {
-      "feature": "kmer:GCCU",
-      "weight": -0.019565564697879324
+      "feature": "mature:kmer:GGUG",
+      "weight": -0.005108828125358563
     },
     {
-      "feature": "kmer:GGUG",
-      "weight": -0.019419354612449747
+      "feature": "mature:kmer:CUCC",
+      "weight": -0.0050961352143942765
     },
     {
-      "feature": "kmer:CUU",
-      "weight": -0.019404580929619795
+      "feature": "mature:kmer:UGGA",
+      "weight": -0.00505540154936667
     },
     {
-      "feature": "kmer:UCCU",
-      "weight": -0.01915463560258528
+      "feature": "mature:kmer:GAAG",
+      "weight": -0.004964633896005544
     },
     {
-      "feature": "kmer:CAC",
-      "weight": -0.01902831701898837
+      "feature": "mature:kmer:GAGA",
+      "weight": -0.004816787881842689
     }
   ],
   "known_markers_with_sequence": [
@@ -1041,8 +1219,13 @@
       "sequence": "UGAGGUAGUAGGUUGUGUGGUU",
       "seed": "GAGGUAG",
       "family_base": "hsa-let-7b",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000063"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "let-7b-5p",
         "resolved_mature_mirna": "hsa-let-7b-5p",
@@ -1054,7 +1237,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1064,8 +1251,13 @@
       "sequence": "AAAAGUGCUUACAGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-106a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000113"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-106a-5p",
         "resolved_mature_mirna": "hsa-miR-106a-5p",
@@ -1077,7 +1269,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1087,8 +1283,14 @@
       "sequence": "UGUGCAAAUCCAUGCAAAACUGA",
       "seed": "GUGCAAA",
       "family_base": "hsa-mir-19b",
+      "hairpin_count": 2,
+      "hairpin_accessions": [
+        "MI0000074",
+        "MI0000075"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-19b-3p",
         "resolved_mature_mirna": "hsa-miR-19b-3p",
@@ -1100,7 +1302,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1110,8 +1316,13 @@
       "sequence": "UAAAGUGCUUAUAGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-20a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000076"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-20a-5p",
         "resolved_mature_mirna": "hsa-miR-20a-5p",
@@ -1123,7 +1334,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; documentado como excecao no compartimento extracelular."
+        "observacao": "Marcador do painel inicial; documentado como excecao no compartimento extracelular.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1133,8 +1348,13 @@
       "sequence": "UGUCAGUUUGUCAAAUACCCCA",
       "seed": "GUCAGUU",
       "family_base": "hsa-mir-223",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000300"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 2.7462686567164174,
       "metadata": {
         "mirna": "miR-223-3p",
         "resolved_mature_mirna": "hsa-miR-223-3p",
@@ -1146,7 +1366,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; documentado como excecao no compartimento extracelular."
+        "observacao": "Marcador do painel inicial; documentado como excecao no compartimento extracelular.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1156,8 +1380,13 @@
       "sequence": "CAUUGCACUUGUCUCGGUCUGA",
       "seed": "AUUGCAC",
       "family_base": "hsa-mir-25",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000082"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-25-3p",
         "resolved_mature_mirna": "hsa-miR-25-3p",
@@ -1169,7 +1398,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1179,8 +1412,13 @@
       "sequence": "AAUGACACGAUCACUCCCGUUGA",
       "seed": "AUGACAC",
       "family_base": "hsa-mir-425",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0001448"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 2.7462686567164174,
       "metadata": {
         "mirna": "miR-425-5p",
         "resolved_mature_mirna": "hsa-miR-425-5p",
@@ -1192,7 +1430,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1202,8 +1444,13 @@
       "sequence": "AAACCGUUACCAUUACUGAGUU",
       "seed": "AACCGUU",
       "family_base": "hsa-mir-451a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0001729"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 2.7462686567164174,
       "metadata": {
         "mirna": "miR-451a",
         "resolved_mature_mirna": "hsa-miR-451a",
@@ -1215,7 +1462,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1225,8 +1476,14 @@
       "sequence": "UAUUGCACUUGUCCCGGCCUGU",
       "seed": "AUUGCAC",
       "family_base": "hsa-mir-92a",
+      "hairpin_count": 2,
+      "hairpin_accessions": [
+        "MI0000093",
+        "MI0000094"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-92a-3p",
         "resolved_mature_mirna": "hsa-miR-92a-3p",
@@ -1238,7 +1495,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1248,8 +1509,13 @@
       "sequence": "CAAAGUGCUGUUCGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-93",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000095"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-93-5p",
         "resolved_mature_mirna": "hsa-miR-93-5p",
@@ -1261,7 +1527,11 @@
         "recorrencia_bibliografica": "painel_inicial",
         "prioridade_projeto": "painel_inicial",
         "urls": "",
-        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo."
+        "observacao": "Marcador do painel inicial; nao tratar como diagnostico definitivo.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_do_projeto"
       }
     },
     {
@@ -1271,8 +1541,15 @@
       "sequence": "UGAGGUAGUAGGUUGUAUAGUU",
       "seed": "GAGGUAG",
       "family_base": "hsa-let-7a",
+      "hairpin_count": 3,
+      "hairpin_accessions": [
+        "MI0000060",
+        "MI0000061",
+        "MI0000062"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "let-7a",
         "resolved_mature_mirna": "hsa-let-7a-5p",
@@ -1284,7 +1561,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1294,8 +1575,14 @@
       "sequence": "UGGAAUGUAAAGAAGUAUGUAU",
       "seed": "GGAAUGU",
       "family_base": "hsa-mir-1",
+      "hairpin_count": 2,
+      "hairpin_accessions": [
+        "MI0000437",
+        "MI0000651"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-1",
         "resolved_mature_mirna": "hsa-miR-1-3p",
@@ -1307,7 +1594,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2024.1337706/full",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1317,8 +1608,13 @@
       "sequence": "UACCCUGUAGAACCGAAUUUGUG",
       "seed": "ACCCUGU",
       "family_base": "hsa-mir-10b",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000267"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 3,
+      "evidence_weight": 3,
+      "family_balanced_weight": 4.119402985074626,
       "metadata": {
         "mirna": "miR-10b",
         "resolved_mature_mirna": "hsa-miR-10b-5p",
@@ -1330,7 +1626,11 @@
         "recorrencia_bibliografica": "alta",
         "prioridade_projeto": "alta",
         "urls": "https://link.springer.com/article/10.1186/s43046-022-00115-6|https://pubmed.ncbi.nlm.nih.gov/23334650/|https://pubmed.ncbi.nlm.nih.gov/38280134/|https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2024.1337706/full",
-        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico."
+        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico.",
+        "training_tier": "alta",
+        "training_weight": "3",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_tres_ou_mais_fontes"
       }
     },
     {
@@ -1340,8 +1640,13 @@
       "sequence": "AAUGGAUUUUUGGAGCAGG",
       "seed": "AUGGAUU",
       "family_base": "hsa-mir-1246",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0006381"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-1246",
         "resolved_mature_mirna": "hsa-miR-1246",
@@ -1353,7 +1658,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4814263/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1363,8 +1672,13 @@
       "sequence": "UCCCUGAGACCCUUUAACCUGUGA",
       "seed": "CCCUGAG",
       "family_base": "hsa-mir-125a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000469"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-125a",
         "resolved_mature_mirna": "hsa-miR-125a-5p",
@@ -1376,7 +1690,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1386,8 +1704,14 @@
       "sequence": "UCCCUGAGACCCUAACUUGUGA",
       "seed": "CCCUGAG",
       "family_base": "hsa-mir-125b",
+      "hairpin_count": 2,
+      "hairpin_accessions": [
+        "MI0000446",
+        "MI0000470"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 3,
+      "evidence_weight": 3,
+      "family_balanced_weight": 2.059701492537313,
       "metadata": {
         "mirna": "miR-125b",
         "resolved_mature_mirna": "hsa-miR-125b-5p",
@@ -1399,7 +1723,11 @@
         "recorrencia_bibliografica": "alta",
         "prioridade_projeto": "alta",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5309178/|https://pubmed.ncbi.nlm.nih.gov/23334650/|https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico."
+        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico.",
+        "training_tier": "alta",
+        "training_weight": "3",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_tres_ou_mais_fontes"
       }
     },
     {
@@ -1409,8 +1737,13 @@
       "sequence": "ACUCGGCGUGGCGUCGGUCGUG",
       "seed": "CUCGGCG",
       "family_base": "hsa-mir-1307",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0006444"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-1307-3p",
         "resolved_mature_mirna": "hsa-miR-1307-3p",
@@ -1422,7 +1755,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4814263/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1432,8 +1769,13 @@
       "sequence": "UCUACAGUGCACGUGUCUCCAGU",
       "seed": "CUACAGU",
       "family_base": "hsa-mir-139",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000261"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-139-5p",
         "resolved_mature_mirna": "hsa-miR-139-5p",
@@ -1445,7 +1787,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1455,8 +1801,13 @@
       "sequence": "GUCCAGUUUUCCCAGGAAUCCCU",
       "seed": "UCCAGUU",
       "family_base": "hsa-mir-145",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000461"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 3,
+      "evidence_weight": 3,
+      "family_balanced_weight": 4.119402985074626,
       "metadata": {
         "mirna": "miR-145",
         "resolved_mature_mirna": "hsa-miR-145-5p",
@@ -1468,7 +1819,11 @@
         "recorrencia_bibliografica": "alta",
         "prioridade_projeto": "alta",
         "urls": "https://link.springer.com/article/10.1186/1756-0500-2-89|https://pmc.ncbi.nlm.nih.gov/articles/PMC5309178/|https://pubmed.ncbi.nlm.nih.gov/23334650/|https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico."
+        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico.",
+        "training_tier": "alta",
+        "training_weight": "3",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_tres_ou_mais_fontes"
       }
     },
     {
@@ -1478,8 +1833,13 @@
       "sequence": "UUAAUGCUAAUCGUGAUAGGGGUU",
       "seed": "UAAUGCU",
       "family_base": "hsa-mir-155",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000681"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 3,
+      "evidence_weight": 3,
+      "family_balanced_weight": 4.119402985074626,
       "metadata": {
         "mirna": "miR-155",
         "resolved_mature_mirna": "hsa-miR-155-5p",
@@ -1491,7 +1851,11 @@
         "recorrencia_bibliografica": "alta",
         "prioridade_projeto": "alta",
         "urls": "https://hematologylaboratories.lf1.cuni.cz/file/154/oncogenetic-micro.pdf|https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0047003|https://link.springer.com/article/10.1186/1756-0500-2-89|https://pmc.ncbi.nlm.nih.gov/articles/PMC5309178/|https://pubmed.ncbi.nlm.nih.gov/23334650/|https://pubmed.ncbi.nlm.nih.gov/38280134/|https://www.mdpi.com/1420-3049/19/5/6282",
-        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico."
+        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico.",
+        "training_tier": "alta",
+        "training_weight": "3",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_tres_ou_mais_fontes"
       }
     },
     {
@@ -1501,8 +1865,14 @@
       "sequence": "UAGCAGCACGUAAAUAUUGGCG",
       "seed": "AGCAGCA",
       "family_base": "hsa-mir-16",
+      "hairpin_count": 2,
+      "hairpin_accessions": [
+        "MI0000070",
+        "MI0000115"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 0.9154228855721391,
       "metadata": {
         "mirna": "miR-16",
         "resolved_mature_mirna": "hsa-miR-16-5p",
@@ -1514,7 +1884,11 @@
         "recorrencia_bibliografica": "media",
         "prioridade_projeto": "media",
         "urls": "https://link.springer.com/article/10.1186/1756-0500-2-89|https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2024.1337706/full",
-        "observacao": "Candidato serum de media recorrencia e marcador do painel inicial; nao diagnostico."
+        "observacao": "Candidato serum de media recorrencia e marcador do painel inicial; nao diagnostico.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_e_recorrencia_media"
       }
     },
     {
@@ -1524,8 +1898,13 @@
       "sequence": "CAAAGUGCUUACAGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-17",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000071"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.3432835820895522,
       "metadata": {
         "mirna": "miR-17-5p",
         "resolved_mature_mirna": "hsa-miR-17-5p",
@@ -1537,7 +1916,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1547,8 +1930,14 @@
       "sequence": "AACAUUCAUUGCUGUCGGUGGGU",
       "seed": "ACAUUCA",
       "family_base": "hsa-mir-181b",
+      "hairpin_count": 2,
+      "hairpin_accessions": [
+        "MI0000270",
+        "MI0000683"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-181b",
         "resolved_mature_mirna": "hsa-miR-181b-5p",
@@ -1560,7 +1949,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://hematologylaboratories.lf1.cuni.cz/file/154/oncogenetic-micro.pdf",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1570,8 +1963,13 @@
       "sequence": "CAACGGAAUCCCAAAAGCAGCUG",
       "seed": "AACGGAA",
       "family_base": "hsa-mir-191",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000465"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-191",
         "resolved_mature_mirna": "hsa-miR-191-5p",
@@ -1583,7 +1981,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/23334650/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1593,8 +1995,13 @@
       "sequence": "UAGCAGCACAGAAAUAUUGGC",
       "seed": "AGCAGCA",
       "family_base": "hsa-mir-195",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000489"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 3,
+      "evidence_weight": 3,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-195",
         "resolved_mature_mirna": "hsa-miR-195-5p",
@@ -1606,7 +2013,11 @@
         "recorrencia_bibliografica": "alta",
         "prioridade_projeto": "alta",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6949784/|https://pubmed.ncbi.nlm.nih.gov/38280134/|https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2024.1337706/full",
-        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico."
+        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico.",
+        "training_tier": "alta",
+        "training_weight": "3",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_tres_ou_mais_fontes"
       }
     },
     {
@@ -1616,8 +2027,13 @@
       "sequence": "UGUGCAAAUCUAUGCAAAACUGA",
       "seed": "GUGCAAA",
       "family_base": "hsa-mir-19a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000073"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 2,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-19a",
         "resolved_mature_mirna": "hsa-miR-19a-3p",
@@ -1629,7 +2045,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://hematologylaboratories.lf1.cuni.cz/file/154/oncogenetic-micro.pdf",
-        "observacao": "Candidato exploratorio e marcador do painel inicial; nao diagnostico."
+        "observacao": "Candidato exploratorio e marcador do painel inicial; nao diagnostico.",
+        "training_tier": "painel_inicial",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "painel_inicial_e_evidencia_exploratoria"
       }
     },
     {
@@ -1639,8 +2059,13 @@
       "sequence": "UAACACUGUCUGGUAACGAUGU",
       "seed": "AACACUG",
       "family_base": "hsa-mir-200a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000737"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-200a",
         "resolved_mature_mirna": "hsa-miR-200a-3p",
@@ -1652,7 +2077,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1662,8 +2091,13 @@
       "sequence": "UCCUUCAUUCCACCGGAGUCUG",
       "seed": "CCUUCAU",
       "family_base": "hsa-mir-205",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000285"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-205",
         "resolved_mature_mirna": "hsa-miR-205-5p",
@@ -1675,7 +2109,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1685,8 +2123,13 @@
       "sequence": "UGGAAUGUAAGGAAGUGUGUGG",
       "seed": "GGAAUGU",
       "family_base": "hsa-mir-206",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000490"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-206",
         "resolved_mature_mirna": "hsa-miR-206",
@@ -1698,7 +2141,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1708,8 +2155,13 @@
       "sequence": "UAGCUUAUCAGACUGAUGUUGA",
       "seed": "AGCUUAU",
       "family_base": "hsa-mir-21",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000077"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 3,
+      "evidence_weight": 3,
+      "family_balanced_weight": 4.119402985074626,
       "metadata": {
         "mirna": "miR-21",
         "resolved_mature_mirna": "hsa-miR-21-5p",
@@ -1721,7 +2173,11 @@
         "recorrencia_bibliografica": "alta",
         "prioridade_projeto": "alta",
         "urls": "https://link.springer.com/article/10.1186/s43046-022-00115-6|https://pmc.ncbi.nlm.nih.gov/articles/PMC3872537/|https://pmc.ncbi.nlm.nih.gov/articles/PMC5309178/|https://pubmed.ncbi.nlm.nih.gov/23334650/|https://pubmed.ncbi.nlm.nih.gov/26063582/|https://pubmed.ncbi.nlm.nih.gov/38280134/|https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2024.1337706/full",
-        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico."
+        "observacao": "Candidato serum de alta recorrencia bibliografica; nao diagnostico.",
+        "training_tier": "alta",
+        "training_weight": "3",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_tres_ou_mais_fontes"
       }
     },
     {
@@ -1731,8 +2187,13 @@
       "sequence": "CUGUGCGUGUGACAGCGGCUGA",
       "seed": "UGUGCGU",
       "family_base": "hsa-mir-210",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000286"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 2.7462686567164174,
       "metadata": {
         "mirna": "miR-210",
         "resolved_mature_mirna": "hsa-miR-210-3p",
@@ -1744,7 +2205,11 @@
         "recorrencia_bibliografica": "media",
         "prioridade_projeto": "media",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/|https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2024.1337706/full",
-        "observacao": "Candidato serum de media recorrencia; nao diagnostico."
+        "observacao": "Candidato serum de media recorrencia; nao diagnostico.",
+        "training_tier": "media",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_duas_fontes"
       }
     },
     {
@@ -1754,8 +2219,14 @@
       "sequence": "UGGCUCAGUUCAGCAGGAACAG",
       "seed": "GGCUCAG",
       "family_base": "hsa-mir-24",
+      "hairpin_count": 2,
+      "hairpin_accessions": [
+        "MI0000080",
+        "MI0000081"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-24",
         "resolved_mature_mirna": "hsa-miR-24-3p",
@@ -1767,7 +2238,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://hematologylaboratories.lf1.cuni.cz/file/154/oncogenetic-micro.pdf",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1777,8 +2252,13 @@
       "sequence": "AGGCAAGAUGCUGGCAUAGCU",
       "seed": "GGCAAGA",
       "family_base": "hsa-mir-31",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000089"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-31",
         "resolved_mature_mirna": "hsa-miR-31-5p",
@@ -1790,7 +2270,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1800,8 +2284,13 @@
       "sequence": "UGGCAGUGUCUUAGCUGGUUGU",
       "seed": "GGCAGUG",
       "family_base": "hsa-mir-34a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000268"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 2,
+      "evidence_weight": 2,
+      "family_balanced_weight": 2.7462686567164174,
       "metadata": {
         "mirna": "miR-34a",
         "resolved_mature_mirna": "hsa-miR-34a-5p",
@@ -1813,7 +2302,11 @@
         "recorrencia_bibliografica": "media",
         "prioridade_projeto": "media",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/|https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2024.1337706/full",
-        "observacao": "Candidato serum de media recorrencia; nao diagnostico."
+        "observacao": "Candidato serum de media recorrencia; nao diagnostico.",
+        "training_tier": "media",
+        "training_weight": "2",
+        "use_in_training": "sim",
+        "training_note": "recorrencia_em_duas_fontes"
       }
     },
     {
@@ -1823,8 +2316,13 @@
       "sequence": "UAAUGCCCCUAAAAAUCCUUAU",
       "seed": "AAUGCCC",
       "family_base": "hsa-mir-365a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000767"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-365",
         "resolved_mature_mirna": "hsa-miR-365a-3p",
@@ -1836,7 +2334,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5309178/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1846,8 +2348,13 @@
       "sequence": "GAAGUGCUUCGAUUUUGGGGUGU",
       "seed": "AAGUGCU",
       "family_base": "hsa-mir-373",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000781"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-373",
         "resolved_mature_mirna": "hsa-miR-373-3p",
@@ -1859,7 +2366,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1869,8 +2380,13 @@
       "sequence": "GAAGUUGUUCGUGGUGGAUUCG",
       "seed": "AAGUUGU",
       "family_base": "hsa-mir-382",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000790"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-382",
         "resolved_mature_mirna": "hsa-miR-382-5p",
@@ -1882,7 +2398,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/23334650/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1892,8 +2412,13 @@
       "sequence": "CGGCGCGACCGGCCCGGGG",
       "seed": "GGCGCGA",
       "family_base": "hsa-mir-4634",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0017261"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-4634",
         "resolved_mature_mirna": "hsa-miR-4634",
@@ -1905,7 +2430,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4814263/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1915,8 +2444,13 @@
       "sequence": "CAGCAGCACACUGUGGUUUGU",
       "seed": "AGCAGCA",
       "family_base": "hsa-mir-497",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0003138"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.45771144278606957,
       "metadata": {
         "mirna": "miR-497",
         "resolved_mature_mirna": "hsa-miR-497-5p",
@@ -1928,7 +2462,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1938,8 +2476,13 @@
       "sequence": "AAAGUGCUUCCUUUUAGAGGGU",
       "seed": "AAGUGCU",
       "family_base": "hsa-mir-520c",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0003158"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 0.6865671641791044,
       "metadata": {
         "mirna": "miR-520c",
         "resolved_mature_mirna": "hsa-miR-520c-3p",
@@ -1951,7 +2494,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1961,8 +2508,13 @@
       "sequence": "ACUGGGUAGGUGGGGCUCCAGG",
       "seed": "CUGGGUA",
       "family_base": "hsa-mir-6861",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0022708"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-6861-5p",
         "resolved_mature_mirna": "hsa-miR-6861-5p",
@@ -1974,7 +2526,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4814263/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -1984,8 +2540,13 @@
       "sequence": "UGAGGGACCCAGGACAGGAGA",
       "seed": "GAGGGAC",
       "family_base": "hsa-mir-6875",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0022722"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-6875-5p",
         "resolved_mature_mirna": "hsa-miR-6875-5p",
@@ -1997,7 +2558,11 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4814263/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     },
     {
@@ -2007,8 +2572,13 @@
       "sequence": "AACCCGUAGAUCCGAUCUUGUG",
       "seed": "ACCCGUA",
       "family_base": "hsa-mir-99a",
+      "hairpin_count": 1,
+      "hairpin_accessions": [
+        "MI0000101"
+      ],
       "resolution_method": "exact",
-      "reference_weight": 1,
+      "evidence_weight": 1,
+      "family_balanced_weight": 1.3731343283582087,
       "metadata": {
         "mirna": "miR-99a",
         "resolved_mature_mirna": "hsa-miR-99a-5p",
@@ -2020,366 +2590,1376 @@
         "recorrencia_bibliografica": "exploratoria",
         "prioridade_projeto": "exploratoria",
         "urls": "https://pubmed.ncbi.nlm.nih.gov/38280134/",
-        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental."
+        "observacao": "Candidato exploratorio; hipotese computacional; necessita validacao experimental.",
+        "training_tier": "exploratoria",
+        "training_weight": "1",
+        "use_in_training": "sim",
+        "training_note": "evidencia_de_uma_fonte"
       }
     }
   ],
   "missing_marker_sequences": [],
   "candidate_count": 2613,
   "candidate_count_global_mirbase": 2613,
-  "candidate_count_with_expression_available": 221,
+  "candidate_count_with_expression_available": 611,
+  "candidate_count_with_hairpin_available": 2612,
+  "candidate_names_without_hairpin": [
+    "mir-517-5p"
+  ],
+  "positive_marker_count_with_hairpin_available": 43,
   "training_history": [
     {
-      "epoch": 1,
-      "weighted_log_loss": 0.6365372089133257
+      "bag": 1,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6340127401484146
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.6337122563675756
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6336498602194249
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.6336327856443547
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.6336311625838572
+        }
+      ]
     },
     {
-      "epoch": 100,
-      "weighted_log_loss": 0.6338219114047269
+      "bag": 2,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6329398022768976
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.6325193459488595
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6324335526832954
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.6324105106931222
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.6324083506759873
+        }
+      ]
     },
     {
-      "epoch": 200,
-      "weighted_log_loss": 0.632976741841009
+      "bag": 3,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6347992332650367
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.6345939367054771
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6345516519460402
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.634540228269549
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.6345391545876041
+        }
+      ]
     },
     {
-      "epoch": 300,
-      "weighted_log_loss": 0.6326182222056924
+      "bag": 4,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6337276504343943
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.6333970589699937
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6333291884545259
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.6333108533053977
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.6333091275466826
+        }
+      ]
     },
     {
-      "epoch": 400,
-      "weighted_log_loss": 0.6324407741197741
+      "bag": 5,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6333439619060627
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.6329705702636322
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6328944442181343
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.6328740497669854
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.6328721428465662
+        }
+      ]
     },
     {
-      "epoch": 500,
-      "weighted_log_loss": 0.6323442117488827
+      "bag": 6,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6340862928195301
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.6337958648076514
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6337357562832663
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.633719362942036
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.6337178084305918
+        }
+      ]
     },
     {
-      "epoch": 600,
-      "weighted_log_loss": 0.6322881000377
+      "bag": 7,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6334383201727668
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.6330777376497511
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6330044352298141
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.6329848438369687
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.6329830147109751
+        }
+      ]
     },
     {
-      "epoch": 700,
-      "weighted_log_loss": 0.6322538631606882
-    },
-    {
-      "epoch": 800,
-      "weighted_log_loss": 0.6322321629461529
-    },
-    {
-      "epoch": 900,
-      "weighted_log_loss": 0.6322179796876192
+      "bag": 8,
+      "history": [
+        {
+          "epoch": 1,
+          "weighted_log_loss": 0.6365365593894158
+        },
+        {
+          "epoch": 100,
+          "weighted_log_loss": 0.6342258486710011
+        },
+        {
+          "epoch": 200,
+          "weighted_log_loss": 0.633952523710964
+        },
+        {
+          "epoch": 300,
+          "weighted_log_loss": 0.6338960531764972
+        },
+        {
+          "epoch": 400,
+          "weighted_log_loss": 0.6338806842539287
+        },
+        {
+          "epoch": 420,
+          "weighted_log_loss": 0.63387922929497
+        }
+      ]
     }
   ],
   "internal_recovery_validation": {
-    "method": "leave_one_positive_out_recovery_against_unlabeled_background",
-    "mean_percentile": 0.7026976744186048,
-    "held_out_markers_in_top_10_percent": 30.23255813953488,
-    "details": [
+    "method": "nested_group_cross_validation_by_seed_family_against_full_unlabeled_background",
+    "primary_unit": "seed_family",
+    "seed_family_count": 32,
+    "marker_count": 43,
+    "marker_metrics": {
+      "count": 43,
+      "mean_percentile": 0.6318575949641144,
+      "recovered_at_1_percent": 0,
+      "recall_at_1_percent": 0,
+      "recovered_at_5_percent": 1,
+      "recall_at_5_percent": 0.023255813953488372,
+      "recovered_at_10_percent": 5,
+      "recall_at_10_percent": 0.11627906976744186,
+      "recovered_at_20_percent": 12,
+      "recall_at_20_percent": 0.27906976744186046
+    },
+    "family_metrics": {
+      "count": 32,
+      "mean_percentile": 0.6035020543409444,
+      "recovered_at_1_percent": 0,
+      "recall_at_1_percent": 0,
+      "recovered_at_5_percent": 0,
+      "recall_at_5_percent": 0,
+      "recovered_at_10_percent": 3,
+      "recall_at_10_percent": 0.09375,
+      "recovered_at_20_percent": 10,
+      "recall_at_20_percent": 0.3125
+    },
+    "bootstrap_95_ci": {
+      "method": "bootstrap_by_seed_family",
+      "iterations": 4000,
+      "mean_percentile_95_ci": [
+        0.5178988070386716,
+        0.687976771475063
+      ],
+      "recall_at_10_percent_95_ci": [
+        0,
+        0.21875
+      ]
+    },
+    "random_ranking_test": {
+      "method": "deterministic_random_ranking_monte_carlo_preserving_family_marker_counts",
+      "iterations": 10000,
+      "preserves_marker_count_per_seed_family": true,
+      "p_value_mean_percentile": 0.011998800119988001,
+      "p_value_recall_at_10_percent": 0.47225277472252775
+    },
+    "baselines": {
+      "similaridade_seed": {
+        "marker_metrics": {
+          "count": 43,
+          "mean_percentile": 0.516849533176921,
+          "recovered_at_1_percent": 0,
+          "recall_at_1_percent": 0,
+          "recovered_at_5_percent": 0,
+          "recall_at_5_percent": 0,
+          "recovered_at_10_percent": 0,
+          "recall_at_10_percent": 0,
+          "recovered_at_20_percent": 7,
+          "recall_at_20_percent": 0.16279069767441862
+        },
+        "family_metrics": {
+          "count": 32,
+          "mean_percentile": 0.5307836477889657,
+          "recovered_at_1_percent": 0,
+          "recall_at_1_percent": 0,
+          "recovered_at_5_percent": 0,
+          "recall_at_5_percent": 0,
+          "recovered_at_10_percent": 0,
+          "recall_at_10_percent": 0,
+          "recovered_at_20_percent": 5,
+          "recall_at_20_percent": 0.15625
+        }
+      },
+      "centroide_kmer_maduro": {
+        "marker_metrics": {
+          "count": 43,
+          "mean_percentile": 0.5314965927372424,
+          "recovered_at_1_percent": 1,
+          "recall_at_1_percent": 0.023255813953488372,
+          "recovered_at_5_percent": 2,
+          "recall_at_5_percent": 0.046511627906976744,
+          "recovered_at_10_percent": 3,
+          "recall_at_10_percent": 0.06976744186046512,
+          "recovered_at_20_percent": 6,
+          "recall_at_20_percent": 0.13953488372093023
+        },
+        "family_metrics": {
+          "count": 32,
+          "mean_percentile": 0.5089977556676641,
+          "recovered_at_1_percent": 1,
+          "recall_at_1_percent": 0.03125,
+          "recovered_at_5_percent": 1,
+          "recall_at_5_percent": 0.03125,
+          "recovered_at_10_percent": 2,
+          "recall_at_10_percent": 0.0625,
+          "recovered_at_20_percent": 5,
+          "recall_at_20_percent": 0.15625
+        }
+      },
+      "centroide_kmer_hairpin": {
+        "marker_metrics": {
+          "count": 43,
+          "mean_percentile": 0.6620013303755388,
+          "recovered_at_1_percent": 1,
+          "recall_at_1_percent": 0.023255813953488372,
+          "recovered_at_5_percent": 3,
+          "recall_at_5_percent": 0.06976744186046512,
+          "recovered_at_10_percent": 7,
+          "recall_at_10_percent": 0.16279069767441862,
+          "recovered_at_20_percent": 16,
+          "recall_at_20_percent": 0.37209302325581395
+        },
+        "family_metrics": {
+          "count": 32,
+          "mean_percentile": 0.6685923061942632,
+          "recovered_at_1_percent": 1,
+          "recall_at_1_percent": 0.03125,
+          "recovered_at_5_percent": 2,
+          "recall_at_5_percent": 0.0625,
+          "recovered_at_10_percent": 3,
+          "recall_at_10_percent": 0.09375,
+          "recovered_at_20_percent": 13,
+          "recall_at_20_percent": 0.40625
+        }
+      },
+      "ranking_aleatorio_deterministico": {
+        "marker_metrics": {
+          "count": 43,
+          "mean_percentile": 0.5060730892379738,
+          "recovered_at_1_percent": 0,
+          "recall_at_1_percent": 0,
+          "recovered_at_5_percent": 2,
+          "recall_at_5_percent": 0.046511627906976744,
+          "recovered_at_10_percent": 4,
+          "recall_at_10_percent": 0.09302325581395349,
+          "recovered_at_20_percent": 7,
+          "recall_at_20_percent": 0.16279069767441862
+        },
+        "family_metrics": {
+          "count": 32,
+          "mean_percentile": 0.5434003757696616,
+          "recovered_at_1_percent": 0,
+          "recall_at_1_percent": 0,
+          "recovered_at_5_percent": 2,
+          "recall_at_5_percent": 0.0625,
+          "recovered_at_10_percent": 3,
+          "recall_at_10_percent": 0.09375,
+          "recovered_at_20_percent": 7,
+          "recall_at_20_percent": 0.21875
+        }
+      }
+    },
+    "fold_selections": [
       {
-        "marker": "let-7b-5p",
-        "score": 0.6691338838657406,
-        "rank": 16,
-        "percentile": 0.97,
-        "pool_size": 501
+        "outer_fold": 1,
+        "held_out_seed_families": [
+          "ACAUUCA",
+          "AUUGCAC",
+          "UAAUGCU",
+          "GGCGCGA",
+          "ACCCGUA",
+          "GUGCAAA",
+          "GAGGGAC"
+        ],
+        "held_out_marker_count": 9,
+        "selected_config": "k2345_mature70_hairpin20_structure10",
+        "inner_comparison": [
+          {
+            "config": "k2345_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6155411039529269,
+            "family_recall_at_10_percent": 0.16
+          },
+          {
+            "config": "k234_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6139960007445648,
+            "family_recall_at_10_percent": 0.16
+          },
+          {
+            "config": "k2345_mature60_hairpin25_structure15",
+            "family_mean_percentile": 0.6087673661382987,
+            "family_recall_at_10_percent": 0.04
+          },
+          {
+            "config": "k3456_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6075923000369532,
+            "family_recall_at_10_percent": 0.04
+          },
+          {
+            "config": "k234567_structure25_mature50_hairpin25",
+            "family_mean_percentile": 0.5857274404486852,
+            "family_recall_at_10_percent": 0.08
+          },
+          {
+            "config": "k2345_balanced50_hairpin30_structure20",
+            "family_mean_percentile": 0.5814427204422092,
+            "family_recall_at_10_percent": 0.12
+          }
+        ]
       },
       {
-        "marker": "mir-106a-5p",
-        "score": 0.6691021498083843,
-        "rank": 17,
-        "percentile": 0.968,
-        "pool_size": 501
+        "outer_fold": 2,
+        "held_out_seed_families": [
+          "CUACAGU",
+          "CUGGGUA",
+          "CCCUGAG",
+          "AUGGAUU",
+          "GGAAUGU",
+          "AAGUGCU",
+          "GAGGUAG"
+        ],
+        "held_out_marker_count": 11,
+        "selected_config": "k234_mature70_hairpin20_structure10",
+        "inner_comparison": [
+          {
+            "config": "k234_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6170984925922134,
+            "family_recall_at_10_percent": 0.2
+          },
+          {
+            "config": "k2345_mature60_hairpin25_structure15",
+            "family_mean_percentile": 0.6089851332387163,
+            "family_recall_at_10_percent": 0.2
+          },
+          {
+            "config": "k2345_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6079181636265902,
+            "family_recall_at_10_percent": 0.16
+          },
+          {
+            "config": "k2345_balanced50_hairpin30_structure20",
+            "family_mean_percentile": 0.6067423950698967,
+            "family_recall_at_10_percent": 0.16
+          },
+          {
+            "config": "k3456_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6019314861123399,
+            "family_recall_at_10_percent": 0.12
+          },
+          {
+            "config": "k234567_structure25_mature50_hairpin25",
+            "family_mean_percentile": 0.5924160006175182,
+            "family_recall_at_10_percent": 0.12
+          }
+        ]
       },
+      {
+        "outer_fold": 3,
+        "held_out_seed_families": [
+          "AACGGAA",
+          "AAAGUGC",
+          "CUCGGCG",
+          "AGCAGCA",
+          "AACCGUU",
+          "AUGACAC"
+        ],
+        "held_out_marker_count": 11,
+        "selected_config": "k234_mature70_hairpin20_structure10",
+        "inner_comparison": [
+          {
+            "config": "k234_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6012788873780033,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k2345_mature60_hairpin25_structure15",
+            "family_mean_percentile": 0.601175136904108,
+            "family_recall_at_10_percent": 0.11538461538461539
+          },
+          {
+            "config": "k2345_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.600286837521664,
+            "family_recall_at_10_percent": 0.11538461538461539
+          },
+          {
+            "config": "k3456_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.5956595500847415,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k2345_balanced50_hairpin30_structure20",
+            "family_mean_percentile": 0.5925196409217596,
+            "family_recall_at_10_percent": 0.11538461538461539
+          },
+          {
+            "config": "k234567_structure25_mature50_hairpin25",
+            "family_mean_percentile": 0.5838527540743171,
+            "family_recall_at_10_percent": 0.11538461538461539
+          }
+        ]
+      },
+      {
+        "outer_fold": 4,
+        "held_out_seed_families": [
+          "GGCAGUG",
+          "CCUUCAU",
+          "AAUGCCC",
+          "UGUGCGU",
+          "AACACUG",
+          "AAGUUGU"
+        ],
+        "held_out_marker_count": 6,
+        "selected_config": "k234_mature70_hairpin20_structure10",
+        "inner_comparison": [
+          {
+            "config": "k234_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.607680667649907,
+            "family_recall_at_10_percent": 0.11538461538461539
+          },
+          {
+            "config": "k2345_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6013563005405275,
+            "family_recall_at_10_percent": 0.038461538461538464
+          },
+          {
+            "config": "k2345_mature60_hairpin25_structure15",
+            "family_mean_percentile": 0.5993520740896613,
+            "family_recall_at_10_percent": 0.11538461538461539
+          },
+          {
+            "config": "k2345_balanced50_hairpin30_structure20",
+            "family_mean_percentile": 0.596411122966246,
+            "family_recall_at_10_percent": 0.15384615384615385
+          },
+          {
+            "config": "k3456_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.591059276664329,
+            "family_recall_at_10_percent": 0
+          },
+          {
+            "config": "k234567_structure25_mature50_hairpin25",
+            "family_mean_percentile": 0.5838922010599277,
+            "family_recall_at_10_percent": 0.11538461538461539
+          }
+        ]
+      },
+      {
+        "outer_fold": 5,
+        "held_out_seed_families": [
+          "GGCUCAG",
+          "GGCAAGA",
+          "AGCUUAU",
+          "ACCCUGU",
+          "GUCAGUU",
+          "UCCAGUU"
+        ],
+        "held_out_marker_count": 6,
+        "selected_config": "k2345_balanced50_hairpin30_structure20",
+        "inner_comparison": [
+          {
+            "config": "k2345_balanced50_hairpin30_structure20",
+            "family_mean_percentile": 0.6207252465184075,
+            "family_recall_at_10_percent": 0.23076923076923078
+          },
+          {
+            "config": "k2345_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.60735978013284,
+            "family_recall_at_10_percent": 0.15384615384615385
+          },
+          {
+            "config": "k234_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.6067333477816308,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k2345_mature60_hairpin25_structure15",
+            "family_mean_percentile": 0.5920726766629605,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k3456_mature70_hairpin20_structure10",
+            "family_mean_percentile": 0.5863476988403201,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k234567_structure25_mature50_hairpin25",
+            "family_mean_percentile": 0.5832091036343628,
+            "family_recall_at_10_percent": 0.07692307692307693
+          }
+        ]
+      }
+    ],
+    "family_details": [
+      {
+        "seed_family": "GUGCAAA",
+        "marker_count": 2,
+        "percentile": 0.890164561806353,
+        "best_percentile": 0.9223115193264447,
+        "markers": [
+          "mir-19b-3p",
+          "mir-19a-3p"
+        ]
+      },
+      {
+        "seed_family": "AUUGCAC",
+        "marker_count": 2,
+        "percentile": 0.5247221157531621,
+        "best_percentile": 0.5626676887696436,
+        "markers": [
+          "mir-25-3p",
+          "mir-92a-3p"
+        ]
+      },
+      {
+        "seed_family": "UAAUGCU",
+        "marker_count": 1,
+        "percentile": 0.9054726368159204,
+        "best_percentile": 0.9054726368159204,
+        "markers": [
+          "mir-155-5p"
+        ]
+      },
+      {
+        "seed_family": "ACAUUCA",
+        "marker_count": 1,
+        "percentile": 0.6554235339210426,
+        "best_percentile": 0.6554235339210426,
+        "markers": [
+          "mir-181b-5p"
+        ]
+      },
+      {
+        "seed_family": "GGCGCGA",
+        "marker_count": 1,
+        "percentile": 0.001530807500956799,
+        "best_percentile": 0.001530807500956799,
+        "markers": [
+          "mir-4634"
+        ]
+      },
+      {
+        "seed_family": "GAGGGAC",
+        "marker_count": 1,
+        "percentile": 0.19869831546707506,
+        "best_percentile": 0.19869831546707506,
+        "markers": [
+          "mir-6875-5p"
+        ]
+      },
+      {
+        "seed_family": "ACCCGUA",
+        "marker_count": 1,
+        "percentile": 0.6254308693986979,
+        "best_percentile": 0.6254308693986979,
+        "markers": [
+          "mir-99a-5p"
+        ]
+      },
+      {
+        "seed_family": "GAGGUAG",
+        "marker_count": 2,
+        "percentile": 0.8022273425499232,
+        "best_percentile": 0.8851766513056836,
+        "markers": [
+          "let-7b-5p",
+          "let-7a-5p"
+        ]
+      },
+      {
+        "seed_family": "GGAAUGU",
+        "marker_count": 2,
+        "percentile": 0.8483920367534457,
+        "best_percentile": 0.9785604900459418,
+        "markers": [
+          "mir-1-3p",
+          "mir-206"
+        ]
+      },
+      {
+        "seed_family": "AUGGAUU",
+        "marker_count": 1,
+        "percentile": 0.6153846153846154,
+        "best_percentile": 0.6153846153846154,
+        "markers": [
+          "mir-1246"
+        ]
+      },
+      {
+        "seed_family": "CCCUGAG",
+        "marker_count": 2,
+        "percentile": 0.6265313935681469,
+        "best_percentile": 0.6558192955589586,
+        "markers": [
+          "mir-125a-5p",
+          "mir-125b-5p"
+        ]
+      },
+      {
+        "seed_family": "CUACAGU",
+        "marker_count": 1,
+        "percentile": 0.6130884041331803,
+        "best_percentile": 0.6130884041331803,
+        "markers": [
+          "mir-139-5p"
+        ]
+      },
+      {
+        "seed_family": "AAGUGCU",
+        "marker_count": 2,
+        "percentile": 0.7087975412985017,
+        "best_percentile": 0.7483672685363043,
+        "markers": [
+          "mir-373-3p",
+          "mir-520c-3p"
+        ]
+      },
+      {
+        "seed_family": "CUGGGUA",
+        "marker_count": 1,
+        "percentile": 0.11213164944508225,
+        "best_percentile": 0.11213164944508225,
+        "markers": [
+          "mir-6861-5p"
+        ]
+      },
+      {
+        "seed_family": "AAAGUGC",
+        "marker_count": 4,
+        "percentile": 0.738118052893829,
+        "best_percentile": 0.8761977769260253,
+        "markers": [
+          "mir-106a-5p",
+          "mir-20a-5p",
+          "mir-93-5p",
+          "mir-17-5p"
+        ]
+      },
+      {
+        "seed_family": "AUGACAC",
+        "marker_count": 1,
+        "percentile": 0.6724071947952546,
+        "best_percentile": 0.6724071947952546,
+        "markers": [
+          "mir-425-5p"
+        ]
+      },
+      {
+        "seed_family": "AACCGUU",
+        "marker_count": 1,
+        "percentile": 0.8993494068120934,
+        "best_percentile": 0.8993494068120934,
+        "markers": [
+          "mir-451a"
+        ]
+      },
+      {
+        "seed_family": "CUCGGCG",
+        "marker_count": 1,
+        "percentile": 0.12935323383084574,
+        "best_percentile": 0.12935323383084574,
+        "markers": [
+          "mir-1307-3p"
+        ]
+      },
+      {
+        "seed_family": "AGCAGCA",
+        "marker_count": 3,
+        "percentile": 0.621310847067842,
+        "best_percentile": 0.6880030663089306,
+        "markers": [
+          "mir-16-5p",
+          "mir-195-5p",
+          "mir-497-5p"
+        ]
+      },
+      {
+        "seed_family": "AACGGAA",
+        "marker_count": 1,
+        "percentile": 0.5331037122081899,
+        "best_percentile": 0.5331037122081899,
+        "markers": [
+          "mir-191-5p"
+        ]
+      },
+      {
+        "seed_family": "AACACUG",
+        "marker_count": 1,
+        "percentile": 0.8039816232771823,
+        "best_percentile": 0.8039816232771823,
+        "markers": [
+          "mir-200a-3p"
+        ]
+      },
+      {
+        "seed_family": "CCUUCAU",
+        "marker_count": 1,
+        "percentile": 0.438193647148871,
+        "best_percentile": 0.438193647148871,
+        "markers": [
+          "mir-205-5p"
+        ]
+      },
+      {
+        "seed_family": "UGUGCGU",
+        "marker_count": 1,
+        "percentile": 0.26942212016838885,
+        "best_percentile": 0.26942212016838885,
+        "markers": [
+          "mir-210-3p"
+        ]
+      },
+      {
+        "seed_family": "GGCAGUG",
+        "marker_count": 1,
+        "percentile": 0.5954022988505747,
+        "best_percentile": 0.5954022988505747,
+        "markers": [
+          "mir-34a-5p"
+        ]
+      },
+      {
+        "seed_family": "AAUGCCC",
+        "marker_count": 1,
+        "percentile": 0.9467840735068913,
+        "best_percentile": 0.9467840735068913,
+        "markers": [
+          "mir-365a-3p"
+        ]
+      },
+      {
+        "seed_family": "AAGUUGU",
+        "marker_count": 1,
+        "percentile": 0.632988901645618,
+        "best_percentile": 0.632988901645618,
+        "markers": [
+          "mir-382-5p"
+        ]
+      },
+      {
+        "seed_family": "GUCAGUU",
+        "marker_count": 1,
+        "percentile": 0.8040566398775354,
+        "best_percentile": 0.8040566398775354,
+        "markers": [
+          "mir-223-3p"
+        ]
+      },
+      {
+        "seed_family": "ACCCUGU",
+        "marker_count": 1,
+        "percentile": 0.8143185298621746,
+        "best_percentile": 0.8143185298621746,
+        "markers": [
+          "mir-10b-5p"
+        ]
+      },
+      {
+        "seed_family": "UCCAGUU",
+        "marker_count": 1,
+        "percentile": 0.5099540581929556,
+        "best_percentile": 0.5099540581929556,
+        "markers": [
+          "mir-145-5p"
+        ]
+      },
+      {
+        "seed_family": "AGCUUAU",
+        "marker_count": 1,
+        "percentile": 0.9257274119448698,
+        "best_percentile": 0.9257274119448698,
+        "markers": [
+          "mir-21-5p"
+        ]
+      },
+      {
+        "seed_family": "GGCUCAG",
+        "marker_count": 1,
+        "percentile": 0.4156142365097589,
+        "best_percentile": 0.4156142365097589,
+        "markers": [
+          "mir-24-3p"
+        ]
+      },
+      {
+        "seed_family": "GGCAAGA",
+        "marker_count": 1,
+        "percentile": 0.43398392652123996,
+        "best_percentile": 0.43398392652123996,
+        "markers": [
+          "mir-31-5p"
+        ]
+      }
+    ],
+    "marker_details": [
       {
         "marker": "mir-19b-3p",
-        "score": 0.6676571942458238,
-        "rank": 50,
-        "percentile": 0.902,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-20a-5p",
-        "score": 0.6696310485678808,
-        "rank": 9,
-        "percentile": 0.984,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-223-3p",
-        "score": 0.6676099487788182,
-        "rank": 53,
-        "percentile": 0.896,
-        "pool_size": 501
+        "seed_family": "GUGCAAA",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.7096244594501183,
+        "rank": 372,
+        "percentile": 0.8580176042862611,
+        "pool_size": 2614
       },
       {
         "marker": "mir-25-3p",
-        "score": 0.6652037334369865,
-        "rank": 194,
-        "percentile": 0.614,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-425-5p",
-        "score": 0.6652783069139265,
-        "rank": 195,
-        "percentile": 0.612,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-451a",
-        "score": 0.6669546238138615,
-        "rank": 82,
-        "percentile": 0.838,
-        "pool_size": 501
+        "seed_family": "AUUGCAC",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.6891380803559284,
+        "rank": 1142,
+        "percentile": 0.5626676887696436,
+        "pool_size": 2610
       },
       {
         "marker": "mir-92a-3p",
-        "score": 0.6661291885288585,
-        "rank": 140,
-        "percentile": 0.722,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-93-5p",
-        "score": 0.6691753915526744,
-        "rank": 15,
-        "percentile": 0.972,
-        "pool_size": 501
-      },
-      {
-        "marker": "let-7a-5p",
-        "score": 0.6697637993471973,
-        "rank": 8,
-        "percentile": 0.986,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-1-3p",
-        "score": 0.6688371065328603,
-        "rank": 17,
-        "percentile": 0.968,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-10b-5p",
-        "score": 0.6674571650878323,
-        "rank": 60,
-        "percentile": 0.882,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-1246",
-        "score": 0.6628685779509094,
-        "rank": 334,
-        "percentile": 0.33399999999999996,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-125a-5p",
-        "score": 0.664944787189799,
-        "rank": 205,
-        "percentile": 0.5920000000000001,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-125b-5p",
-        "score": 0.6644375295880698,
-        "rank": 235,
-        "percentile": 0.532,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-1307-3p",
-        "score": 0.6660927165508738,
-        "rank": 145,
-        "percentile": 0.712,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-139-5p",
-        "score": 0.667225589668255,
-        "rank": 76,
-        "percentile": 0.85,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-145-5p",
-        "score": 0.6631632698980278,
-        "rank": 302,
-        "percentile": 0.398,
-        "pool_size": 501
+        "seed_family": "AUUGCAC",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.6842270503559172,
+        "rank": 1340,
+        "percentile": 0.4867765427366807,
+        "pool_size": 2610
       },
       {
         "marker": "mir-155-5p",
-        "score": 0.6658543509704097,
-        "rank": 156,
-        "percentile": 0.69,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-16-5p",
-        "score": 0.6685755767895307,
-        "rank": 22,
-        "percentile": 0.958,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-17-5p",
-        "score": 0.6693722268618343,
-        "rank": 15,
-        "percentile": 0.972,
-        "pool_size": 501
+        "seed_family": "UAAUGCU",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.7128531164640624,
+        "rank": 248,
+        "percentile": 0.9054726368159204,
+        "pool_size": 2614
       },
       {
         "marker": "mir-181b-5p",
-        "score": 0.6655644681000268,
-        "rank": 180,
-        "percentile": 0.642,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-191-5p",
-        "score": 0.6655424910972533,
-        "rank": 183,
-        "percentile": 0.636,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-195-5p",
-        "score": 0.6664943924797933,
-        "rank": 114,
-        "percentile": 0.774,
-        "pool_size": 501
+        "seed_family": "ACAUUCA",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.6947588855494096,
+        "rank": 900,
+        "percentile": 0.6554235339210426,
+        "pool_size": 2610
       },
       {
         "marker": "mir-19a-3p",
-        "score": 0.668303288589475,
-        "rank": 27,
-        "percentile": 0.948,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-200a-3p",
-        "score": 0.6671159793428262,
-        "rank": 79,
-        "percentile": 0.844,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-205-5p",
-        "score": 0.6614855538531758,
-        "rank": 420,
-        "percentile": 0.16200000000000003,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-206",
-        "score": 0.6682074850437776,
-        "rank": 29,
-        "percentile": 0.944,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-21-5p",
-        "score": 0.6658854197763466,
-        "rank": 153,
-        "percentile": 0.696,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-210-3p",
-        "score": 0.6663996526201009,
-        "rank": 126,
-        "percentile": 0.75,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-24-3p",
-        "score": 0.663695747816802,
-        "rank": 284,
-        "percentile": 0.43400000000000005,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-31-5p",
-        "score": 0.6626899690309451,
-        "rank": 352,
-        "percentile": 0.29800000000000004,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-34a-5p",
-        "score": 0.6665270235462983,
-        "rank": 115,
-        "percentile": 0.772,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-365a-3p",
-        "score": 0.6664103898996117,
-        "rank": 121,
-        "percentile": 0.76,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-373-3p",
-        "score": 0.666102563931117,
-        "rank": 141,
-        "percentile": 0.72,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-382-5p",
-        "score": 0.6676653492568463,
-        "rank": 50,
-        "percentile": 0.902,
-        "pool_size": 501
+        "seed_family": "GUGCAAA",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.7154398282853442,
+        "rank": 204,
+        "percentile": 0.9223115193264447,
+        "pool_size": 2614
       },
       {
         "marker": "mir-4634",
-        "score": 0.6594891485700476,
-        "rank": 481,
-        "percentile": 0.040000000000000036,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-497-5p",
-        "score": 0.667992857763232,
-        "rank": 40,
-        "percentile": 0.922,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-520c-3p",
-        "score": 0.6649116544383395,
-        "rank": 210,
-        "percentile": 0.5820000000000001,
-        "pool_size": 501
-      },
-      {
-        "marker": "mir-6861-5p",
-        "score": 0.6606982332741955,
-        "rank": 447,
-        "percentile": 0.10799999999999998,
-        "pool_size": 501
+        "seed_family": "GGCGCGA",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.6136963024201096,
+        "rank": 2610,
+        "percentile": 0.001530807500956799,
+        "pool_size": 2614
       },
       {
         "marker": "mir-6875-5p",
-        "score": 0.6602690342303174,
-        "rank": 465,
-        "percentile": 0.07199999999999995,
-        "pool_size": 501
+        "seed_family": "GAGGGAC",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.6668991319285883,
+        "rank": 2094,
+        "percentile": 0.19869831546707506,
+        "pool_size": 2613
       },
       {
         "marker": "mir-99a-5p",
-        "score": 0.6673774532062837,
-        "rank": 72,
-        "percentile": 0.858,
-        "pool_size": 501
+        "seed_family": "ACCCGUA",
+        "outer_fold": 1,
+        "selected_model_config": "k2345_mature70_hairpin20_structure10",
+        "score": 0.6924394194561874,
+        "rank": 979,
+        "percentile": 0.6254308693986979,
+        "pool_size": 2612
+      },
+      {
+        "marker": "let-7b-5p",
+        "seed_family": "GAGGUAG",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6991313654566065,
+        "rank": 732,
+        "percentile": 0.7192780337941629,
+        "pool_size": 2605
+      },
+      {
+        "marker": "let-7a-5p",
+        "seed_family": "GAGGUAG",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7133988823232756,
+        "rank": 300,
+        "percentile": 0.8851766513056836,
+        "pool_size": 2605
+      },
+      {
+        "marker": "mir-1-3p",
+        "seed_family": "GGAAUGU",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7286504879705296,
+        "rank": 57,
+        "percentile": 0.9785604900459418,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-1246",
+        "seed_family": "AUGGAUU",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6919775619631762,
+        "rank": 1006,
+        "percentile": 0.6153846153846154,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-125a-5p",
+        "seed_family": "CCCUGAG",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6955584216107826,
+        "rank": 900,
+        "percentile": 0.6558192955589586,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-125b-5p",
+        "seed_family": "CCCUGAG",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.690832372581764,
+        "rank": 1053,
+        "percentile": 0.5972434915773354,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-139-5p",
+        "seed_family": "CUACAGU",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.691808202189686,
+        "rank": 1012,
+        "percentile": 0.6130884041331803,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-206",
+        "seed_family": "GGAAUGU",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6993016201447413,
+        "rank": 737,
+        "percentile": 0.7182235834609494,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-373-3p",
+        "seed_family": "AAGUGCU",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6962150517332544,
+        "rank": 862,
+        "percentile": 0.6692278140606992,
+        "pool_size": 2604
+      },
+      {
+        "marker": "mir-520c-3p",
+        "seed_family": "AAGUGCU",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7019602375537759,
+        "rank": 656,
+        "percentile": 0.7483672685363043,
+        "pool_size": 2604
+      },
+      {
+        "marker": "mir-6861-5p",
+        "seed_family": "CUGGGUA",
+        "outer_fold": 2,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6543831855816713,
+        "rank": 2321,
+        "percentile": 0.11213164944508225,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-106a-5p",
+        "seed_family": "AAAGUGC",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7035774594357007,
+        "rank": 580,
+        "percentile": 0.7780758911460329,
+        "pool_size": 2610
+      },
+      {
+        "marker": "mir-20a-5p",
+        "seed_family": "AAAGUGC",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7111993890380398,
+        "rank": 324,
+        "percentile": 0.8761977769260253,
+        "pool_size": 2610
+      },
+      {
+        "marker": "mir-425-5p",
+        "seed_family": "AUGACAC",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6964892156036462,
+        "rank": 857,
+        "percentile": 0.6724071947952546,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-451a",
+        "seed_family": "AACCGUU",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7129253722163881,
+        "rank": 264,
+        "percentile": 0.8993494068120934,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-93-5p",
+        "seed_family": "AAAGUGC",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6923078879716273,
+        "rank": 1006,
+        "percentile": 0.6147949405902644,
+        "pool_size": 2610
+      },
+      {
+        "marker": "mir-1307-3p",
+        "seed_family": "CUCGGCG",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6599423711749511,
+        "rank": 2276,
+        "percentile": 0.12935323383084574,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-16-5p",
+        "seed_family": "AGCAGCA",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6973811915852672,
+        "rank": 815,
+        "percentile": 0.6880030663089306,
+        "pool_size": 2610
+      },
+      {
+        "marker": "mir-17-5p",
+        "seed_family": "AAAGUGC",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6971569524109814,
+        "rank": 827,
+        "percentile": 0.6834036029129935,
+        "pool_size": 2610
+      },
+      {
+        "marker": "mir-191-5p",
+        "seed_family": "AACGGAA",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6881074511922352,
+        "rank": 1221,
+        "percentile": 0.5331037122081899,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-195-5p",
+        "seed_family": "AGCAGCA",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6964546730041633,
+        "rank": 856,
+        "percentile": 0.6722882330394787,
+        "pool_size": 2610
+      },
+      {
+        "marker": "mir-497-5p",
+        "seed_family": "AGCAGCA",
+        "outer_fold": 3,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6859876181905538,
+        "rank": 1296,
+        "percentile": 0.5036412418551168,
+        "pool_size": 2610
+      },
+      {
+        "marker": "mir-200a-3p",
+        "seed_family": "AACACUG",
+        "outer_fold": 4,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7066828404778028,
+        "rank": 513,
+        "percentile": 0.8039816232771823,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-205-5p",
+        "seed_family": "CCUUCAU",
+        "outer_fold": 4,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6804562774731334,
+        "rank": 1469,
+        "percentile": 0.438193647148871,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-210-3p",
+        "seed_family": "UGUGCGU",
+        "outer_fold": 4,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6686074449796542,
+        "rank": 1910,
+        "percentile": 0.26942212016838885,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-34a-5p",
+        "seed_family": "GGCAGUG",
+        "outer_fold": 4,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6903213143114472,
+        "rank": 1057,
+        "percentile": 0.5954022988505747,
+        "pool_size": 2611
+      },
+      {
+        "marker": "mir-365a-3p",
+        "seed_family": "AAUGCCC",
+        "outer_fold": 4,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.7224256796645178,
+        "rank": 140,
+        "percentile": 0.9467840735068913,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-382-5p",
+        "seed_family": "AAGUUGU",
+        "outer_fold": 4,
+        "selected_model_config": "k234_mature70_hairpin20_structure10",
+        "score": 0.6933138927164216,
+        "rank": 960,
+        "percentile": 0.632988901645618,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-223-3p",
+        "seed_family": "GUCAGUU",
+        "outer_fold": 5,
+        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
+        "score": 0.9195382008326969,
+        "rank": 513,
+        "percentile": 0.8040566398775354,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-10b-5p",
+        "seed_family": "ACCCUGU",
+        "outer_fold": 5,
+        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
+        "score": 0.9197990258516219,
+        "rank": 486,
+        "percentile": 0.8143185298621746,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-145-5p",
+        "seed_family": "UCCAGUU",
+        "outer_fold": 5,
+        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
+        "score": 0.9138142265547414,
+        "rank": 1281,
+        "percentile": 0.5099540581929556,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-21-5p",
+        "seed_family": "AGCUUAU",
+        "outer_fold": 5,
+        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
+        "score": 0.9231909262404533,
+        "rank": 195,
+        "percentile": 0.9257274119448698,
+        "pool_size": 2613
+      },
+      {
+        "marker": "mir-24-3p",
+        "seed_family": "GGCUCAG",
+        "outer_fold": 5,
+        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
+        "score": 0.9120682459343599,
+        "rank": 1528,
+        "percentile": 0.4156142365097589,
+        "pool_size": 2614
+      },
+      {
+        "marker": "mir-31-5p",
+        "seed_family": "GGCAAGA",
+        "outer_fold": 5,
+        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
+        "score": 0.9123520619256332,
+        "rank": 1480,
+        "percentile": 0.43398392652123996,
+        "pool_size": 2614
       }
     ],
-    "background_pool_size_for_lopo": 500,
-    "warning": "Esta validacao mede recuperacao de positivos conhecidos por padroes de sequencia contra uma amostra deterministica do background. Nao e validacao clinica nem prova laboratorial."
+    "background_pool": "todo o background elegivel; candidatos com a mesma seed retida sao excluidos apenas daquela comparacao",
+    "warning": "A validacao e interna e mede generalizacao para familias de seed nao vistas. Nao e validacao clinica nem laboratorial."
   },
-  "candidate_ranking_score_definition": "score_modelo_sequencial e o percentil do candidato pelo logit aprendido pelo modelo de k-mers; perto de 1 indica maior suporte sequencial relativo.",
+  "candidate_ranking_score_definition": "score_modelo_sequencial e o percentil do logit PU out-of-bag no universo de candidatos; cada candidato e pontuado apenas por bags em que nao foi usado como contraste temporario.",
   "next_step": "Executar scripts/validate_mirna_candidates_in_patients_model.js para testar os candidatos no dataset de pacientes."
 }

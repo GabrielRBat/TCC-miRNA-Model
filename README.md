@@ -1,6 +1,6 @@
-# Projeto miRNA - Dataset Balanceado e Modelo Diagnóstico
+# Projeto miRNA - Descoberta e Validacao Computacional de Candidatos
 
-Este projeto organiza, transforma e modela dados de expressão de miRNAs para uma tarefa de classificação binária:
+Este projeto organiza dados de sequencia, estrutura e expressao de miRNAs. O fluxo principal atual prioriza candidatos ao cancer de mama em dois modelos; os classificadores binarios anteriores permanecem como historico:
 
 - `classe = 0`: paciente saudável
 - `classe = 1`: paciente doente
@@ -16,7 +16,7 @@ context.md
 
 Isso vale para novos scripts, datasets, modelos, métricas, comandos, fluxos de predição, limitações ou mudanças na recomendação de uso.
 
-O objetivo foi transformar uma matriz TXT grande de saudáveis para a mesma estrutura do CSV de doentes, balancear as classes em `1339 x 1339`, treinar modelos de IA e criar uma documentação reprodutível.
+O projeto comecou transformando uma matriz TXT de saudaveis para a estrutura do CSV de doentes, balanceando as classes em `1339 x 1339` e treinando classificadores de pacientes. O objetivo principal atual e descobrir e priorizar novos miRNAs candidatos ao cancer de mama: o Modelo 1 usa ensemble PU com k-mers, seed, hairpin e estrutura; o Modelo 2 usa validacao cruzada de expressao nos pacientes. Consulte [`docs/METODOLOGIA_MODELOS_MIRNA.md`](docs/METODOLOGIA_MODELOS_MIRNA.md).
 
 ## Estrutura do Projeto
 
@@ -27,28 +27,53 @@ miRNA/
 │   │   ├── dataset_mirna_raw (doentes).csv
 │   │   └── miRNA_TPM_matrix_PORTAL_2025_03_17 (saudaveis).txt
 │   ├── external/
-│   │   └── rnacentral_mirbase_mapping.tsv
+│   │   ├── rnacentral_mirbase_mapping.tsv
+│   │   ├── mirbase_mature.fa
+│   │   ├── mirbase_hairpin.fa
+│   │   ├── breast_cancer_mirna_positive_markers.csv
+│   │   └── breast_cancer_mirna_training_policy.csv
 │   └── processed/
 │       ├── dataset_mirna_balanceado.csv
 │       ├── dataset_mirna_balanceado_colunas_comuns.csv
-│       └── dataset_mirna_painel_12_disponiveis.csv
+│       ├── dataset_mirna_painel_12_disponiveis.csv
+│       ├── mirna_hairpin_structure_features.csv
+│       ├── mirna_candidate_discovery_model_ranking.csv
+│       ├── mirna_patient_candidate_validation.csv
+│       └── mirna_patient_candidate_integrated_ranking.csv
 ├── models/
 │   ├── modelo_mirna_logistic.json
-│   └── modelo_mirna_painel.json
+│   ├── modelo_mirna_painel.json
+│   ├── modelo_mirna_candidate_discovery.json
+│   └── modelo_mirna_patient_candidate_validation.json
 ├── predictions/
 │   ├── predicoes_teste_dataset.csv
 │   └── predicoes_teste_painel.csv
 ├── reports/
 │   ├── dataset_mirna_balanceado_report.txt
 │   ├── modelo_mirna_metricas.txt
-│   └── modelo_mirna_painel_metricas.txt
+│   ├── modelo_mirna_painel_metricas.txt
+│   ├── modelo_mirna_candidate_discovery_report.txt
+│   ├── modelo_mirna_patient_candidate_validation_report.txt
+│   ├── auditoria_pipeline_descoberta_mirna.txt
+│   └── mirna_rankings_dashboard.html
+├── docs/
+│   ├── METODOLOGIA_MODELOS_MIRNA.md
+│   ├── GUIA_DIDATICO_PIPELINE_MIRNA.html
+│   └── GUIA_DIDATICO_PIPELINE_MIRNA.pdf
 ├── scripts/
 │   ├── build_balanced_mirna_dataset.js
 │   ├── train_mirna_logistic_model.js
 │   ├── train_mirna_panel_model.js
 │   ├── predict_mirna_with_model.js
-│   └── predict_mirna_panel_model.js
-└── README.md
+│   ├── predict_mirna_panel_model.js
+│   ├── generate_mirna_secondary_structure_features.js
+│   ├── generate_mirna_didactic_guide.js
+│   ├── train_mirna_candidate_discovery_model.js
+│   ├── validate_mirna_candidates_in_patients_model.js
+│   ├── generate_mirna_rankings_html.js
+│   └── audit_mirna_discovery_pipeline.js
+├── README.md
+└── context.md
 ```
 
 ## Estado de Versionamento
@@ -546,7 +571,9 @@ O dataset mais recomendado para novas análises é:
 data/processed/dataset_mirna_painel_12_disponiveis.csv
 ```
 
-## Evolucao: Descoberta de Candidatos por Sequencia
+## Historico: Primeira Descoberta de Candidatos por Sequencia
+
+Esta secao preserva a primeira abordagem exploratoria, baseada apenas em similaridade de sequencias maduras. Ela foi substituida como fluxo principal pelos dois modelos documentados na secao "Atualizacao: Dois Modelos para Descoberta de Novos Marcadores". Os scripts e artefatos antigos continuam no repositorio apenas para rastreabilidade.
 
 Esta evolucao adiciona uma camada exploratoria ao projeto. O pipeline antigo continua existindo para treinar modelos de expressao e predizer `classe = 0` ou `classe = 1`. A nova etapa responde outra pergunta:
 
@@ -582,7 +609,7 @@ data/external/mirbase_hairpin.fa
 
 O `mirbase_mature.fa` contem sequencias maduras de miRNAs do miRBase. O `mirbase_hairpin.fa` contem sequencias precursoras/stem-loop. Eles sao necessarios porque os CSVs atuais guardam expressao por amostra, mas nao guardam sequencias.
 
-No pipeline atual, a descoberta sequencial usa `mirbase_mature.fa`. O `mirbase_hairpin.fa` foi adicionado como universo complementar para futuras analises em nivel de precursor, que combina melhor com varias colunas do CSV, como `hsa-mir-106a`.
+O pipeline exploratorio original usava apenas `mirbase_mature.fa`. O fluxo principal atual combina `mirbase_mature.fa` e `mirbase_hairpin.fa`; a secao "Atualizacao: Dois Modelos para Descoberta de Novos Marcadores" descreve a versao vigente.
 
 Novo script:
 
@@ -639,7 +666,7 @@ data/processed/dataset_mirna_balanceado_colunas_comuns.csv
 models/modelo_mirna_logistic.json
 ```
 
-Entrada complementar disponivel para evolucao futura:
+Entrada que era complementar nesta versao exploratoria e passou a ser usada pelo Modelo 1 principal:
 
 ```text
 data/external/mirbase_hairpin.fa
@@ -727,7 +754,7 @@ Score alto significa maior proximidade sequencial com os marcadores conhecidos. 
 
 ### Exemplo de Resultado
 
-Na execucao atual, o script encontrou 43/43 sequencias dos biomarcadores positivos e avaliou 221 candidatos humanos presentes na base. Os primeiros candidatos do ranking foram:
+Na execucao historica desse script, foram encontradas 43/43 sequencias dos biomarcadores positivos e avaliados 221 candidatos humanos presentes na base. Os primeiros candidatos daquele ranking foram:
 
 ```text
 1. mir-449a       score=0.6500
@@ -767,7 +794,7 @@ mirbase_hairpin.fa
 Uso recomendado:
 
 - `mirbase_mature.fa`: universo de miRNAs maduros; usado atualmente pelo script de descoberta sequencial.
-- `mirbase_hairpin.fa`: universo de precursores/stem-loop; disponivel para a proxima evolucao, especialmente porque os CSVs do projeto usam muitas features em nivel de precursor.
+- `mirbase_hairpin.fa`: universo de precursores/stem-loop; usado pelo Modelo 1 atual como um segundo compartimento de features.
 
 O arquivo curado de biomarcadores positivos de cancer de mama e:
 
@@ -781,7 +808,7 @@ Esse arquivo contem:
 - lista consolidada de miRNAs encontrados em serum/soro enviada pelo usuario;
 - classificacao por recorrencia bibliografica focada em serum/soro.
 
-O script `scripts/discover_mirna_sequence_candidates.js` agora carrega esse CSV automaticamente. Portanto, quando novos biomarcadores forem encontrados, o caminho preferido e acrescentar novas linhas nesse arquivo.
+O script historico `scripts/discover_mirna_sequence_candidates.js` carrega esse CSV automaticamente. No fluxo principal atual, todo novo biomarcador deve ser incluido tanto na lista bibliografica quanto em `breast_cancer_mirna_training_policy.csv` antes de executar os dois modelos.
 
 ### Lista consolidada de biomarcadores serum/soro
 
@@ -859,13 +886,38 @@ miR-520c -> hsa-miR-520c-3p
 
 Essas resolucoes devem ser revisadas se uma fonte posterior especificar outro braco maduro.
 
-### Como adicionar novos biomarcadores
+### Politica de treinamento dos 43 biomarcadores
+
+A evidencia bibliografica e a decisao de treinamento ficam separadas:
+
+```text
+data/external/breast_cancer_mirna_positive_markers.csv
+data/external/breast_cancer_mirna_training_policy.csv
+```
+
+O primeiro arquivo preserva fontes, tipo de amostra, recorrencia e observacoes biologicas. O segundo registra, para cada forma madura resolvida, o nivel usado pelo modelo, peso numerico, inclusao no treinamento e justificativa curta.
+
+Na configuracao atual, os 43 biomarcadores entram no Modelo 1 com os seguintes pesos:
+
+```text
+alta recorrencia = 3
+media recorrencia = 2
+painel inicial = 2
+exploratoria = 1
+```
+
+MiR-16-5p e miR-19a-3p recebem peso 2 por tambem pertencerem ao painel inicial. Separar a politica da lista bibliografica permite mudar uma decisao computacional sem apagar ou reescrever a evidencia original.
+
+### Como adicionar novos biomarcadores no fluxo principal atual
 
 Quando novos biomarcadores forem encontrados, editar:
 
 ```text
 data/external/breast_cancer_mirna_positive_markers.csv
+data/external/breast_cancer_mirna_training_policy.csv
 ```
+
+Todo marcador usado pelo Modelo 1 precisa existir nos dois arquivos. O script principal interrompe a execucao se encontrar um positivo sem politica de treinamento correspondente.
 
 Formato:
 
@@ -882,18 +934,20 @@ miR-9-5p,hsa-miR-9-5p,nao_informada,candidato_serum,Autor et al.,soro,1,explorat
 Depois executar:
 
 ```powershell
-node scripts\discover_mirna_sequence_candidates.js
+node scripts\train_mirna_candidate_discovery_model.js
+node scripts\validate_mirna_candidates_in_patients_model.js
+node scripts\generate_mirna_rankings_html.js
 ```
 
-O script vai:
+O fluxo atual vai:
 
-- carregar todos os biomarcadores positivos do CSV;
-- encontrar as sequencias no `mirbase_mature.fa`;
-- recalcular motifs/k-mers enriquecidos;
-- recalcular o ranking de candidatos;
-- atualizar `mirna_sequence_candidate_ranking.csv`, `modelo_mirna_sequence_patterns.json` e `mirna_sequence_candidate_discovery_report.txt`.
+- validar a correspondencia entre a lista bibliografica e a politica de treinamento;
+- localizar sequencias maduras e hairpins;
+- retreinar o Modelo 1 e recalcular o ranking global;
+- reexecutar a validacao cruzada do Modelo 2;
+- atualizar modelos JSON, rankings CSV, relatorios TXT e dashboard HTML.
 
-### Execucao apos incorporar a lista consolidada
+### Resultado historico do pipeline exploratorio anterior
 
 A execucao validada apos incorporar a lista consolidada ficou:
 
@@ -924,7 +978,7 @@ painel_inicial = 2
 exploratoria = 1
 ```
 
-### Evidencia integrada: sequencia + expressao + recorrencia
+### Historico: evidencia integrada anterior
 
 Foi adicionada uma etapa para cruzar as hipoteses sequenciais com o dataset de pacientes:
 
@@ -1008,23 +1062,26 @@ Essa combinacao deve continuar sendo descrita como hipotese computacional ate pa
 
 ## Atualizacao: Dois Modelos para Descoberta de Novos Marcadores
 
+> Versao vigente em 09/10/2026. A descricao metodologica completa, incluindo validacao, baselines, incerteza e limitacoes, esta em [`docs/METODOLOGIA_MODELOS_MIRNA.md`](docs/METODOLOGIA_MODELOS_MIRNA.md).
+
 O foco principal do projeto foi ajustado. Os modelos antigos de classificacao de pacientes (`modelo_mirna_logistic.json` e `modelo_mirna_painel.json`) continuam no repositorio como historico, comparacao e suporte exploratorio, mas nao sao mais o fluxo principal do TCC.
 
 O objetivo principal agora e:
 
 ```text
-aprender padroes de k-mers em miRNAs associados ao cancer de mama
+aprender padroes de k-mers, seed, hairpin e estrutura em miRNAs associados ao cancer de mama
 -> encontrar novos miRNAs candidatos dentro do universo humano maduro do miRBase
 -> validar computacionalmente se esses candidatos aparecem/separam pacientes doentes e saudaveis no dataset atual
 ```
 
 Essa formulacao evita chamar miRNAs nao estudados de "nao cancerigenos", porque isso exigiria validacao biologica/laboratorial. O projeto trabalha com candidatos hipoteticos, nao com classificacao definitiva de cancerigeno vs nao cancerigeno.
 
-### Modelo 1: Descoberta por K-mers
+### Modelo 1: Descoberta por Padroes Maduros e Hairpin
 
-Script:
+Scripts:
 
 ```powershell
+node scripts\generate_mirna_secondary_structure_features.js
 node scripts\train_mirna_candidate_discovery_model.js
 ```
 
@@ -1033,6 +1090,9 @@ Entradas:
 ```text
 data/external/breast_cancer_mirna_positive_markers.csv
 data/external/mirbase_mature.fa
+data/external/mirbase_hairpin.fa
+data/external/breast_cancer_mirna_training_policy.csv
+data/processed/mirna_hairpin_structure_features.csv
 data/processed/dataset_mirna_balanceado_colunas_comuns.csv
 ```
 
@@ -1047,45 +1107,62 @@ reports/modelo_mirna_candidate_discovery_report.txt
 Esse modelo e do tipo:
 
 ```text
-trained_contrastive_one_class_kmer_model
+bagged_positive_unlabeled_mature_hairpin_structure_model
 ```
 
 Como funciona:
 
-- usa miRNAs associados ao cancer de mama como positivos;
-- usa os demais miRNAs humanos maduros do miRBase como background nao rotulado;
-- nao trata o background como "nao cancerigeno";
-- extrai k-mers de tamanho 2, 3, 4 e 5;
-- inclui a seed region como feature adicional;
-- treina pesos para k-mers/seeds que diferenciam o perfil positivo do background;
+- usa os 43 miRNAs associados ao cancer de mama como positivos;
+- aplica pesos explicitos definidos em `breast_cancer_mirna_training_policy.csv`: alta=3, media/painel inicial=2 e exploratoria=1;
+- usa os demais miRNAs humanos maduros do miRBase como conjunto nao rotulado, nunca como negativos biologicos;
+- mantem k-mers como nucleo e adiciona seed, composicao madura, k-mers de hairpin e features estruturais;
+- testa, dentro da validacao aninhada, faixas de k-mers entre k=2 e k=7 e diferentes pesos/regularizacoes;
+- balanceia o peso positivo por familia de seed, preservando depois a massa total dos pesos de evidencia;
+- quando existem varios loci precursores para a mesma familia, agrega os vetores hairpin/estrutura pela media;
+- treina um ensemble PU por bagging: cada bag usa todos os positivos e uma amostra diferente do conjunto nao rotulado como contraste temporario;
+- calcula o modelo consenso pela media dos pesos e do vies de 8 bags e ranqueia cada candidato apenas com predicoes out-of-bag;
 - ranqueia candidatos pela semelhanca aprendida com o perfil dos positivos;
 - marca quais candidatos tem expressao disponivel no dataset para a validacao posterior.
+
+A validacao e aninhada por familia de seed: 5 folds externos medem recuperacao e 3 folds internos escolhem a configuracao. Familias externas nao participam nem do treino nem da escolha de hiperparametros. A avaliacao usa todo o background nao rotulado elegivel e reporta Recall@1/5/10/20%, bootstrap por familia, teste nulo de ranking e quatro baselines.
+
+Na execucao atual, `RNAfold` nao estava disponivel. As features estruturais foram geradas pelo proxy deterministico `nussinov_weighted_pairing_proxy`, sem MFE termodinamica. Se ViennaRNA/RNAfold for instalado, o gerador passa a usar RNAfold automaticamente e todo o fluxo deve ser reexecutado.
 
 Execucao validada:
 
 ```text
-Marcadores positivos com sequencia: 43
+Marcadores positivos: 43
+Familias de seed: 32
 Candidatos ranqueados no universo miRBase: 2613
-Candidatos com expressao disponivel para validacao em pacientes: 221
-Vocabulario aprendido: 608 features de k-mer/seed
-LOPO percentil medio: 0.7027
-LOPO positivos recuperados no top 10%: 30.23%
-LOPO background usado: 500 candidatos
+Candidatos com hairpin associado: 2612
+Candidatos sem hairpin: 1 (mir-517-5p)
+Candidatos com expressao disponivel para validacao em pacientes: 611
+Configuracao final: k234_mature70_hairpin20_structure10
+Vocabulario final: 650 features
+Percentil medio externo por familia: 0.6035 (IC95% 0.5179 a 0.6880; p nulo=0.0120)
+Recall@1%: 0/32 (0.00%)
+Recall@5%: 0/32 (0.00%)
+Recall@10%: 3/32 (9.38%; IC95% 0.00% a 21.88%; p nulo=0.4723)
+Recall@20%: 10/32 (31.25%)
 ```
 
-Top 5 candidatos por padrao sequencial aprendido:
+Top 5 candidatos por padrao de sequencia/estrutura aprendido:
 
 ```text
-mir-574-5p
 mir-1277-5p
-mir-32-3p
-mir-297
-mir-3149
+mir-2054
+mir-1277-3p
+mir-590-3p
+mir-548aj-3p
 ```
 
-O `score_modelo_sequencial` e o percentil do candidato pelo logit aprendido pelo modelo. Valores proximos de 1 indicam maior suporte sequencial relativo.
+O `score_modelo_sequencial` e o percentil do candidato pelo logit do ensemble. Valores proximos de 1 indicam maior suporte relativo de sequencia/estrutura. A `probabilidade_pu_consenso_bruta` nao e probabilidade de cancer.
 
-Observacao: candidatos sem expressao disponivel continuam no ranking sequencial global, mas nao entram no Modelo 2 no dataset atual.
+Observacao: candidatos sem expressao disponivel continuam no ranking global, mas nao entram no Modelo 2 no dataset atual. O unico candidato sem precursor associado, `mir-517-5p`, e avaliado apenas pelas features maduras disponiveis, sem inventar estrutura nem MFE.
+
+Interpretacao dos resultados: o percentil medio apresenta sinal acima do nulo, mas o Recall@10% nao e significativo. O baseline simples de centroide hairpin obteve percentil medio 0.6686 e o mesmo Recall@10% de 9.38%; portanto, nao se deve afirmar superioridade geral do ensemble combinado.
+
+O mapeamento de nomes remove apenas sufixos que representam locus (`-1`, `-2` etc.) quando o nome realmente possui uma familia antes desse sufixo. Assim, nomes validos como `hsa-mir-574` nao sao truncados para `hsa-mir`; bracos com locus explicito, como `mir-16-1-3p`, tambem sao associados a familia precursora correta. Os caminhos gravados nos modelos e relatorios sao relativos a raiz do projeto, permitindo reproduzir a execucao em outra maquina.
 
 ### Modelo 2: Validacao Computacional em Pacientes
 
@@ -1122,12 +1199,15 @@ Como funciona:
 
 - recebe os candidatos gerados pelo Modelo 1;
 - localiza as features correspondentes no dataset de pacientes;
-- para cada candidato, treina uma regressao logistica univariada usando `log1p(expressao)`;
-- testa se a expressao desse candidato ajuda a separar `classe=1` doente de `classe=0` saudavel;
-- calcula AUC, accuracy, precision, recall, specificity, F1, log2 fold-change e presenca maior que zero;
+- para cada candidato, executa regressao logistica univariada usando `log1p(expressao)`;
+- usa validacao cruzada estratificada deterministica de 5 folds, com distribuicao estavel por hash de `sample_id` dentro de cada classe;
+- cada amostra recebe uma predicao out-of-fold de um modelo que nao a utilizou no treino;
+- agrega as predicoes out-of-fold para calcular AUC, accuracy, precision, recall, specificity e F1;
+- ajusta depois um modelo final em todas as amostras apenas para serializacao e uso futuro;
+- calcula tambem log2 fold-change e presenca maior que zero;
 - gera um `score_validacao_pacientes`;
 - gera um ranking puro de validacao em pacientes;
-- combina suporte sequencial e suporte em pacientes em um ranking integrado por `score_final_descoberta`.
+- combina suporte de sequencia/estrutura e suporte em pacientes em um ranking integrado por `score_final_descoberta`.
 
 Formula:
 
@@ -1142,32 +1222,34 @@ score_final_descoberta =
 + 0.50 * score_validacao_pacientes
 ```
 
+A regressao univariada usa otimizacao Newton-Raphson com regularizacao L2. A validacao cruzada substituiu o antigo corte unico 80/20 e reduz a dependencia de uma divisao especifica dos pacientes.
+
 Execucao validada:
 
 ```text
-Candidatos validados: 221
+Candidatos validados: 611
 Candidatos recebidos do ranking sequencial global: 2613
-Candidatos ignorados por falta de expressao no dataset: 2392
+Candidatos ignorados por falta de expressao no dataset: 2002
 ```
 
 Top 5 por validacao em pacientes:
 
 ```text
-let-7f-5p    validacao=1.0000  rank_integrado=1
-mir-106b-5p  validacao=1.0000  rank_integrado=2
-mir-106b-3p  validacao=1.0000  rank_integrado=28
-mir-34a-3p   validacao=1.0000  rank_integrado=21
-mir-181b-3p  validacao=1.0000  rank_integrado=12
+mir-182-5p   validacao=1.0000  rank_integrado=11
+mir-182-3p   validacao=1.0000  rank_integrado=54
+let-7f-5p    validacao=1.0000  rank_integrado=2
+let-7f-2-3p  validacao=1.0000  rank_integrado=18
+let-7f-1-3p  validacao=1.0000  rank_integrado=23
 ```
 
 Top 5 por score integrado:
 
 ```text
-let-7f-5p    score_final=0.9952
-mir-106b-5p  score_final=0.9847
-mir-33a-5p   score_final=0.9692
-let-7c-5p    score_final=0.9606
-let-7i-5p    score_final=0.9426
+mir-32-3p    score_final=0.9975
+let-7f-5p    score_final=0.9818
+mir-32-5p    score_final=0.9799
+mir-95-5p    score_final=0.9312
+mir-26a-2-3p score_final=0.9190
 ```
 
 Arquivos de ranking:
@@ -1186,7 +1268,7 @@ Interpretacao correta:
 
 ```text
 Modelo 1 pergunta:
-quais miRNAs parecem sequencialmente com os marcadores positivos conhecidos?
+quais miRNAs recebem maior suporte do padrao de sequencia/estrutura aprendido com os marcadores positivos conhecidos?
 
 Modelo 2 pergunta:
 desses candidatos, quais tambem mostram associacao computacional com pacientes doentes no dataset atual?
@@ -1194,13 +1276,18 @@ desses candidatos, quais tambem mostram associacao computacional com pacientes d
 
 Essa segunda etapa funciona como uma validacao computacional, nao laboratorial. Se um candidato aparece no dataset e sua expressao separa doentes e saudaveis, ele ganha prioridade como hipotese biologica. Ainda assim, isso nao prova causalidade nem valida o biomarcador clinicamente.
 
+A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes podem estar confundidas com fonte/lote. Uma coorte externa continua sendo necessaria.
+
 ### Fluxo Principal Atual
 
 Executar:
 
 ```powershell
+node scripts\generate_mirna_secondary_structure_features.js
 node scripts\train_mirna_candidate_discovery_model.js
 node scripts\validate_mirna_candidates_in_patients_model.js
+node scripts\generate_mirna_rankings_html.js
+node scripts\audit_mirna_discovery_pipeline.js
 ```
 
 Consultar:
@@ -1239,12 +1326,32 @@ reports/mirna_rankings_dashboard.html
 O dashboard contem:
 
 - cards com metricas gerais dos modelos;
+- metricas do Modelo 2 calculadas a partir das predicoes out-of-fold da validacao cruzada;
 - grafico `score_modelo_sequencial` vs `score_validacao_pacientes`;
 - grafico do top 20 do ranking integrado;
-- abas para ranking integrado, validacao em pacientes e Modelo 1 sequencial;
+- abas para ranking integrado, validacao em pacientes e Modelo 1 PU/estrutura;
 - busca textual, paginacao e ordenacao por coluna.
 
 Os graficos usam Plotly via CDN. Se o HTML for aberto sem internet, as tabelas continuam funcionando e os graficos podem ficar indisponiveis.
+
+### Guia Didatico para Apresentacao
+
+Foi criado um guia diagramado que explica, em linguagem de apresentacao, os conceitos biologicos, a quebra das sequencias em k-mers, os dois modelos e o significado pratico de cada metrica.
+
+Arquivos:
+
+```text
+docs/GUIA_DIDATICO_PIPELINE_MIRNA.pdf
+docs/GUIA_DIDATICO_PIPELINE_MIRNA.html
+```
+
+O HTML e reproduzido com:
+
+```powershell
+node scripts\generate_mirna_didactic_guide.js
+```
+
+O PDF foi impresso localmente a partir desse HTML em formato A4. Ele deve ser regenerado quando resultados, metodologia ou numeros do pipeline forem alterados.
 
 ### Status dos Modelos Antigos
 

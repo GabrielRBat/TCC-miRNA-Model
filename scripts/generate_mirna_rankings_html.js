@@ -75,11 +75,13 @@ function compactSequenceRows(rows) {
     mirna: row.mirna,
     expressao: row.tem_expressao_no_dataset,
     score: toNumber(row.score_modelo_sequencial),
-    prob: toNumber(row.probabilidade_contrastiva_bruta),
+    prob: toNumber(row.probabilidade_pu_consenso_bruta ?? row.probabilidade_contrastiva_bruta),
     logit: toNumber(row.logit_modelo_sequencial),
+    hairpins: toNumber(row.numero_hairpins_associados),
     features: row.features_expressao_associadas,
     referencias: row.marcadores_referencia_mais_proximos,
-    kmers: row.features_kmer_mais_influentes,
+    metodoEstrutura: row.metodo_estrutura_hairpin,
+    kmers: row.features_modelo_mais_influentes ?? row.features_kmer_mais_influentes,
   }));
 }
 
@@ -92,12 +94,12 @@ function compactPatientRows(rows) {
     score_final: toNumber(row.score_final_descoberta),
     score_seq: toNumber(row.score_modelo_sequencial),
     rank_seq: toNumber(row.rank_modelo_sequencial),
-    auc: toNumber(row.test_auc),
-    acc: toNumber(row.test_accuracy),
-    precision: toNumber(row.test_precision),
-    recall: toNumber(row.test_recall_sensibilidade),
-    specificity: toNumber(row.test_specificity),
-    f1: toNumber(row.test_f1),
+    auc: toNumber(row.cv_oof_auc ?? row.test_auc),
+    acc: toNumber(row.cv_oof_accuracy ?? row.test_accuracy),
+    precision: toNumber(row.cv_oof_precision ?? row.test_precision),
+    recall: toNumber(row.cv_oof_recall_sensibilidade ?? row.test_recall_sensibilidade),
+    specificity: toNumber(row.cv_oof_specificity ?? row.test_specificity),
+    f1: toNumber(row.cv_oof_f1 ?? row.test_f1),
     log2fc: toNumber(row.log2_fc_doente_vs_saudavel),
     media_doente: toNumber(row.media_doente),
     media_saudavel: toNumber(row.media_saudavel),
@@ -148,9 +150,9 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
     renderMetric("Modelo 1 candidatos", sequenceRows.length, "miRBase maduro humano"),
     renderMetric("Com expressão", sequenceWithExpression, "seguem para Modelo 2"),
     renderMetric("Modelo 2 validados", validationRows.length, "candidatos com feature no dataset"),
-    renderMetric("Precisão média", round(mean(precisions)), "Modelo 2"),
-    renderMetric("AUC média", round(mean(aucs)), "Modelo 2"),
-    renderMetric("Acurácia média", round(mean(accuracies)), "Modelo 2"),
+    renderMetric("Precisão CV média", round(mean(precisions)), "predições out-of-fold"),
+    renderMetric("AUC CV média", round(mean(aucs)), "predições out-of-fold"),
+    renderMetric("Acurácia CV média", round(mean(accuracies)), "predições out-of-fold"),
     renderMetric("Precisão >= 0.90", countWhere(precisions, (value) => value >= 0.9), "candidatos"),
     renderMetric("AUC >= 0.90", countWhere(aucs, (value) => value >= 0.9), "candidatos"),
   ].join("\n");
@@ -158,7 +160,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
   const metricDefinitions = [
     renderDefinition(
       "Modelo 1 candidatos",
-      "Total de miRNAs maduros humanos ranqueados pelo padrão sequencial aprendido com os positivos conhecidos."
+      "Total de miRNAs maduros humanos ranqueados pelo ensemble PU com k-mers, seed, hairpin e estrutura."
     ),
     renderDefinition(
       "Com expressão",
@@ -169,20 +171,20 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       "Quantidade de candidatos testados em doentes contra saudáveis usando a expressão disponível no dataset."
     ),
     renderDefinition(
-      "Precisão média",
-      "Entre os casos classificados como doentes pelo mini-modelo de cada candidato, mede a proporção que realmente era classe 1."
+      "Precisão CV média",
+      "Nas predições out-of-fold, mede a proporção de classe 1 entre os casos classificados como doentes pelo mini-modelo de cada candidato."
     ),
     renderDefinition(
-      "AUC média",
-      "Capacidade média de separar doentes e saudáveis variando o limiar; 0.5 equivale a acaso e 1.0 indica separação perfeita no teste."
+      "AUC CV média",
+      "Capacidade média de separar doentes e saudáveis nas predições out-of-fold; 0.5 equivale a acaso e 1.0 indica separação perfeita."
     ),
     renderDefinition(
-      "Acurácia média",
-      "Proporção média de amostras corretamente classificadas no teste estratificado do Modelo 2."
+      "Acurácia CV média",
+      "Proporção média de amostras corretamente classificadas na validação cruzada estratificada de 5 folds do Modelo 2."
     ),
     renderDefinition(
       "Precisão >= 0.90 / AUC >= 0.90",
-      "Contagem de candidatos com desempenho alto no teste interno. Esses números continuam sendo validação computacional, não clínica."
+      "Contagem de candidatos com desempenho alto nas predições out-of-fold. Esses números continuam sendo validação computacional, não clínica."
     ),
   ].join("\n");
 
@@ -446,7 +448,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 <body>
   <header>
     <h1>miRNA Rankings Dashboard</h1>
-    <p>Visualização dos rankings gerados pelo Modelo 1 sequencial, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
+    <p>Visualização dos rankings gerados pelo Modelo 1 PU de sequência/estrutura, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
   </header>
 
   <main>
@@ -466,7 +468,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       <div class="grid-2">
         <div>
           <div id="scatter" class="chart"></div>
-          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte sequencial do Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito são os candidatos mais interessantes porque combinam semelhança sequencial com associação em pacientes.</p>
+          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte de sequência/estrutura do Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito combinam as duas fontes de evidência computacional.</p>
         </div>
         <div>
           <div id="bar" class="chart"></div>
@@ -482,7 +484,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       <div class="tabs">
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
         <button type="button" class="tab" data-view="validation">Validação em pacientes</button>
-        <button type="button" class="tab" data-view="sequence">Modelo 1 sequencial</button>
+        <button type="button" class="tab" data-view="sequence">Modelo 1 PU/estrutura</button>
       </div>
       <div class="toolbar">
         <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direção, referência ou k-mer">
@@ -553,12 +555,13 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
           ["rank", "Rank seq."],
           ["mirna", "miRNA"],
           ["expressao", "Expressão no dataset"],
-          ["score", "Score sequencial"],
-          ["prob", "Prob. bruta"],
+          ["score", "Score Modelo 1"],
+          ["prob", "Consenso PU bruto"],
           ["logit", "Logit"],
           ["features", "Features expressão"],
+          ["metodoEstrutura", "Método estrutural"],
           ["referencias", "Referências próximas"],
-          ["kmers", "K-mers influentes"]
+          ["kmers", "Features influentes"]
         ]
       }
     };
