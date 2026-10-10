@@ -74,15 +74,14 @@ function main() {
   const folds = validation?.fold_selections ?? [];
   const heldOutFamilies = folds.flatMap((fold) => fold.held_out_seed_families ?? []);
   const configs = model1.hyperparameter_selection?.candidate_configurations ?? [];
-  const structureMethods = model1.structure_features?.methods ?? (model1.structure_features?.method ? [model1.structure_features.method] : []);
   const modelWeightFeatures = Array.isArray(model1.weights)
     ? model1.weights.map((item) => item[0])
     : Object.keys(model1.weights ?? {});
 
-  check(model1.type === "bagged_positive_unlabeled_mature_hairpin_structure_model", "Modelo 1 declara ensemble PU com sequencia e estrutura", model1.type);
+  check(model1.type === "bagged_positive_unlabeled_mature_sequence_model", "Modelo 1 declara ensemble PU da sequencia madura", model1.type);
   check(/PU|positive-unlabeled/i.test(model1.training_design ?? ""), "desenho do Modelo 1 explicita aprendizado Positive-Unlabeled", model1.training_design);
-  check(structureMethods.length > 0, "metodo estrutural foi registrado", structureMethods.join(", "));
-  check(!modelWeightFeatures.includes("structure:mfe_per_nt") || structureMethods.includes("viennarna_rnafold"), "MFE so aparece quando calculada pelo RNAfold");
+  check(model1.feature_scope?.excluded?.includes("precursor hairpin") && model1.feature_scope?.excluded?.includes("estrutura secundaria"), "hairpin e estrutura estao explicitamente fora do escopo ativo", model1.feature_scope?.excluded?.join(", "));
+  check(modelWeightFeatures.every((feature) => feature.startsWith("mature:")), "todos os pesos do Modelo 1 pertencem a sequencia madura");
   check(validation?.primary_unit === "seed_family", "unidade primaria da validacao e familia de seed", validation?.primary_unit);
   check(validation?.method?.includes("full_unlabeled_background"), "validacao usa o background nao rotulado completo", validation?.method);
   check(folds.length === 5, "validacao externa possui 5 folds", folds.length);
@@ -104,7 +103,7 @@ function main() {
   check(ranking1.every((row) => row.probabilidade_pu_consenso_bruta === row.probabilidade_contrastiva_bruta), "alias legado da probabilidade preserva o mesmo valor");
   check(ranking1.every((row) => Number(row.numero_modelos_oob) >= 1 && Number(row.numero_modelos_oob) <= model1.pu_ensemble.bags), "todo candidato registra quantidade valida de modelos out-of-bag");
   check(ranking1.filter((row) => row.tem_expressao_no_dataset === "sim").length === model1.candidate_count_with_expression_available, "contagem de candidatos com expressao confere", model1.candidate_count_with_expression_available);
-  check(ranking1.filter((row) => Number(row.numero_hairpins_associados) > 0).length === model1.candidate_count_with_hairpin_available, "contagem de candidatos com hairpin confere", model1.candidate_count_with_hairpin_available);
+  check(!Object.hasOwn(ranking1[0] ?? {}, "numero_hairpins_associados") && !Object.hasOwn(ranking1[0] ?? {}, "metodo_estrutura_hairpin"), "ranking ativo nao expoe colunas de hairpin ou estrutura");
   check(ranking1.every((row) => row.features_modelo_mais_influentes === row.features_kmer_mais_influentes), "alias legado de features influentes preserva o mesmo valor");
 
   const model2 = JSON.parse(fs.readFileSync(FILES.model2, "utf8"));

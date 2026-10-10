@@ -1,17 +1,10 @@
 const fs = require("fs");
 const path = require("path");
-const {
-  OUTPUT_CSV: STRUCTURE_FEATURES_CSV,
-  generateStructureFeatures,
-  readStructureFeatureCsv,
-} = require("./generate_mirna_secondary_structure_features");
-
 const ROOT = path.resolve(__dirname, "..");
 const fromRoot = (...parts) => path.join(ROOT, ...parts);
 const projectPath = (filePath) => path.relative(ROOT, filePath).split(path.sep).join("/");
 
 const FASTA_PATH = fromRoot("data", "external", "mirbase_mature.fa");
-const HAIRPIN_FASTA_PATH = fromRoot("data", "external", "mirbase_hairpin.fa");
 const DATASET_CSV = fromRoot("data", "processed", "dataset_mirna_balanceado_colunas_comuns.csv");
 const POSITIVE_MARKERS_CSV = fromRoot("data", "external", "breast_cancer_mirna_positive_markers.csv");
 const TRAINING_POLICY_CSV = fromRoot("data", "external", "breast_cancer_mirna_training_policy.csv");
@@ -37,79 +30,47 @@ const LEARNING_RATE = 0.8;
 
 const MODEL_CONFIGS = [
   {
-    id: "k234_mature70_hairpin20_structure10",
+    id: "k234_mature_seed_l2_003_u050",
     kValues: [2, 3, 4],
-    matureWeight: 0.7,
-    hairpinWeight: 0.2,
-    structureWeight: 0.1,
     l2: 0.03,
     unlabeledWeightRatio: 0.5,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k2345_mature70_hairpin20_structure10",
+    id: "k2345_mature_seed_l2_003_u050",
     kValues: [2, 3, 4, 5],
-    matureWeight: 0.7,
-    hairpinWeight: 0.2,
-    structureWeight: 0.1,
     l2: 0.03,
     unlabeledWeightRatio: 0.5,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k3456_mature70_hairpin20_structure10",
+    id: "k3456_mature_seed_l2_003_u050",
     kValues: [3, 4, 5, 6],
-    matureWeight: 0.7,
-    hairpinWeight: 0.2,
-    structureWeight: 0.1,
     l2: 0.03,
     unlabeledWeightRatio: 0.5,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k2345_mature60_hairpin25_structure15",
+    id: "k2345_mature_seed_l2_002_u045",
     kValues: [2, 3, 4, 5],
-    matureWeight: 0.6,
-    hairpinWeight: 0.25,
-    structureWeight: 0.15,
     l2: 0.02,
     unlabeledWeightRatio: 0.45,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k2345_balanced50_hairpin30_structure20",
+    id: "k2345_mature_seed_l2_003_u040",
     kValues: [2, 3, 4, 5],
-    matureWeight: 0.5,
-    hairpinWeight: 0.3,
-    structureWeight: 0.2,
     l2: 0.03,
     unlabeledWeightRatio: 0.4,
     minimumFeatureWeight: 2,
   },
   {
-    id: "k234567_structure25_mature50_hairpin25",
+    id: "k234567_mature_seed_l2_005_u035",
     kValues: [2, 3, 4, 5, 6, 7],
-    matureWeight: 0.5,
-    hairpinWeight: 0.25,
-    structureWeight: 0.25,
     l2: 0.05,
     unlabeledWeightRatio: 0.35,
     minimumFeatureWeight: 2,
   },
-];
-
-const STRUCTURE_FEATURE_COLUMNS = [
-  "gc_fraction",
-  "paired_fraction",
-  "unpaired_fraction",
-  "stem_density",
-  "longest_stem_fraction",
-  "mean_stem_fraction",
-  "hairpin_loop_density",
-  "internal_bulge_density",
-  "pair_au_fraction",
-  "pair_gc_fraction",
-  "pair_gu_fraction",
 ];
 
 function ensureDirectory(filePath) {
@@ -203,18 +164,6 @@ function readFasta(filePath) {
   }
   flush();
   return entries.filter((entry) => entry.name.startsWith("hsa-") && entry.sequence.length > 0);
-}
-
-function attachHairpinsAndStructure(matureEntries, hairpinEntries, structureRows) {
-  const structureByAccession = new Map(structureRows.map((row) => [row.accession, row]));
-  const hairpinsByFamily = new Map();
-  for (const hairpin of hairpinEntries) {
-    const family = precursorFamilyBase(hairpin.name);
-    const current = hairpinsByFamily.get(family) ?? [];
-    current.push({ ...hairpin, structure: structureByAccession.get(hairpin.accession) ?? null });
-    hairpinsByFamily.set(family, current);
-  }
-  return matureEntries.map((entry) => ({ ...entry, hairpins: hairpinsByFamily.get(entry.familyBase) ?? [] }));
 }
 
 function readPositiveMarkers() {
@@ -319,49 +268,12 @@ function gcFraction(sequence) {
   return [...sequence].filter((base) => base === "G" || base === "C").length / Math.max(1, sequence.length);
 }
 
-function addScaledVector(target, source, scale, vocabulary = null) {
-  for (const [feature, value] of source.entries()) {
-    if (vocabulary && !vocabulary.has(feature)) continue;
-    target.set(feature, (target.get(feature) ?? 0) + value * scale);
-  }
-}
-
-function entryComponents(entry, kValues) {
-  const mature = normalizedSequenceVector(entry.sequence, "mature", kValues, true);
+function sequenceVector(entry, config, vocabulary = null) {
+  const mature = normalizedSequenceVector(entry.sequence, "mature", config.kValues, true);
   mature.set("mature:composition:length", Math.min(1, entry.sequence.length / 30));
   mature.set("mature:composition:gc_fraction", gcFraction(entry.sequence));
-  const hairpin = new Map();
-  const structure = new Map();
-  if (entry.hairpins?.length) {
-    const scale = 1 / entry.hairpins.length;
-    for (const precursor of entry.hairpins) {
-      addScaledVector(hairpin, normalizedSequenceVector(precursor.sequence, "hairpin", kValues), scale);
-      if (precursor.structure) {
-        for (const column of STRUCTURE_FEATURE_COLUMNS) {
-          const value = Number(precursor.structure[column]);
-          if (Number.isFinite(value)) structure.set(`structure:${column}`, (structure.get(`structure:${column}`) ?? 0) + value * scale);
-        }
-        if (String(precursor.structure.mfe_per_nt ?? "").trim() !== "") {
-          const mfePerNt = Number(precursor.structure.mfe_per_nt);
-          if (Number.isFinite(mfePerNt)) structure.set("structure:mfe_per_nt", (structure.get("structure:mfe_per_nt") ?? 0) + mfePerNt * scale);
-        }
-      }
-    }
-  }
-  return { mature, hairpin, structure };
-}
-
-function sequenceVector(entry, config, vocabulary = null) {
-  const vector = new Map();
-  const components = entryComponents(entry, config.kValues);
-  if (!entry.hairpins?.length) {
-    addScaledVector(vector, components.mature, 1, vocabulary);
-    return vector;
-  }
-  addScaledVector(vector, components.mature, config.matureWeight, vocabulary);
-  addScaledVector(vector, components.hairpin, config.hairpinWeight, vocabulary);
-  addScaledVector(vector, components.structure, config.structureWeight, vocabulary);
-  return vector;
+  if (!vocabulary) return mature;
+  return new Map([...mature.entries()].filter(([feature]) => vocabulary.has(feature)));
 }
 
 function balancedPositiveWeights(entries) {
@@ -387,7 +299,7 @@ function buildVocabulary(positiveEntries, config, positiveWeights) {
     const weight = positiveWeights.get(entry.normalizedName) ?? 1;
     for (const feature of new Set(sequenceVector(entry, config).keys())) weightedPresence.set(feature, (weightedPresence.get(feature) ?? 0) + weight);
   }
-  return new Set([...weightedPresence.entries()].filter(([feature, weight]) => feature.includes(":seed:") || feature.startsWith("structure:") || feature.includes(":composition:") || weight >= config.minimumFeatureWeight).map(([feature]) => feature));
+  return new Set([...weightedPresence.entries()].filter(([feature, weight]) => feature.includes(":seed:") || feature.includes(":composition:") || weight >= config.minimumFeatureWeight).map(([feature]) => feature));
 }
 
 function sigmoid(value) {
@@ -500,12 +412,18 @@ function seedSimilarity(entry, trainingMarkers) {
 
 function buildBaselineScorers(trainingMarkers, model, config, foldIndex) {
   const matureCentroid = meanVector(trainingMarkers.map((entry) => normalizedSequenceVector(entry.sequence, "baseline", config.kValues, false)));
-  const hairpinCentroid = meanVector(trainingMarkers.map((entry) => entryComponents(entry, config.kValues).hairpin));
+  const meanLength = mean(trainingMarkers.map((entry) => entry.sequence.length));
+  const meanGc = mean(trainingMarkers.map((entry) => gcFraction(entry.sequence)));
+  const compositionSimilarity = (entry) => {
+    const lengthDistance = Math.abs(entry.sequence.length - meanLength) / Math.max(1, meanLength);
+    const gcDistance = Math.abs(gcFraction(entry.sequence) - meanGc);
+    return 1 - Math.min(1, (lengthDistance + gcDistance) / 2);
+  };
   return {
-    modelo_pu_estrutura: (entry) => modelLogit(model, entry),
+    modelo_pu_maduro: (entry) => modelLogit(model, entry),
     similaridade_seed: (entry) => seedSimilarity(entry, trainingMarkers),
     centroide_kmer_maduro: (entry) => cosineSimilarity(normalizedSequenceVector(entry.sequence, "baseline", config.kValues, false), matureCentroid),
-    centroide_kmer_hairpin: (entry) => cosineSimilarity(entryComponents(entry, config.kValues).hairpin, hairpinCentroid),
+    similaridade_composicao_madura: compositionSimilarity,
     ranking_aleatorio_deterministico: (entry) => stableHash(`random-baseline|${foldIndex}|${entry.normalizedName}`) / 0xffffffff,
   };
 }
@@ -631,10 +549,10 @@ function runNestedFamilyValidation(markerEntries, backgroundEntries) {
   }
   const methods = {};
   for (const [method, evaluations] of evaluationsByMethod.entries()) methods[method] = { ...aggregateValidation(evaluations), marker_details: evaluations };
-  methods.modelo_pu_estrutura.bootstrap_95_ci = bootstrapFamilyIntervals(methods.modelo_pu_estrutura.family_details);
-  methods.modelo_pu_estrutura.random_ranking_test = randomRankingTest(
-    methods.modelo_pu_estrutura.family_metrics,
-    methods.modelo_pu_estrutura.family_details
+  methods.modelo_pu_maduro.bootstrap_95_ci = bootstrapFamilyIntervals(methods.modelo_pu_maduro.family_details);
+  methods.modelo_pu_maduro.random_ranking_test = randomRankingTest(
+    methods.modelo_pu_maduro.family_metrics,
+    methods.modelo_pu_maduro.family_details
   );
   return { outer_folds: outerFolds.length, inner_folds: INNER_FOLDS, fold_selections: foldSelections, methods };
 }
@@ -661,12 +579,7 @@ function topContributingFeatures(model, entry, limit = 10, scoringModels = null)
 }
 
 function nearestMarkers(candidate, markers, model) {
-  const similarityVector = (entry) => {
-    const vector = new Map();
-    addScaledVector(vector, normalizedSequenceVector(entry.sequence, "mature", model.config.kValues, true), 0.7);
-    if (entry.hairpins?.length) addScaledVector(vector, entryComponents(entry, model.config.kValues).hairpin, 0.3);
-    return vector;
-  };
+  const similarityVector = (entry) => normalizedSequenceVector(entry.sequence, "mature", model.config.kValues, true);
   const vector = similarityVector(candidate);
   return markers.map((marker) => ({ marker: markerDisplayName(marker.name), similarity: cosineSimilarity(vector, similarityVector(marker)) })).sort((left, right) => right.similarity - left.similarity).slice(0, 3);
 }
@@ -676,11 +589,7 @@ function percent(value) {
 }
 
 function main() {
-  for (const requiredPath of [FASTA_PATH, HAIRPIN_FASTA_PATH, DATASET_CSV, POSITIVE_MARKERS_CSV, TRAINING_POLICY_CSV]) if (!fs.existsSync(requiredPath)) throw new Error(`Arquivo obrigatorio nao encontrado: ${requiredPath}`);
-  for (const config of MODEL_CONFIGS) if (Math.abs(config.matureWeight + config.hairpinWeight + config.structureWeight - 1) > 1e-12) throw new Error(`Pesos invalidos em ${config.id}`);
-  if (!fs.existsSync(STRUCTURE_FEATURES_CSV)) generateStructureFeatures();
-  const structureRows = readStructureFeatureCsv(STRUCTURE_FEATURES_CSV);
-  const structureMethods = [...new Set(structureRows.map((row) => row.method))];
+  for (const requiredPath of [FASTA_PATH, DATASET_CSV, POSITIVE_MARKERS_CSV, TRAINING_POLICY_CSV]) if (!fs.existsSync(requiredPath)) throw new Error(`Arquivo obrigatorio nao encontrado: ${requiredPath}`);
   const dataset = readCsv(DATASET_CSV);
   if (!dataset.indexByName.has("classe")) throw new Error(`Coluna classe ausente em ${DATASET_CSV}`);
   const featuresByFamily = new Map();
@@ -690,7 +599,7 @@ function main() {
     current.push(feature);
     featuresByFamily.set(family, current);
   }
-  const matureEntries = attachHairpinsAndStructure(readFasta(FASTA_PATH), readFasta(HAIRPIN_FASTA_PATH), structureRows);
+  const matureEntries = readFasta(FASTA_PATH);
   const byNormalizedName = new Map(matureEntries.map((entry) => [entry.normalizedName, entry]));
   const positiveMarkers = readPositiveMarkers();
   const resolved = positiveMarkers.map((marker) => resolveMarkerEntry(marker, byNormalizedName)).filter(Boolean);
@@ -700,9 +609,6 @@ function main() {
   if (markerEntries.length < 5) throw new Error(`Marcadores positivos insuficientes: ${markerEntries.length}`);
   const candidateEntries = matureEntries.filter((entry) => !knownNames.has(entry.normalizedName)).map((entry) => ({ ...entry, associatedFeatures: featuresByFamily.get(entry.familyBase) ?? [] }));
   const candidatesWithExpressionCount = candidateEntries.filter((entry) => entry.associatedFeatures.length > 0).length;
-  const candidatesWithHairpinCount = candidateEntries.filter((entry) => entry.hairpins.length > 0).length;
-  const candidatesWithoutHairpin = candidateEntries.filter((entry) => !entry.hairpins.length).map((entry) => markerDisplayName(entry.name));
-  const markersWithHairpinCount = markerEntries.filter((entry) => entry.hairpins.length > 0).length;
 
   console.log(`Iniciando validacao aninhada por ${new Set(markerEntries.map((entry) => seedRegion(entry.sequence))).size} familias de seed...`);
   const nestedValidation = runNestedFamilyValidation(markerEntries, candidateEntries);
@@ -721,30 +627,29 @@ function main() {
   ensureDirectory(OUTPUT_RANKING);
   ensureDirectory(OUTPUT_REPORT);
   const sortedWeights = [...model.weights.entries()].sort((left, right) => right[1] - left[1]);
-  const primaryValidation = nestedValidation.methods.modelo_pu_estrutura;
-  const structureWarning = structureMethods.includes("viennarna_rnafold_mfe") ? "Estruturas e MFE calculadas pelo ViennaRNA RNAfold." : "RNAfold nao estava disponivel; a execucao usa proxy Nussinov de pareamento ponderado e nao inclui MFE termodinamica.";
+  const primaryValidation = nestedValidation.methods.modelo_pu_maduro;
   const finalPositiveWeights = balancedPositiveWeights(markerEntries);
   const modelArtifact = {
-    type: "bagged_positive_unlabeled_mature_hairpin_structure_model",
-    purpose: "Priorizar miRNAs por padroes de k-mers, seed, hairpin e estrutura aprendidos dos marcadores associados ao cancer de mama; nao e classificador clinico.",
+    type: "bagged_positive_unlabeled_mature_sequence_model",
+    purpose: "Priorizar miRNAs por padroes de k-mers, seed e composicao da sequencia madura aprendidos dos marcadores associados ao cancer de mama; nao e classificador clinico.",
     training_design: "Ensemble PU por bagging deterministico. Cada bag usa todos os positivos e uma amostra diferente do universo nao rotulado como contraste temporario; candidatos do conjunto nao rotulado sao ranqueados e explicados apenas pelos modelos out-of-bag.",
-    source_fasta: projectPath(FASTA_PATH), source_hairpin_fasta: projectPath(HAIRPIN_FASTA_PATH), source_hairpin_structure_features: projectPath(STRUCTURE_FEATURES_CSV), source_dataset_for_expression_filter: projectPath(DATASET_CSV), positive_markers_csv: projectPath(POSITIVE_MARKERS_CSV), training_policy_csv: projectPath(TRAINING_POLICY_CSV),
+    source_fasta: projectPath(FASTA_PATH), source_dataset_for_expression_filter: projectPath(DATASET_CSV), positive_markers_csv: projectPath(POSITIVE_MARKERS_CSV), training_policy_csv: projectPath(TRAINING_POLICY_CSV),
     candidate_pool_definition: "Todos os miRNAs humanos maduros do miRBase, removendo os positivos conhecidos; a validacao usa todo o background elegivel.",
-    structure_features: { methods: structureMethods, row_count: structureRows.length, columns: STRUCTURE_FEATURE_COLUMNS, warning: structureWarning },
+    feature_scope: { active: ["k-mers da sequencia madura", "seed (posicoes 2-8)", "comprimento normalizado", "fracao GC"], excluded: ["precursor hairpin", "estrutura secundaria", "MFE"], rationale: "escopo simplificado e alinhado ao foco do TCC em miRNAs maduros" },
     positive_weighting: "peso_de_evidencia dividido pelo numero de positivos da mesma familia de seed e reescalado para preservar o peso total",
     hyperparameter_selection: { method: "nested_group_cross_validation_by_seed_family", outer_folds: OUTER_FOLDS, inner_folds: INNER_FOLDS, candidate_configurations: MODEL_CONFIGS, final_configuration: finalConfig, rule: "maior percentil medio por familia na validacao interna; recall@10% e id usados como desempate" },
     pu_ensemble: { bags: FINAL_PU_BAGS, unlabeled_per_bag: model.bagSize, epochs_per_bag: FINAL_EPOCHS, deterministic: true, candidate_scoring: "media dos logits apenas dos modelos em que o candidato nao foi usado como contraste temporario (out-of-bag)", out_of_bag_models_per_candidate_min: Math.min(...ranked.map((candidate) => candidate.outOfBagModelCount)), out_of_bag_models_per_candidate_max: Math.max(...ranked.map((candidate) => candidate.outOfBagModelCount)), out_of_bag_fallback_count: ranked.filter((candidate) => candidate.usedOutOfBagFallback).length },
     vocabulary_size: model.vocabulary.size, bias: model.bias, weights: Object.fromEntries(sortedWeights),
     top_positive_features: sortedWeights.slice(0, 50).map(([feature, weight]) => ({ feature, weight })),
     top_negative_features: sortedWeights.slice(-50).reverse().map(([feature, weight]) => ({ feature, weight })),
-    known_markers_with_sequence: markerEntries.map((entry) => ({ requested_marker: entry.requestedName, marker: markerDisplayName(entry.name), accession: entry.accession, sequence: entry.sequence, seed: seedRegion(entry.sequence), family_base: entry.familyBase, hairpin_count: entry.hairpins.length, hairpin_accessions: entry.hairpins.map((hairpin) => hairpin.accession), resolution_method: entry.resolutionMethod, evidence_weight: markerEvidenceWeight(entry), family_balanced_weight: finalPositiveWeights.get(entry.normalizedName), metadata: entry.markerMetadata })),
+    known_markers_with_sequence: markerEntries.map((entry) => ({ requested_marker: entry.requestedName, marker: markerDisplayName(entry.name), accession: entry.accession, sequence: entry.sequence, seed: seedRegion(entry.sequence), family_base: entry.familyBase, resolution_method: entry.resolutionMethod, evidence_weight: markerEvidenceWeight(entry), family_balanced_weight: finalPositiveWeights.get(entry.normalizedName), metadata: entry.markerMetadata })),
     missing_marker_sequences: missingMarkers,
-    candidate_count: ranked.length, candidate_count_global_mirbase: ranked.length, candidate_count_with_expression_available: candidatesWithExpressionCount, candidate_count_with_hairpin_available: candidatesWithHairpinCount, candidate_names_without_hairpin: candidatesWithoutHairpin, positive_marker_count_with_hairpin_available: markersWithHairpinCount,
+    candidate_count: ranked.length, candidate_count_global_mirbase: ranked.length, candidate_count_with_expression_available: candidatesWithExpressionCount,
     training_history: model.histories,
     internal_recovery_validation: {
       method: "nested_group_cross_validation_by_seed_family_against_full_unlabeled_background", primary_unit: "seed_family", seed_family_count: primaryValidation.family_metrics.count, marker_count: primaryValidation.marker_metrics.count,
       marker_metrics: primaryValidation.marker_metrics, family_metrics: primaryValidation.family_metrics, bootstrap_95_ci: primaryValidation.bootstrap_95_ci, random_ranking_test: primaryValidation.random_ranking_test,
-      baselines: Object.fromEntries(Object.entries(nestedValidation.methods).filter(([name]) => name !== "modelo_pu_estrutura").map(([name, value]) => [name, { marker_metrics: value.marker_metrics, family_metrics: value.family_metrics }])),
+      baselines: Object.fromEntries(Object.entries(nestedValidation.methods).filter(([name]) => name !== "modelo_pu_maduro").map(([name, value]) => [name, { marker_metrics: value.marker_metrics, family_metrics: value.family_metrics }])),
       fold_selections: nestedValidation.fold_selections, family_details: primaryValidation.family_details, marker_details: primaryValidation.marker_details,
       background_pool: "todo o background elegivel; candidatos com a mesma seed retida sao excluidos apenas daquela comparacao",
       warning: "A validacao e interna e mede generalizacao para familias de seed nao vistas. Nao e validacao clinica nem laboratorial.",
@@ -754,19 +659,20 @@ function main() {
   };
   fs.writeFileSync(OUTPUT_MODEL, JSON.stringify(modelArtifact, null, 2), "utf8");
 
-  const outputHeader = ["rank", "mirna", "accession", "sequence", "numero_hairpins_associados", "hairpins_associados", "metodo_estrutura_hairpin", "tem_expressao_no_dataset", "score_modelo_sequencial", "probabilidade_pu_consenso_bruta", "probabilidade_contrastiva_bruta", "numero_modelos_oob", "logit_modelo_sequencial", "features_expressao_associadas", "features_modelo_mais_influentes", "features_kmer_mais_influentes", "marcadores_referencia_mais_proximos"];
+  const outputHeader = ["rank", "mirna", "accession", "sequence", "tem_expressao_no_dataset", "score_modelo_sequencial", "probabilidade_pu_consenso_bruta", "probabilidade_contrastiva_bruta", "numero_modelos_oob", "logit_modelo_sequencial", "features_expressao_associadas", "features_modelo_mais_influentes", "features_kmer_mais_influentes", "marcadores_referencia_mais_proximos"];
   const outputRows = ranked.map((candidate, index) => {
     const influential = candidate.topFeatures.map((item) => `${item.feature}:${item.contribution.toFixed(4)}`).join("; ");
-    return [index + 1, markerDisplayName(candidate.name), candidate.accession, candidate.sequence, candidate.hairpins.length, candidate.hairpins.map((hairpin) => `${markerDisplayName(hairpin.name)}:${hairpin.accession}`).join("; "), [...new Set(candidate.hairpins.map((hairpin) => hairpin.structure?.method).filter(Boolean))].join("; ") || "sem_hairpin", candidate.associatedFeatures.length ? "sim" : "nao", candidate.sequenceScore.toFixed(6), candidate.probability.toFixed(6), candidate.probability.toFixed(6), candidate.outOfBagModelCount, candidate.rawLogit.toFixed(6), candidate.associatedFeatures.join("; "), influential, influential, candidate.nearest.map((item) => `${item.marker}:${item.similarity.toFixed(3)}`).join("; ")];
+    return [index + 1, markerDisplayName(candidate.name), candidate.accession, candidate.sequence, candidate.associatedFeatures.length ? "sim" : "nao", candidate.sequenceScore.toFixed(6), candidate.probability.toFixed(6), candidate.probability.toFixed(6), candidate.outOfBagModelCount, candidate.rawLogit.toFixed(6), candidate.associatedFeatures.join("; "), influential, influential, candidate.nearest.map((item) => `${item.marker}:${item.similarity.toFixed(3)}`).join("; ")];
   });
   fs.writeFileSync(OUTPUT_RANKING, [outputHeader, ...outputRows].map((row) => row.map(csvCell).join(",")).join("\n"), "utf8");
 
   const markerMetrics = primaryValidation.marker_metrics;
   const familyMetrics = primaryValidation.family_metrics;
   const report = [
-    "Modelo 1 - descoberta de candidatos por k-mers, seed, hairpin, estrutura e ensemble PU", "",
-    `FASTA maduro: ${projectPath(FASTA_PATH)}`, `FASTA hairpin: ${projectPath(HAIRPIN_FASTA_PATH)}`, `Features estruturais: ${projectPath(STRUCTURE_FEATURES_CSV)}`, `Metodo estrutural atual: ${structureMethods.join(", ")}`, `Aviso estrutural: ${structureWarning}`,
-    `Marcadores positivos: ${markerEntries.length}`, `Familias de seed positivas: ${familyMetrics.count}`, `Candidatos ranqueados: ${ranked.length}`, `Candidatos com hairpin: ${candidatesWithHairpinCount}`, `Candidatos sem hairpin: ${candidatesWithoutHairpin.join(", ") || "nenhum"}`, `Candidatos com expressao para o Modelo 2: ${candidatesWithExpressionCount}`, `Configuracao final escolhida: ${finalConfig.id}`, `Ensemble PU final: ${FINAL_PU_BAGS} bags x ${model.bagSize} nao rotulados`, `Pontuacao dos candidatos: out-of-bag (${Math.min(...ranked.map((candidate) => candidate.outOfBagModelCount))} a ${Math.max(...ranked.map((candidate) => candidate.outOfBagModelCount))} modelos por candidato; fallbacks=${ranked.filter((candidate) => candidate.usedOutOfBagFallback).length})`, `Vocabulario final: ${model.vocabulary.size} features`, "",
+    "Modelo 1 - descoberta de candidatos por sequencia madura e ensemble PU", "",
+    `FASTA maduro: ${projectPath(FASTA_PATH)}`,
+    "Escopo de features: k-mers maduros, seed, comprimento e fracao GC. Hairpin e estrutura secundaria nao participam do modelo.",
+    `Marcadores positivos: ${markerEntries.length}`, `Familias de seed positivas: ${familyMetrics.count}`, `Candidatos ranqueados: ${ranked.length}`, `Candidatos com expressao para o Modelo 2: ${candidatesWithExpressionCount}`, `Configuracao final escolhida: ${finalConfig.id}`, `Ensemble PU final: ${FINAL_PU_BAGS} bags x ${model.bagSize} nao rotulados`, `Pontuacao dos candidatos: out-of-bag (${Math.min(...ranked.map((candidate) => candidate.outOfBagModelCount))} a ${Math.max(...ranked.map((candidate) => candidate.outOfBagModelCount))} modelos por candidato; fallbacks=${ranked.filter((candidate) => candidate.usedOutOfBagFallback).length})`, `Vocabulario final: ${model.vocabulary.size} features`, "",
     "Validacao aninhada por familia de seed (metrica principal por familia):",
     `Percentil medio por familia=${familyMetrics.mean_percentile.toFixed(4)}`,
     `Recall@1% por familia=${percent(familyMetrics.recall_at_1_percent)} (${familyMetrics.recovered_at_1_percent}/${familyMetrics.count})`,
@@ -782,7 +688,7 @@ function main() {
     ...Object.entries(nestedValidation.methods).map(([name, value]) => `${name}\tpercentil_medio=${value.family_metrics.mean_percentile.toFixed(4)}\trecall@10%=${percent(value.family_metrics.recall_at_10_percent)}`), "",
     "Top features positivas do modelo final:", ...sortedWeights.slice(0, 15).map(([feature, weight]) => `${feature}\tpeso=${weight.toFixed(6)}`), "",
     "Top candidatos do ranking final:", ...ranked.slice(0, TOP_REPORT_COUNT).map((candidate, index) => `${index + 1}. ${markerDisplayName(candidate.name)}\tscore=${candidate.sequenceScore.toFixed(4)}\tpu=${candidate.probability.toFixed(4)}\texpressao=${candidate.associatedFeatures.length ? "sim" : "nao"}\treferencias=${candidate.nearest.map((item) => `${item.marker}:${item.similarity.toFixed(3)}`).join(", ")}`), "",
-    "Interpretacao:", "O Modelo 1 continua usando k-mers como nucleo e adiciona seed, estrutura do hairpin, balanceamento por familia e bagging Positive-Unlabeled.", "A metrica principal e calculada nas familias de seed externas, que nao participam nem do treino nem da escolha de hiperparametros.", "O score e uma prioridade relativa para pesquisa, nao probabilidade de cancer, diagnostico ou validacao clinica.", "",
+    "Interpretacao:", "O Modelo 1 usa k-mers da sequencia madura como nucleo, alem de seed, composicao, balanceamento por familia e bagging Positive-Unlabeled.", "Hairpin e estrutura secundaria foram excluidos deliberadamente para manter o escopo do TCC no miRNA maduro.", "A metrica principal e calculada nas familias de seed externas, que nao participam nem do treino nem da escolha de hiperparametros.", "O score e uma prioridade relativa para pesquisa, nao probabilidade de cancer, diagnostico ou validacao clinica.", "",
   ].join("\n");
   fs.writeFileSync(OUTPUT_REPORT, report, "utf8");
   console.log(report);

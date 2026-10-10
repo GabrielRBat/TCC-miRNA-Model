@@ -1,33 +1,25 @@
 {
-  "type": "bagged_positive_unlabeled_mature_hairpin_structure_model",
-  "purpose": "Priorizar miRNAs por padroes de k-mers, seed, hairpin e estrutura aprendidos dos marcadores associados ao cancer de mama; nao e classificador clinico.",
+  "type": "bagged_positive_unlabeled_mature_sequence_model",
+  "purpose": "Priorizar miRNAs por padroes de k-mers, seed e composicao da sequencia madura aprendidos dos marcadores associados ao cancer de mama; nao e classificador clinico.",
   "training_design": "Ensemble PU por bagging deterministico. Cada bag usa todos os positivos e uma amostra diferente do universo nao rotulado como contraste temporario; candidatos do conjunto nao rotulado sao ranqueados e explicados apenas pelos modelos out-of-bag.",
   "source_fasta": "data/external/mirbase_mature.fa",
-  "source_hairpin_fasta": "data/external/mirbase_hairpin.fa",
-  "source_hairpin_structure_features": "data/processed/mirna_hairpin_structure_features.csv",
   "source_dataset_for_expression_filter": "data/processed/dataset_mirna_balanceado_colunas_comuns.csv",
   "positive_markers_csv": "data/external/breast_cancer_mirna_positive_markers.csv",
   "training_policy_csv": "data/external/breast_cancer_mirna_training_policy.csv",
   "candidate_pool_definition": "Todos os miRNAs humanos maduros do miRBase, removendo os positivos conhecidos; a validacao usa todo o background elegivel.",
-  "structure_features": {
-    "methods": [
-      "nussinov_weighted_pairing_proxy"
+  "feature_scope": {
+    "active": [
+      "k-mers da sequencia madura",
+      "seed (posicoes 2-8)",
+      "comprimento normalizado",
+      "fracao GC"
     ],
-    "row_count": 1917,
-    "columns": [
-      "gc_fraction",
-      "paired_fraction",
-      "unpaired_fraction",
-      "stem_density",
-      "longest_stem_fraction",
-      "mean_stem_fraction",
-      "hairpin_loop_density",
-      "internal_bulge_density",
-      "pair_au_fraction",
-      "pair_gc_fraction",
-      "pair_gu_fraction"
+    "excluded": [
+      "precursor hairpin",
+      "estrutura secundaria",
+      "MFE"
     ],
-    "warning": "RNAfold nao estava disponivel; a execucao usa proxy Nussinov de pareamento ponderado e nao inclui MFE termodinamica."
+    "rationale": "escopo simplificado e alinhado ao foco do TCC em miRNAs maduros"
   },
   "positive_weighting": "peso_de_evidencia dividido pelo numero de positivos da mesma familia de seed e reescalado para preservar o peso total",
   "hyperparameter_selection": {
@@ -36,81 +28,66 @@
     "inner_folds": 3,
     "candidate_configurations": [
       {
-        "id": "k234_mature70_hairpin20_structure10",
+        "id": "k234_mature_seed_l2_003_u050",
         "kValues": [
           2,
           3,
           4
         ],
-        "matureWeight": 0.7,
-        "hairpinWeight": 0.2,
-        "structureWeight": 0.1,
         "l2": 0.03,
         "unlabeledWeightRatio": 0.5,
         "minimumFeatureWeight": 2
       },
       {
-        "id": "k2345_mature70_hairpin20_structure10",
+        "id": "k2345_mature_seed_l2_003_u050",
         "kValues": [
           2,
           3,
           4,
           5
         ],
-        "matureWeight": 0.7,
-        "hairpinWeight": 0.2,
-        "structureWeight": 0.1,
         "l2": 0.03,
         "unlabeledWeightRatio": 0.5,
         "minimumFeatureWeight": 2
       },
       {
-        "id": "k3456_mature70_hairpin20_structure10",
+        "id": "k3456_mature_seed_l2_003_u050",
         "kValues": [
           3,
           4,
           5,
           6
         ],
-        "matureWeight": 0.7,
-        "hairpinWeight": 0.2,
-        "structureWeight": 0.1,
         "l2": 0.03,
         "unlabeledWeightRatio": 0.5,
         "minimumFeatureWeight": 2
       },
       {
-        "id": "k2345_mature60_hairpin25_structure15",
+        "id": "k2345_mature_seed_l2_002_u045",
         "kValues": [
           2,
           3,
           4,
           5
         ],
-        "matureWeight": 0.6,
-        "hairpinWeight": 0.25,
-        "structureWeight": 0.15,
         "l2": 0.02,
         "unlabeledWeightRatio": 0.45,
         "minimumFeatureWeight": 2
       },
       {
-        "id": "k2345_balanced50_hairpin30_structure20",
+        "id": "k2345_mature_seed_l2_003_u040",
         "kValues": [
           2,
           3,
           4,
           5
         ],
-        "matureWeight": 0.5,
-        "hairpinWeight": 0.3,
-        "structureWeight": 0.2,
         "l2": 0.03,
         "unlabeledWeightRatio": 0.4,
         "minimumFeatureWeight": 2
       },
       {
-        "id": "k234567_structure25_mature50_hairpin25",
+        "id": "k234567_mature_seed_l2_005_u035",
         "kValues": [
           2,
           3,
@@ -119,24 +96,18 @@
           6,
           7
         ],
-        "matureWeight": 0.5,
-        "hairpinWeight": 0.25,
-        "structureWeight": 0.25,
         "l2": 0.05,
         "unlabeledWeightRatio": 0.35,
         "minimumFeatureWeight": 2
       }
     ],
     "final_configuration": {
-      "id": "k234_mature70_hairpin20_structure10",
+      "id": "k234_mature_seed_l2_003_u050",
       "kValues": [
         2,
         3,
         4
       ],
-      "matureWeight": 0.7,
-      "hairpinWeight": 0.2,
-      "structureWeight": 0.1,
       "l2": 0.03,
       "unlabeledWeightRatio": 0.5,
       "minimumFeatureWeight": 2
@@ -149,1066 +120,720 @@
     "epochs_per_bag": 420,
     "deterministic": true,
     "candidate_scoring": "media dos logits apenas dos modelos em que o candidato nao foi usado como contraste temporario (out-of-bag)",
-    "out_of_bag_models_per_candidate_min": 2,
+    "out_of_bag_models_per_candidate_min": 1,
     "out_of_bag_models_per_candidate_max": 8,
     "out_of_bag_fallback_count": 0
   },
-  "vocabulary_size": 650,
-  "bias": 0.713002075602859,
+  "vocabulary_size": 304,
+  "bias": 0.7233633965388284,
   "weights": {
-    "mature:composition:length": 0.12042313179891197,
-    "mature:kmer:GU": 0.05653699005302058,
-    "mature:kmer:UGU": 0.02868690055670438,
-    "mature:kmer:UG": 0.02611594648520578,
-    "mature:kmer:UA": 0.025438999916230623,
-    "mature:kmer:AA": 0.024753293153461673,
-    "mature:kmer:AAU": 0.02304230698167905,
-    "mature:kmer:CG": 0.02297242194411896,
-    "mature:kmer:GUU": 0.019477604122911395,
-    "mature:kmer:GUG": 0.018702796490586912,
-    "mature:kmer:CGU": 0.01855418696097975,
-    "mature:kmer:UUGU": 0.015127042543242417,
-    "mature:kmer:UAG": 0.014808931579368396,
-    "mature:kmer:AU": 0.014516456227780966,
-    "mature:kmer:UGA": 0.013936100279687303,
-    "structure:pair_gu_fraction": 0.013755961608133709,
-    "mature:kmer:UGUG": 0.012703640812243682,
-    "mature:kmer:CGUG": 0.012686523300072791,
-    "mature:kmer:AAUC": 0.012542976682621576,
-    "mature:kmer:AUC": 0.012160324967092942,
-    "mature:kmer:ACC": 0.011251334289072159,
-    "mature:kmer:UU": 0.01104595194340275,
-    "mature:kmer:UUA": 0.010997950580460077,
-    "structure:paired_fraction": 0.010567618317556307,
-    "mature:kmer:UGUC": 0.010317286395185185,
-    "mature:kmer:AGUU": 0.010284834110380097,
-    "mature:kmer:AAC": 0.010088106249875214,
-    "mature:kmer:CCC": 0.00994958776935466,
-    "mature:kmer:ACCC": 0.009878211919049756,
-    "mature:kmer:UAA": 0.00984122830395292,
-    "mature:seed:AGCUUAU": 0.00972030013753251,
-    "mature:kmer:UUG": 0.009694489798671251,
-    "mature:kmer:CCG": 0.009672587378412726,
-    "mature:kmer:UCG": 0.009507330447481189,
-    "mature:kmer:UAGC": 0.009502655945554536,
-    "mature:kmer:GUC": 0.009437255754683514,
-    "mature:seed:UCCAGUU": 0.009422046051577388,
-    "mature:seed:ACCCUGU": 0.009331929140121733,
-    "mature:kmer:ACCG": 0.009268571982301766,
-    "mature:kmer:GUUG": 0.009234267995321446,
-    "mature:kmer:GUAG": 0.00904443633808354,
-    "mature:kmer:CUUA": 0.009016644609466178,
-    "mature:kmer:UCCC": 0.009009759570331689,
-    "mature:kmer:GAAU": 0.008981036496022018,
-    "mature:seed:UAAUGCU": 0.008907871957697825,
-    "mature:kmer:CUGA": 0.008635665567613929,
-    "mature:kmer:CGA": 0.008149971748795806,
-    "mature:kmer:AAA": 0.007989371595352457,
-    "mature:kmer:AAUG": 0.007987648629662211,
-    "mature:kmer:UACC": 0.00797194938821085,
-    "mature:kmer:CAGU": 0.007820378746338032,
-    "mature:kmer:GUGC": 0.007198891439792351,
-    "mature:kmer:UCGU": 0.007121559043107869,
-    "mature:kmer:CCCU": 0.007117895801004414,
-    "mature:kmer:UAAU": 0.0071006179625202935,
-    "mature:kmer:AUCC": 0.007079076205405491,
-    "mature:kmer:AAAU": 0.006950540896382966,
-    "mature:kmer:CAG": 0.006854840032103455,
-    "mature:kmer:AACC": 0.006766667934183363,
-    "mature:seed:UGUGCGU": 0.006732367449484079,
-    "mature:seed:AGCAGCA": 0.006681894928251031,
-    "mature:seed:GUCAGUU": 0.00655405667804335,
-    "mature:seed:AACCGUU": 0.00652338074640689,
-    "mature:seed:GGCAGUG": 0.006506813055824054,
-    "mature:kmer:CGAU": 0.006478370173666803,
-    "mature:kmer:CGGC": 0.00642134317431015,
-    "mature:kmer:CAAA": 0.00638493491169725,
-    "mature:seed:AUUGCAC": 0.006369539559122865,
-    "mature:seed:CCCUGAG": 0.006349584473378664,
-    "mature:seed:AUGACAC": 0.00630049777790667,
-    "mature:kmer:AUGC": 0.0062580373872101296,
-    "mature:seed:GUGCAAA": 0.006218418062760904,
-    "mature:kmer:CUAA": 0.006013322061658398,
-    "mature:kmer:UCC": 0.005801889972945192,
-    "mature:kmer:CCGU": 0.00577173604819459,
-    "mature:kmer:AGU": 0.005756538730928049,
-    "mature:seed:AAAGUGC": 0.005232280791730956,
-    "hairpin:kmer:GU": 0.005215424818246714,
-    "mature:kmer:CGUU": 0.005213807689240625,
-    "mature:kmer:AUAG": 0.005162371098965839,
-    "mature:kmer:GGUU": 0.005046811320088645,
-    "mature:kmer:CCCG": 0.005035823131151879,
-    "mature:kmer:GCGU": 0.004929639871568015,
-    "mature:kmer:ACUG": 0.00487739503916938,
-    "mature:kmer:UCCA": 0.00482211556144041,
-    "mature:kmer:CCGA": 0.004677233968431378,
-    "mature:kmer:GUA": 0.004607922446498143,
-    "mature:kmer:AC": 0.004494947586351245,
-    "structure:pair_au_fraction": 0.004375929276805609,
-    "mature:seed:GAGGUAG": 0.004351486423435795,
-    "mature:kmer:AGCA": 0.004309142251917424,
-    "mature:kmer:UAAC": 0.004303811071815553,
-    "mature:kmer:UUAU": 0.004253638335413194,
-    "mature:kmer:CAUU": 0.004247733335461712,
-    "hairpin:kmer:AU": 0.004173401594163233,
-    "hairpin:kmer:UA": 0.0041675531198113345,
-    "hairpin:kmer:UG": 0.004149711593651667,
-    "mature:kmer:UUAC": 0.004136872754929773,
-    "mature:kmer:CGG": 0.004117982301960047,
-    "mature:seed:GGCGCGA": 0.004113569864436306,
-    "mature:kmer:GUGU": 0.0040087947074978715,
-    "mature:kmer:CGAA": 0.003946410577478549,
-    "mature:kmer:GGUA": 0.003946160758799145,
-    "mature:seed:AUGGAUU": 0.003881234721993728,
-    "mature:kmer:AUCA": 0.003802726945929458,
-    "mature:kmer:ACGA": 0.0037980166941346378,
-    "mature:kmer:CACG": 0.003785883252541685,
-    "mature:kmer:UUCG": 0.0036305674617802108,
-    "mature:kmer:GUCU": 0.0035807607430189737,
-    "mature:kmer:UUGA": 0.0035239526525626757,
-    "mature:seed:GGCAAGA": 0.0035165276560832374,
-    "mature:kmer:GUCG": 0.0034801448632000025,
-    "mature:seed:GAGGGAC": 0.003454780018567461,
-    "mature:seed:CUGGGUA": 0.0034043762428207012,
-    "mature:seed:CUCGGCG": 0.0033995403207747053,
-    "mature:kmer:CCGG": 0.003394647933072745,
-    "hairpin:kmer:CG": 0.0033463447725970807,
-    "mature:seed:GGCUCAG": 0.0033455774034425625,
-    "mature:seed:CCUUCAU": 0.003344897863272826,
-    "mature:seed:AAGUUGU": 0.003311696595581866,
-    "mature:kmer:AAUA": 0.0032918459665179103,
-    "mature:kmer:AGCU": 0.0032670600340309625,
-    "mature:kmer:AUU": 0.0032640310220790015,
-    "mature:kmer:UAGG": 0.003254760548397062,
-    "mature:seed:GGAAUGU": 0.0032332607757620964,
-    "mature:kmer:GAUC": 0.0032242498973380084,
-    "mature:seed:AAUGCCC": 0.0032235568624646204,
-    "mature:seed:AACACUG": 0.003203363887381943,
-    "mature:kmer:UCGG": 0.0031909063834901453,
-    "mature:seed:ACCCGUA": 0.003181253676154982,
-    "mature:seed:AACGGAA": 0.003170867229036957,
-    "mature:seed:CUACAGU": 0.003166025434660384,
-    "hairpin:kmer:UGU": 0.0031653825622470454,
-    "mature:kmer:GAU": 0.0031323702161729066,
-    "mature:kmer:UUAA": 0.0030109011434545805,
-    "mature:kmer:UGAU": 0.0030096056148240596,
-    "mature:kmer:GCAA": 0.0029829577103964453,
-    "mature:kmer:CUGU": 0.002966099821620994,
-    "mature:kmer:AUCG": 0.0029485602684226593,
-    "mature:seed:ACAUUCA": 0.0028884989997947767,
-    "hairpin:kmer:GUU": 0.002819898866000811,
-    "mature:kmer:CAGC": 0.0028130363586003205,
-    "hairpin:kmer:AC": 0.002703686824213713,
-    "mature:kmer:GAAC": 0.002699841714537369,
-    "mature:kmer:GGAA": 0.0026753550526795174,
-    "mature:kmer:CAGG": 0.002665334938183506,
-    "mature:kmer:AUUU": 0.002645496379961984,
-    "mature:kmer:UAC": 0.0026389121731481948,
-    "mature:seed:AAGUGCU": 0.0026259965683933426,
-    "mature:kmer:GUGA": 0.0026215116911652743,
-    "mature:kmer:ACG": 0.0025841076152299035,
-    "mature:kmer:AUGU": 0.0025612387341558043,
-    "mature:kmer:UGCU": 0.002518963336283948,
-    "mature:kmer:GCUU": 0.0025101100455249717,
-    "mature:kmer:UGCA": 0.00249051333069813,
-    "mature:kmer:UCAG": 0.0024775051247148275,
-    "mature:kmer:UAUC": 0.002474501257664269,
-    "mature:kmer:GAA": 0.0024741863915559025,
-    "hairpin:kmer:UUG": 0.002308511360179336,
-    "mature:kmer:CCAG": 0.0023078476766079754,
-    "mature:kmer:AACG": 0.0022459815155556197,
-    "mature:kmer:AGAC": 0.0021938781685242894,
-    "mature:kmer:AAAC": 0.002186058479452002,
-    "mature:kmer:ACAG": 0.002174937143624431,
-    "mature:kmer:GCAC": 0.0021625156920113122,
-    "mature:kmer:CCCA": 0.0021250566952757343,
-    "mature:kmer:GACC": 0.002017256967064855,
-    "hairpin:kmer:GUUG": 0.0019972049628238747,
-    "mature:kmer:GGU": 0.001987078021073917,
-    "hairpin:kmer:AAU": 0.0019767304545467135,
-    "hairpin:kmer:UAU": 0.001973968071254778,
-    "mature:kmer:GUCA": 0.0019487789528600836,
-    "mature:kmer:GACA": 0.0019379915765160005,
-    "mature:kmer:GUUU": 0.0019119544954298157,
-    "hairpin:kmer:ACUG": 0.001871099964921254,
-    "mature:kmer:UGGC": 0.0018476222130254173,
-    "hairpin:kmer:AUA": 0.0018396830151388036,
-    "hairpin:kmer:UCG": 0.0017868308465900568,
-    "mature:kmer:AAAA": 0.0017711632870990937,
-    "mature:kmer:CGUA": 0.0017443061385657712,
-    "hairpin:kmer:CGU": 0.0017014398192348639,
-    "mature:kmer:CGGU": 0.001678917706782712,
-    "hairpin:kmer:AAUC": 0.001641395420105846,
-    "mature:kmer:UUUG": 0.00162551100971061,
-    "mature:kmer:GCAG": 0.001616001518681398,
-    "mature:kmer:UUUU": 0.0015555007379568198,
-    "hairpin:kmer:GAAU": 0.001547442017891937,
-    "hairpin:kmer:AGU": 0.0015053702352442462,
-    "hairpin:kmer:AUGG": 0.0014870314571240034,
-    "mature:kmer:GAUA": 0.0014738460621609452,
-    "mature:kmer:UAAA": 0.0014248464098372711,
-    "mature:kmer:GUCC": 0.0014024863844033014,
-    "hairpin:kmer:UAG": 0.0013390432603335323,
-    "mature:kmer:GCA": 0.0013309935353309366,
-    "hairpin:kmer:CGA": 0.001311950746494401,
-    "hairpin:kmer:GCAA": 0.0012430557681943973,
-    "hairpin:kmer:UGUC": 0.0012388225987743763,
-    "hairpin:kmer:UAUA": 0.0012363477967771844,
-    "hairpin:kmer:UGC": 0.0012279563140199967,
-    "hairpin:kmer:CGAU": 0.0012154029991716382,
-    "mature:kmer:AGGU": 0.0012105497388524812,
-    "hairpin:kmer:GUCG": 0.001201871681396138,
-    "mature:kmer:UGUA": 0.0011877790244050708,
-    "mature:kmer:GCG": 0.001178586036428346,
-    "hairpin:kmer:GGAA": 0.0011696819254254829,
-    "hairpin:kmer:UGUU": 0.001158043543213156,
-    "hairpin:kmer:UU": 0.0011488531241967016,
-    "hairpin:kmer:CUGU": 0.001145565208794503,
-    "hairpin:kmer:AGUG": 0.0011330122772526597,
-    "hairpin:kmer:UUGU": 0.0011247130747972026,
-    "mature:kmer:ACAC": 0.001118593083653253,
-    "hairpin:kmer:AUG": 0.0011159833510636214,
-    "hairpin:kmer:ACCG": 0.0011135205870784327,
-    "hairpin:kmer:AUC": 0.0010944761284223494,
-    "hairpin:kmer:AAUG": 0.0010703774727480737,
-    "hairpin:kmer:AUAU": 0.001064327786172924,
-    "mature:kmer:GCUA": 0.0010498566552025667,
-    "hairpin:kmer:CUUG": 0.0010440888807783644,
-    "mature:kmer:ACGU": 0.001017278269310286,
-    "hairpin:kmer:GCA": 0.0009804429739625046,
-    "mature:kmer:AACU": 0.0009791203493501382,
-    "mature:kmer:GGCG": 0.0009599479783364633,
-    "hairpin:kmer:UAGU": 0.0009532014005624122,
-    "hairpin:kmer:UGAC": 0.0009482671497997099,
-    "hairpin:kmer:GUA": 0.0009417311544416423,
-    "hairpin:kmer:GAC": 0.0009335549289891641,
-    "hairpin:kmer:UUGA": 0.0009056492826437632,
-    "hairpin:kmer:CAGU": 0.0008996205494603845,
-    "mature:kmer:AUUG": 0.0008935882694359483,
-    "hairpin:kmer:CGUU": 0.0008823617273917594,
-    "hairpin:kmer:ACC": 0.0008720174002620897,
-    "hairpin:kmer:CCG": 0.0008598323339078635,
-    "hairpin:kmer:GUC": 0.0008482721590312591,
-    "mature:kmer:UAGA": 0.0008456536253860164,
-    "hairpin:kmer:ACU": 0.0008448219562227718,
-    "hairpin:kmer:UCC": 0.0008261076268479199,
-    "hairpin:kmer:UAGC": 0.0008204247921301385,
-    "hairpin:kmer:UCGA": 0.0008183211126408667,
-    "hairpin:kmer:GACA": 0.0008166914264997507,
-    "hairpin:kmer:UAC": 0.0008081122882931018,
-    "hairpin:kmer:CUA": 0.000806900977958975,
-    "hairpin:kmer:AUAC": 0.0007897860796036064,
-    "hairpin:kmer:GAU": 0.0007882385559762971,
-    "mature:kmer:AAGU": 0.000786097582037548,
-    "hairpin:kmer:GUG": 0.0007855604024112518,
-    "hairpin:kmer:CGUG": 0.0007797190546281504,
-    "hairpin:kmer:AUGC": 0.0007718389510615959,
-    "hairpin:kmer:UAAC": 0.000771155571672353,
-    "hairpin:kmer:AAC": 0.000769386802759087,
-    "hairpin:kmer:CAA": 0.0007639301642882184,
-    "hairpin:kmer:UCGU": 0.0007636419918493823,
-    "hairpin:kmer:UGUG": 0.000754992398932647,
-    "hairpin:kmer:UCCA": 0.000747731411124063,
-    "hairpin:kmer:ACCC": 0.0007472677479554861,
-    "hairpin:kmer:UGCU": 0.000738548251498632,
-    "hairpin:kmer:UUA": 0.0007355369122257697,
-    "hairpin:kmer:CACG": 0.0007224909277124375,
-    "hairpin:kmer:CUUA": 0.0007050447718876398,
-    "mature:kmer:UGCG": 0.0007005266039196638,
-    "hairpin:kmer:GGUA": 0.0006928065372746898,
-    "hairpin:kmer:GGCA": 0.0006881223232347236,
-    "hairpin:kmer:UACC": 0.0006848352055578208,
-    "hairpin:kmer:CUAU": 0.0006804651465516523,
-    "hairpin:kmer:GCUA": 0.000672915333902673,
-    "mature:kmer:GUUA": 0.000633123905326887,
-    "mature:kmer:UAUU": 0.0006210440131706681,
-    "hairpin:kmer:UUAG": 0.0006178456224325279,
-    "hairpin:kmer:CCGU": 0.0006165154847222097,
-    "hairpin:kmer:GUGC": 0.0006055221210776816,
-    "hairpin:kmer:CGG": 0.0006022652688572858,
-    "hairpin:kmer:GUAU": 0.0006004283896210086,
-    "hairpin:kmer:AUUC": 0.0005980298251488061,
-    "hairpin:kmer:AUCC": 0.0005887302996154169,
-    "hairpin:kmer:CCAG": 0.0005844903302682989,
-    "hairpin:kmer:CAAC": 0.0005832267671539938,
-    "hairpin:kmer:CAUA": 0.000583069202858919,
-    "hairpin:kmer:GUAG": 0.0005804823865483771,
-    "mature:kmer:AUUC": 0.0005786347310772435,
-    "hairpin:kmer:ACA": 0.0005761231192917242,
-    "hairpin:kmer:CGGC": 0.0005747213867226197,
-    "hairpin:kmer:GUUU": 0.0005691645256534626,
-    "hairpin:kmer:ACAC": 0.0005449796082669132,
-    "mature:kmer:AUA": 0.0005433660423840208,
-    "mature:kmer:UAU": 0.0005420898858948492,
-    "mature:kmer:AGUG": 0.0005295867714114364,
-    "hairpin:kmer:GUGU": 0.0005261483597749501,
-    "hairpin:kmer:AUUA": 0.0005199003782356059,
-    "hairpin:kmer:AUAG": 0.0005141097842870063,
-    "hairpin:kmer:GCAC": 0.0005024251510320539,
-    "hairpin:kmer:GCU": 0.0004913395530677391,
-    "mature:kmer:AGC": 0.0004882829010076457,
-    "hairpin:kmer:GAUG": 0.0004875611220991253,
-    "hairpin:kmer:CUGA": 0.0004805729812613684,
-    "hairpin:kmer:GGUU": 0.0004798688398526172,
-    "mature:kmer:UGAC": 0.0004776891453402971,
-    "mature:kmer:CCUA": 0.00047082173326683355,
-    "hairpin:kmer:UACU": 0.0004644833962536256,
-    "hairpin:kmer:AUCG": 0.000463497243610464,
-    "hairpin:kmer:GAUU": 0.0004579599749897846,
-    "hairpin:kmer:UCGG": 0.00045790975492680786,
-    "mature:kmer:AGCG": 0.0004391046126202373,
-    "mature:kmer:GUAA": 0.00042936328710608943,
-    "hairpin:kmer:CAUU": 0.0004291558340003316,
-    "mature:kmer:UAGU": 0.0004146531692401335,
-    "hairpin:kmer:CUCC": 0.0004132361129655009,
-    "hairpin:kmer:UCUU": 0.00041047058463097695,
-    "hairpin:kmer:CCUA": 0.0004093032618710158,
-    "hairpin:kmer:ACG": 0.0004079932865405605,
-    "hairpin:kmer:GUAA": 0.0004033762768180744,
-    "hairpin:kmer:CGCU": 0.0003989746184752847,
-    "mature:kmer:CACU": 0.00037666643627863117,
-    "hairpin:kmer:UUAC": 0.00036931120153881986,
-    "hairpin:kmer:UGGU": 0.00034573223518026937,
-    "hairpin:kmer:AACA": 0.0003409723817154393,
-    "mature:kmer:CUUG": 0.00033917059513080517,
-    "hairpin:kmer:AGUU": 0.0003320196371089419,
-    "hairpin:kmer:CGGA": 0.0003313626174676975,
-    "hairpin:kmer:CAAU": 0.00032847522157837886,
-    "hairpin:kmer:UUCG": 0.0003280363690575255,
-    "hairpin:kmer:UAUC": 0.00032359919268005837,
-    "hairpin:kmer:CCCG": 0.0003207200195149995,
-    "mature:kmer:GAUG": 0.0003202974551393234,
-    "hairpin:kmer:UUGC": 0.00031120094857886555,
-    "mature:kmer:AACA": 0.0003100117156992076,
-    "hairpin:kmer:CUAC": 0.00029122811674719756,
-    "mature:kmer:UCAA": 0.00027348105060220993,
-    "hairpin:kmer:UAAU": 0.000264229105820712,
-    "hairpin:kmer:CCGA": 0.0002577765870825692,
-    "hairpin:kmer:AGCA": 0.0002546756999025471,
-    "hairpin:kmer:GCG": 0.00025334707810340684,
-    "hairpin:kmer:UAUU": 0.0002527604781449507,
-    "hairpin:kmer:CGUA": 0.00025197157004762513,
-    "hairpin:kmer:GCGC": 0.0002340496089871049,
-    "hairpin:kmer:GCAU": 0.00023222063395651933,
-    "hairpin:kmer:UGCC": 0.00022960930364132953,
-    "hairpin:kmer:UCUA": 0.00022819271699017773,
-    "hairpin:kmer:CACU": 0.00022763854099456553,
-    "hairpin:kmer:UAUG": 0.0002217628691634295,
-    "hairpin:kmer:AGAU": 0.0002202768097961028,
-    "hairpin:kmer:CAAG": 0.0002195211255951154,
-    "mature:kmer:CUCG": 0.0002169713689522974,
-    "mature:kmer:GGGU": 0.0002154816711208781,
-    "hairpin:kmer:GACC": 0.00020922057397093806,
-    "mature:kmer:UUAG": 0.00019799494643341447,
-    "hairpin:kmer:ACGU": 0.0001940827922204067,
-    "hairpin:kmer:AUU": 0.00019343368258268326,
-    "hairpin:kmer:ACGA": 0.00019336527413828212,
-    "hairpin:kmer:CUAA": 0.00018530406451430326,
-    "hairpin:kmer:UGCG": 0.00018438621995242482,
-    "hairpin:kmer:AACU": 0.000177486017085659,
-    "hairpin:kmer:AACG": 0.00015575152064262128,
-    "hairpin:kmer:UCCG": 0.0001555652900081494,
-    "hairpin:kmer:AGUC": 0.0001535160875573899,
-    "hairpin:kmer:GCGU": 0.00015088361410362604,
-    "hairpin:kmer:AUCA": 0.0001400248351356406,
-    "mature:kmer:AUAC": 0.00012712468344608344,
-    "hairpin:kmer:UAA": 0.00012303727426701429,
-    "hairpin:kmer:CGCG": 0.0001194910700816403,
-    "hairpin:kmer:CGAC": 0.00011479184718724266,
-    "hairpin:kmer:CCGG": 0.00010999365881471428,
-    "hairpin:kmer:GUUA": 0.00010724742195914252,
-    "hairpin:kmer:GGAC": 0.00010695366564369574,
-    "structure:longest_stem_fraction": 0.00010502264044731234,
-    "hairpin:kmer:CGAA": 0.00010476332199927814,
-    "hairpin:kmer:UGA": 0.00008766044842300954,
-    "hairpin:kmer:AGCU": 0.00008231694618644079,
-    "hairpin:kmer:GCGA": 0.00007480825786472382,
-    "hairpin:kmer:AAUA": 0.00007141089604094981,
-    "hairpin:kmer:ACGG": 0.00006661664384438997,
-    "hairpin:kmer:AGCG": 0.00006434011300962416,
-    "hairpin:kmer:GACU": 0.00006302259545120488,
-    "hairpin:kmer:UUGG": 0.00005193828006694257,
-    "hairpin:kmer:UUAA": 0.00005066791798554834,
-    "hairpin:kmer:GCUU": 0.00004288844282333954,
-    "hairpin:kmer:CCAA": 0.000041314996179233855,
-    "hairpin:kmer:UGGA": 0.000040458210242732076,
-    "hairpin:kmer:CGGU": 0.000035130464714107654,
-    "hairpin:kmer:UGUA": 0.00003501932258123306,
-    "hairpin:kmer:GCUC": 0.00002312405546704389,
-    "hairpin:kmer:GUCC": 0.00002023775814828292,
-    "hairpin:kmer:CGCA": 0.000017723484298253755,
-    "mature:kmer:AUG": 0.000016833586136108975,
-    "hairpin:kmer:ACAA": 0.000013782440233704137,
-    "hairpin:kmer:GAUA": 0.0000047311576059455615,
-    "hairpin:kmer:UGAU": 2.1110205145105892e-7,
-    "hairpin:kmer:AACC": -5.647257382670041e-7,
-    "hairpin:kmer:CCAU": -0.0000028331960231495343,
-    "hairpin:kmer:CAC": -0.0000036748879102035926,
-    "hairpin:kmer:UGCA": -0.000007082323500563964,
-    "hairpin:kmer:CCCA": -0.000008885864956455956,
-    "hairpin:kmer:UAGG": -0.000014492667468880964,
-    "hairpin:kmer:ACGC": -0.000019688499379268845,
-    "hairpin:kmer:AUGU": -0.00002040948617401917,
-    "hairpin:kmer:GAA": -0.000031862083469458925,
-    "hairpin:kmer:AUCU": -0.00003283351446632664,
-    "mature:kmer:AGAA": -0.000035290461067909244,
-    "hairpin:kmer:GGCG": -0.00004092447118106112,
-    "hairpin:kmer:UUUU": -0.0000418661150620312,
-    "hairpin:kmer:GAGU": -0.000045485616566611314,
-    "hairpin:kmer:AGUA": -0.000047331346573221454,
-    "mature:kmer:AUUA": -0.00006056403138316756,
-    "hairpin:kmer:GUCU": -0.00006395172648313149,
-    "hairpin:kmer:AAAU": -0.00007584286630395884,
-    "hairpin:kmer:UACA": -0.00008767649074936662,
-    "hairpin:kmer:UCCU": -0.00008920132230395081,
-    "hairpin:kmer:CGAG": -0.00009460304080580485,
-    "hairpin:kmer:CCGC": -0.00009706985828414757,
-    "mature:kmer:CGGA": -0.00010051639614458268,
-    "hairpin:kmer:UUCC": -0.0001072518709449931,
-    "hairpin:kmer:AAAC": -0.00011129556017740415,
-    "hairpin:kmer:GAUC": -0.00011456511471207991,
-    "hairpin:kmer:UUUC": -0.00012005763982658994,
-    "hairpin:kmer:GUGA": -0.00012038265087222378,
-    "hairpin:kmer:ACUU": -0.00012324613346093336,
-    "hairpin:kmer:UGGC": -0.0001362867177809049,
-    "hairpin:kmer:UUUG": -0.00013846221763472833,
-    "hairpin:kmer:GUUC": -0.00013938837092623556,
-    "mature:kmer:AAUU": -0.00014488348393158578,
-    "hairpin:kmer:AGAC": -0.00015952565886682716,
-    "hairpin:kmer:GCGG": -0.00017041009757113158,
-    "hairpin:kmer:CGC": -0.00017407808556070897,
-    "hairpin:kmer:CUCG": -0.0001889406965807266,
-    "hairpin:kmer:CGUC": -0.0002022111726869395,
-    "hairpin:kmer:AAGC": -0.0002152210209250528,
-    "hairpin:kmer:UCCC": -0.00021920239176409354,
-    "hairpin:kmer:GCUG": -0.0002200416387272919,
-    "hairpin:kmer:AAGU": -0.00022165787635874062,
-    "hairpin:kmer:GUCA": -0.00022606725828099424,
-    "hairpin:kmer:UAGA": -0.00023333604818595618,
-    "hairpin:kmer:UUAU": -0.000239074382056893,
-    "hairpin:kmer:UCAU": -0.0002404325627235344,
-    "hairpin:kmer:GACG": -0.0002464886472525484,
-    "hairpin:kmer:UCGC": -0.00024755980438988793,
-    "hairpin:kmer:CAAA": -0.0002552757033214607,
-    "hairpin:kmer:CUG": -0.00025609539337561276,
-    "hairpin:kmer:UGAG": -0.00026153866897022076,
-    "hairpin:kmer:CCUG": -0.0002784495607913907,
-    "hairpin:kmer:ACCA": -0.0002945327692711109,
-    "hairpin:kmer:ACAU": -0.0003163084268654223,
-    "hairpin:kmer:CUAG": -0.0003197899822291624,
-    "hairpin:kmer:ACAG": -0.0003206893636588951,
-    "hairpin:kmer:CA": -0.0003210291589547709,
-    "hairpin:kmer:UAAG": -0.0003252732907294243,
-    "hairpin:kmer:CAU": -0.0003260359477594645,
-    "hairpin:kmer:CCA": -0.0003271795623683378,
-    "hairpin:kmer:CACC": -0.0003402398892342635,
-    "hairpin:kmer:GGUC": -0.00034909559443097667,
-    "hairpin:kmer:CGGG": -0.000357364067533807,
-    "hairpin:kmer:AUUU": -0.00038769532551539407,
-    "mature:kmer:CCAU": -0.0003913953430663041,
-    "hairpin:kmer:ACUC": -0.00039889463100404763,
-    "hairpin:kmer:GAAC": -0.0004124548479234907,
-    "hairpin:kmer:AGGU": -0.0004429116416093968,
-    "hairpin:kmer:UCAA": -0.00046556574303961565,
-    "hairpin:kmer:ACUA": -0.0004692983118261781,
-    "hairpin:kmer:AUUG": -0.00047102787271670826,
-    "hairpin:kmer:UGG": -0.0004802982120511155,
-    "hairpin:kmer:AUAA": -0.0004806551186612798,
-    "hairpin:kmer:CAGA": -0.000487521491677217,
-    "hairpin:kmer:CACA": -0.0004903543611871116,
-    "hairpin:kmer:AAGA": -0.0004927821487706069,
-    "hairpin:kmer:GUGG": -0.0004928996674363922,
-    "hairpin:kmer:GAAG": -0.000518976221598949,
-    "hairpin:kmer:GCCC": -0.0005204263483698121,
-    "hairpin:kmer:CUGC": -0.0005233360421401148,
-    "mature:kmer:UGGU": -0.0005306655139353137,
-    "hairpin:kmer:CCCU": -0.0005328026073773664,
-    "hairpin:kmer:UGAA": -0.0005329798269903467,
-    "hairpin:kmer:UUUA": -0.0005488560805378311,
-    "hairpin:kmer:UAAA": -0.0005498473229474967,
-    "hairpin:kmer:GGCU": -0.0005614963455602167,
-    "hairpin:kmer:UCAG": -0.0005650212684835717,
-    "hairpin:kmer:CAUG": -0.0005752961346451282,
-    "hairpin:kmer:UCAC": -0.0005828613806861569,
-    "hairpin:kmer:GAAA": -0.0005830706779687105,
-    "mature:kmer:UUCC": -0.0005864933550628142,
-    "hairpin:kmer:ACCU": -0.0005913601174182638,
-    "hairpin:kmer:GGAU": -0.0005973458914747845,
-    "hairpin:kmer:CUU": -0.000598088962945102,
-    "mature:kmer:UUCA": -0.000609076798554421,
-    "hairpin:kmer:AGGC": -0.0006450143021809742,
-    "mature:kmer:AGGA": -0.0006564806830037736,
-    "hairpin:kmer:CAGC": -0.0006612236893064265,
-    "mature:kmer:UGUU": -0.0006694011729975298,
-    "hairpin:kmer:UUCA": -0.0006886748427955141,
-    "hairpin:kmer:CAUC": -0.0007043028814588195,
-    "hairpin:kmer:GGGU": -0.0007068024227732087,
-    "hairpin:kmer:GUAC": -0.000707353455771429,
-    "hairpin:kmer:UUCU": -0.0007227163533660033,
-    "hairpin:kmer:UGGG": -0.0007387070764412461,
-    "mature:kmer:GAUU": -0.0007393481781033127,
-    "mature:kmer:GUUC": -0.000755339362008958,
-    "hairpin:kmer:GGGC": -0.0007624543228168752,
-    "hairpin:kmer:GCCG": -0.0007776166676098518,
-    "hairpin:kmer:CGCC": -0.0007801231242340685,
-    "hairpin:kmer:CAGG": -0.0007997751655648704,
-    "hairpin:kmer:CCAC": -0.0008134453145321941,
-    "hairpin:kmer:GGCC": -0.0008379674905848677,
-    "hairpin:kmer:GGGA": -0.0008517689538735517,
-    "hairpin:kmer:AAGG": -0.000880375754891058,
-    "hairpin:kmer:GCCU": -0.0008822524410587109,
-    "hairpin:kmer:GGC": -0.000883358578574268,
-    "hairpin:kmer:CUCA": -0.0008876626564684928,
-    "hairpin:kmer:AGAA": -0.0008939857464247316,
-    "hairpin:kmer:AAUU": -0.0009028915693360213,
-    "hairpin:kmer:GGU": -0.0009151669765615108,
-    "hairpin:kmer:AAAA": -0.0009157064252661055,
-    "hairpin:kmer:UUU": -0.0009476992681479605,
-    "hairpin:kmer:GCCA": -0.0009510196770247766,
-    "hairpin:kmer:CCUC": -0.0009633859852040143,
-    "mature:kmer:ACUC": -0.000979712992294799,
-    "hairpin:kmer:AGGA": -0.000986392825713287,
-    "hairpin:kmer:GAGA": -0.0009963791686336907,
-    "hairpin:kmer:GCAG": -0.0010030678852481095,
-    "hairpin:kmer:CUUU": -0.0010033962213160186,
-    "hairpin:kmer:CCC": -0.001048121944514144,
-    "hairpin:kmer:UUC": -0.00104857832143099,
-    "hairpin:kmer:AUGA": -0.0010596933489131282,
-    "hairpin:kmer:CCCC": -0.0010777174475937415,
-    "mature:kmer:AUCU": -0.0011367743519598316,
-    "structure:mean_stem_fraction": -0.0011513447853685767,
-    "hairpin:kmer:AGGG": -0.001158055389597176,
-    "hairpin:kmer:AAAG": -0.001161617366867262,
-    "hairpin:kmer:UCUC": -0.0011796724085551998,
-    "hairpin:kmer:CCUU": -0.001188855123216379,
-    "hairpin:kmer:GGGG": -0.001238119663137062,
-    "hairpin:kmer:GGA": -0.0012472395455507199,
-    "mature:kmer:ACUU": -0.0012474662688588781,
-    "hairpin:kmer:GAGC": -0.0012737717383348337,
-    "hairpin:kmer:AGC": -0.001298586137789395,
-    "hairpin:kmer:CUUC": -0.0013234690468314752,
-    "mature:kmer:CC": -0.001368623922740215,
-    "hairpin:kmer:CUGG": -0.0013885102303791354,
-    "hairpin:kmer:CAG": -0.0014256853120242048,
-    "mature:kmer:GUGG": -0.001446794467832347,
-    "hairpin:kmer:GC": -0.0014551640798060286,
-    "mature:kmer:UCUA": -0.0014798626536027962,
-    "hairpin:kmer:GAGG": -0.001520021455355906,
-    "mature:kmer:CAGA": -0.0015626067897773104,
-    "mature:kmer:UACA": -0.0015737256923908322,
-    "hairpin:kmer:AGCC": -0.001573749695786629,
-    "mature:kmer:GAC": -0.0015747663110090423,
-    "mature:kmer:ACU": -0.0015914820118848546,
-    "mature:kmer:CAA": -0.0016072335320353845,
-    "mature:kmer:ACCA": -0.001630686511002525,
-    "mature:kmer:UGAG": -0.0016558131174239964,
-    "hairpin:kmer:GGUG": -0.0016564520771212132,
-    "hairpin:kmer:UCA": -0.0017069059195645353,
-    "hairpin:kmer:CUCU": -0.001721359591384456,
-    "hairpin:kmer:AGAG": -0.001761759742958371,
-    "hairpin:kmer:AA": -0.0017790119028726007,
-    "mature:kmer:UCAU": -0.0018353565282353541,
-    "hairpin:kmer:GGAG": -0.0018638954104983028,
-    "hairpin:kmer:AAG": -0.0018721451687115363,
-    "mature:kmer:GCUG": -0.001891358621718708,
-    "mature:kmer:AGUA": -0.0018977453396726578,
-    "mature:kmer:AUGA": -0.0019004665776655477,
-    "hairpin:kmer:UC": -0.0019039995261175729,
-    "mature:kmer:UAUG": -0.00190993470299331,
-    "hairpin:kmer:CCU": -0.0019790917741355383,
-    "mature:kmer:AUAU": -0.0020027067853183415,
-    "hairpin:kmer:UCUG": -0.0020118537432156198,
-    "hairpin:kmer:CC": -0.002059727883049096,
-    "hairpin:kmer:GA": -0.002062081405299865,
-    "mature:kmer:UACU": -0.002114641850170554,
-    "mature:kmer:GGUC": -0.002194807292436817,
-    "mature:kmer:AGAU": -0.0022056866758185796,
-    "mature:kmer:AAAG": -0.0022233085040468574,
-    "mature:kmer:UCUU": -0.002317273704969845,
-    "hairpin:kmer:AGA": -0.002351440421377396,
-    "hairpin:kmer:AAA": -0.0023516999099722057,
-    "mature:kmer:GAGU": -0.0023727179880350304,
-    "structure:internal_bulge_density": -0.002487534731607822,
-    "hairpin:kmer:CUC": -0.002504637761268931,
-    "mature:kmer:GACU": -0.002547250089565281,
-    "structure:hairpin_loop_density": -0.002636493846599317,
-    "mature:kmer:GCGG": -0.0026598228843511635,
-    "hairpin:kmer:UCU": -0.002683388495586372,
-    "hairpin:kmer:CU": -0.0027025367246674985,
-    "mature:kmer:CCUG": -0.002715998971853562,
-    "mature:kmer:UCAC": -0.0027272046252963776,
-    "mature:kmer:UUUC": -0.002761739722724433,
-    "mature:kmer:AAGA": -0.0027629663721508877,
-    "mature:kmer:GGCA": -0.002769117125581717,
-    "mature:kmer:CCA": -0.00280669768657428,
-    "hairpin:kmer:GCC": -0.0030753826176018093,
-    "mature:kmer:GCU": -0.003144868702984767,
-    "mature:kmer:CCCC": -0.003209312033203524,
-    "mature:kmer:UCA": -0.003330169467783593,
-    "hairpin:kmer:AGG": -0.0033433068969260554,
-    "mature:kmer:UUGG": -0.0036189950325211826,
-    "hairpin:kmer:GGG": -0.003621426332948629,
-    "mature:kmer:GGAU": -0.003642697198461376,
-    "mature:kmer:CUA": -0.0037085406850488343,
-    "hairpin:kmer:GAG": -0.0038382292006999483,
-    "mature:kmer:UUU": -0.003880854565621821,
-    "mature:kmer:CCUU": -0.003964878030806801,
-    "mature:kmer:UUGC": -0.004237839026569692,
-    "mature:kmer:GCUC": -0.004633013409647583,
-    "mature:kmer:GCCC": -0.0047061888261217535,
-    "mature:kmer:GAGA": -0.004816787881842689,
-    "mature:kmer:GAAG": -0.004964633896005544,
-    "mature:kmer:UGGA": -0.00505540154936667,
-    "mature:kmer:CUCC": -0.0050961352143942765,
-    "mature:kmer:GGUG": -0.005108828125358563,
-    "structure:stem_density": -0.00512402857820714,
-    "mature:kmer:ACA": -0.005135998618891527,
-    "mature:kmer:GGCC": -0.005176985333207633,
-    "mature:kmer:CUUC": -0.005194296203207654,
-    "mature:kmer:GGCU": -0.005345805264862012,
-    "mature:kmer:CAC": -0.005471543868057731,
-    "mature:kmer:GGGG": -0.005684736245109522,
-    "mature:kmer:CUU": -0.005996548975766514,
-    "mature:kmer:UGC": -0.006053483550721004,
-    "hairpin:kmer:AG": -0.006116182542063843,
-    "mature:kmer:UCCU": -0.006131850125964647,
-    "hairpin:kmer:GG": -0.00681348513757358,
-    "mature:kmer:UCUC": -0.006995844573403086,
-    "mature:kmer:GA": -0.0070761473011108755,
-    "mature:kmer:AGGG": -0.007184419096556744,
-    "mature:kmer:CUGG": -0.0075549762907832696,
-    "mature:kmer:CUG": -0.007925518658748038,
-    "mature:kmer:CAU": -0.008319947259595156,
-    "mature:kmer:UCUG": -0.009312786717776385,
-    "mature:kmer:UUC": -0.009891483766473592,
-    "structure:gc_fraction": -0.010045771522639855,
-    "mature:kmer:GAGG": -0.010129082407644372,
-    "mature:kmer:AGA": -0.010154613104186942,
-    "structure:unpaired_fraction": -0.010376416826572699,
-    "mature:kmer:GGAG": -0.010555581156005776,
-    "mature:kmer:UGGG": -0.010895603077958279,
-    "mature:kmer:CA": -0.011517542032143339,
-    "mature:kmer:GGC": -0.012172325517851346,
-    "mature:kmer:AGG": -0.013075259414031513,
-    "mature:kmer:CCU": -0.013575078316791871,
-    "mature:kmer:AAG": -0.01366837123441442,
-    "mature:kmer:UC": -0.014644619090703397,
-    "mature:kmer:UGG": -0.01603171206160026,
-    "structure:pair_gc_fraction": -0.017940689393955718,
-    "mature:kmer:GGA": -0.018327679858050734,
-    "mature:kmer:UCU": -0.0221359275338536,
-    "mature:kmer:AG": -0.023328684253303318,
-    "mature:kmer:GCC": -0.023821831562787277,
-    "mature:kmer:CUC": -0.025232096134352795,
-    "mature:kmer:GAG": -0.025481312188453155,
-    "mature:kmer:GGG": -0.028442128347739473,
-    "mature:kmer:GC": -0.029002475866509992,
-    "mature:kmer:CU": -0.04290794911673357,
-    "mature:kmer:GG": -0.057039982601086114,
-    "mature:composition:gc_fraction": -0.2359918470058946
+    "mature:composition:length": 0.15485784040287146,
+    "mature:kmer:GU": 0.07778232313876295,
+    "mature:kmer:UGU": 0.03988824831719426,
+    "mature:kmer:UG": 0.038823286762457984,
+    "mature:kmer:UA": 0.03320493733169154,
+    "mature:kmer:CG": 0.03193086015873063,
+    "mature:kmer:AAU": 0.031184626001879944,
+    "mature:kmer:AA": 0.027251485546798602,
+    "mature:kmer:GUU": 0.026663570221743513,
+    "mature:kmer:CGU": 0.02562207875581283,
+    "mature:kmer:GUG": 0.02510793594053308,
+    "mature:kmer:UUGU": 0.02074715817741457,
+    "mature:kmer:UAG": 0.020719797794288827,
+    "mature:kmer:UGA": 0.020670989556279603,
+    "mature:kmer:CGUG": 0.017602438728312905,
+    "mature:kmer:AAUC": 0.0175359727745334,
+    "mature:kmer:UGUG": 0.017201164302921786,
+    "mature:kmer:AU": 0.01699509629870853,
+    "mature:kmer:AUC": 0.016055949417398786,
+    "mature:kmer:ACC": 0.014781673751965976,
+    "mature:kmer:AGUU": 0.01418824426008934,
+    "mature:kmer:UGUC": 0.014183354141536906,
+    "mature:kmer:UUA": 0.013884986375871478,
+    "mature:kmer:UAGC": 0.013796969389004305,
+    "mature:seed:AGCUUAU": 0.013758872829247816,
+    "mature:kmer:ACCG": 0.013502696888851681,
+    "mature:kmer:CCG": 0.013486752994628017,
+    "mature:seed:UCCAGUU": 0.013471070836248515,
+    "mature:kmer:GUAG": 0.013415968958623584,
+    "mature:kmer:ACCC": 0.013351490076288502,
+    "mature:seed:ACCCUGU": 0.01317088924818943,
+    "mature:kmer:UCG": 0.01303001996382478,
+    "mature:kmer:UUG": 0.012973711798997783,
+    "mature:kmer:GUC": 0.01282400147720648,
+    "mature:kmer:AAC": 0.012801403385742932,
+    "mature:kmer:CUGA": 0.012797460128820272,
+    "mature:kmer:GUUG": 0.012792514197633146,
+    "mature:kmer:UAA": 0.012717046544523153,
+    "mature:kmer:CUUA": 0.012686726640474615,
+    "mature:kmer:CAG": 0.012673129633720422,
+    "mature:kmer:CCC": 0.012644349673528905,
+    "mature:seed:UAAUGCU": 0.012552022009367765,
+    "mature:kmer:GAAU": 0.012447313883528967,
+    "mature:kmer:UCCC": 0.01242488576075292,
+    "mature:kmer:CGA": 0.012066074715182423,
+    "mature:kmer:CAGU": 0.012063586641899361,
+    "mature:kmer:AAUG": 0.011243253389928196,
+    "mature:kmer:UU": 0.010736356228924366,
+    "mature:kmer:UACC": 0.010627088338886339,
+    "mature:kmer:GUGC": 0.010356407972256298,
+    "mature:kmer:AUCC": 0.009836988598487265,
+    "mature:kmer:UCGU": 0.009822755118892539,
+    "mature:seed:UGUGCGU": 0.009709340909997892,
+    "mature:kmer:AUGC": 0.00956637840016945,
+    "mature:kmer:CCCU": 0.009557766711083436,
+    "mature:kmer:AAAU": 0.009418058209851301,
+    "mature:seed:AUUGCAC": 0.009270830304075831,
+    "mature:seed:GUCAGUU": 0.009267676098588876,
+    "mature:kmer:CGAU": 0.009264932213394497,
+    "mature:seed:AGCAGCA": 0.009259374401005068,
+    "mature:kmer:UAAU": 0.009224773244390314,
+    "mature:kmer:UCC": 0.009201263753511588,
+    "mature:seed:AACCGUU": 0.009198973763596638,
+    "mature:seed:GGCAGUG": 0.009180275292428175,
+    "mature:seed:CCCUGAG": 0.009161189723661792,
+    "mature:kmer:CGGC": 0.009085096277384016,
+    "mature:kmer:CAAA": 0.009061148482784479,
+    "mature:kmer:AGU": 0.009044610653593512,
+    "mature:seed:AUGACAC": 0.008959613071678613,
+    "mature:seed:GUGCAAA": 0.008764877912531428,
+    "mature:kmer:AACC": 0.008621875700784818,
+    "mature:kmer:AAA": 0.008382555608910904,
+    "mature:kmer:CUAA": 0.007980135388259773,
+    "mature:kmer:UCCA": 0.007911123379776038,
+    "mature:kmer:CCGU": 0.007845661800517234,
+    "mature:kmer:GCGU": 0.00775122531443057,
+    "mature:kmer:CGUU": 0.007458934989180135,
+    "mature:seed:AAAGUGC": 0.007353226591254536,
+    "mature:kmer:AC": 0.00701925946540148,
+    "mature:kmer:CCGA": 0.006960867128584622,
+    "mature:kmer:CCCG": 0.006738644871448341,
+    "mature:kmer:ACUG": 0.006716574884595392,
+    "mature:kmer:AUAG": 0.0064435246642516215,
+    "mature:kmer:CAUU": 0.006436416353197319,
+    "mature:kmer:GUA": 0.0063663547783261954,
+    "mature:kmer:CGG": 0.006271897621464885,
+    "mature:seed:GGCGCGA": 0.006136733100747976,
+    "mature:seed:GAGGUAG": 0.006132837896656577,
+    "mature:kmer:GGUU": 0.006129573976909431,
+    "mature:kmer:UUAU": 0.005862025423167049,
+    "mature:kmer:UAAC": 0.005859451224783999,
+    "mature:kmer:AGCU": 0.005745481881102137,
+    "mature:kmer:AGCA": 0.0057348896341054625,
+    "mature:kmer:CGAA": 0.0056172231750386045,
+    "mature:seed:AUGGAUU": 0.005551463671804989,
+    "mature:kmer:GGUA": 0.0055150080008585555,
+    "mature:kmer:ACGA": 0.005296635695262527,
+    "mature:kmer:GUCU": 0.00527104586157179,
+    "mature:kmer:CCAG": 0.005265266994228262,
+    "mature:kmer:UUGA": 0.0052111918608183355,
+    "mature:kmer:UCGG": 0.005167852135615612,
+    "mature:kmer:CAGC": 0.005141362610624957,
+    "mature:kmer:UUCG": 0.005127091024347473,
+    "mature:seed:GAGGGAC": 0.005090357965258082,
+    "mature:seed:GGCAAGA": 0.005059243646319556,
+    "mature:seed:CUGGGUA": 0.004959265499626543,
+    "mature:seed:CUCGGCG": 0.004945566069131387,
+    "mature:kmer:UUAC": 0.004879710567734155,
+    "mature:kmer:CACG": 0.004842943235578339,
+    "mature:kmer:CCGG": 0.00481655214595546,
+    "mature:seed:GGCUCAG": 0.004811252786302814,
+    "mature:seed:CCUUCAU": 0.004807180263001921,
+    "mature:kmer:GUGU": 0.004731857020205754,
+    "mature:seed:AAGUUGU": 0.004728380689267538,
+    "mature:seed:AACACUG": 0.0045716375256700135,
+    "mature:seed:GGAAUGU": 0.004561804267201984,
+    "mature:kmer:AUCA": 0.004553649569147909,
+    "mature:kmer:GUCG": 0.004545576711689364,
+    "mature:kmer:CAGG": 0.004535430181409153,
+    "mature:seed:AACGGAA": 0.004534545993599619,
+    "mature:seed:CUACAGU": 0.004521885166382818,
+    "mature:seed:ACCCGUA": 0.004463175488916161,
+    "mature:seed:AAUGCCC": 0.004417756633390573,
+    "mature:kmer:UAGG": 0.004408743309708819,
+    "mature:kmer:CUGU": 0.004369124485565768,
+    "mature:kmer:ACAG": 0.004330239928193104,
+    "mature:kmer:AAUA": 0.004239341513728652,
+    "mature:kmer:AUGU": 0.004157327500508401,
+    "mature:kmer:GUGA": 0.004130246575458445,
+    "mature:kmer:UGCA": 0.004094704531608761,
+    "mature:seed:ACAUUCA": 0.004085010883627009,
+    "mature:kmer:AUCG": 0.0040333226368963054,
+    "mature:kmer:AUUU": 0.004000782110627136,
+    "mature:kmer:UUAA": 0.003947085050253536,
+    "mature:seed:AAGUGCU": 0.0038580652355414543,
+    "mature:kmer:GAUC": 0.0037875852848403267,
+    "mature:kmer:UGAU": 0.0037391218595172497,
+    "mature:kmer:GCAC": 0.0037292569821965054,
+    "mature:kmer:GCAA": 0.0037150701679545804,
+    "mature:kmer:GAU": 0.003682036555831038,
+    "mature:kmer:UGCU": 0.0036297606638566616,
+    "mature:kmer:UAC": 0.003583716174623241,
+    "mature:kmer:UGGC": 0.00356853474037766,
+    "mature:kmer:AUU": 0.003460016210647411,
+    "mature:kmer:GCG": 0.0034182277354835554,
+    "mature:kmer:UCAG": 0.0033759138267037466,
+    "mature:kmer:UAUC": 0.0032691081007576767,
+    "mature:kmer:GAAC": 0.003259969674790106,
+    "mature:kmer:GACC": 0.003023806952864912,
+    "mature:kmer:CCCA": 0.0029963691380860613,
+    "mature:kmer:GUUU": 0.0029658397787364213,
+    "mature:kmer:AGAC": 0.002962322368831572,
+    "mature:kmer:GACA": 0.0027597119000168577,
+    "mature:kmer:AAAC": 0.002674291097417585,
+    "mature:kmer:CGUA": 0.002653219636468217,
+    "mature:kmer:GCUU": 0.0026262664724413442,
+    "mature:kmer:UUUG": 0.002471760819874377,
+    "mature:kmer:AACG": 0.0024712505741923364,
+    "mature:kmer:GUCA": 0.0024485903802005274,
+    "mature:kmer:GCAG": 0.002386593706796856,
+    "mature:kmer:AGC": 0.002325786517415222,
+    "mature:kmer:CGGU": 0.002313141914153286,
+    "mature:kmer:GGAA": 0.0022372755441705944,
+    "mature:kmer:ACG": 0.002143175987585068,
+    "mature:kmer:GUCC": 0.0020083508083418864,
+    "mature:kmer:UGUA": 0.0018715771158793588,
+    "mature:kmer:GGCG": 0.001855048487717777,
+    "mature:kmer:GAUA": 0.0017405841723012697,
+    "mature:kmer:UAAA": 0.0017185708689598286,
+    "mature:kmer:CACU": 0.001684959209764813,
+    "mature:kmer:GAA": 0.0016031389105030719,
+    "mature:kmer:UGAC": 0.001579282265247157,
+    "mature:kmer:GCUA": 0.0015763383160149892,
+    "mature:kmer:AGUG": 0.0015564573358760223,
+    "mature:kmer:ACAC": 0.0015165088216639072,
+    "mature:kmer:GCA": 0.0015014452817201074,
+    "mature:kmer:UAGA": 0.0013556185877035174,
+    "mature:kmer:AGGU": 0.0013267778200217958,
+    "mature:kmer:GAUG": 0.0012923107746809668,
+    "mature:kmer:AACA": 0.0012819865414312908,
+    "mature:kmer:AGCG": 0.0012693529125348563,
+    "mature:kmer:UGCG": 0.0011956899159107687,
+    "mature:kmer:AACU": 0.000998283827419822,
+    "mature:kmer:AAGU": 0.0009389736311422314,
+    "mature:kmer:AUUC": 0.0009213428890545018,
+    "mature:kmer:ACGU": 0.0008628810957349098,
+    "mature:kmer:CCUA": 0.0007760164167863425,
+    "mature:kmer:CUCG": 0.000701531223930729,
+    "mature:kmer:CGGA": 0.0006928404915281463,
+    "mature:kmer:UUUU": 0.0006703126586254613,
+    "mature:kmer:AAAA": 0.000655528794974651,
+    "mature:kmer:AUAC": 0.0006429445233863985,
+    "mature:kmer:CUUG": 0.0004938045159682611,
+    "mature:kmer:GUUA": 0.0004739627290643474,
+    "mature:kmer:GGU": 0.00035376418963500145,
+    "mature:kmer:UAUU": 0.0002947894124228063,
+    "mature:kmer:AUG": 0.00026287615276718415,
+    "mature:kmer:ACUC": 0.0002435071493571317,
+    "mature:kmer:GUAA": 0.00016584918535152873,
+    "mature:kmer:AUUG": 0.0001192292722404824,
+    "mature:kmer:AUA": 0.00011496779530007502,
+    "mature:kmer:UUAG": 0.000013930405979478087,
+    "mature:kmer:GGGU": -0.00000477371551235095,
+    "mature:kmer:AGAA": -0.00006843073027683592,
+    "mature:kmer:UAU": -0.00013802132550454622,
+    "mature:kmer:UCAA": -0.00015199797941147362,
+    "mature:kmer:UAGU": -0.00016791600293394367,
+    "mature:kmer:ACU": -0.00016800670012540866,
+    "mature:kmer:CCAU": -0.0003485583950062279,
+    "mature:kmer:AUUA": -0.00045537211080788224,
+    "mature:kmer:UGUU": -0.000666737155353882,
+    "mature:kmer:UUCC": -0.0006811132783890059,
+    "mature:kmer:GCUG": -0.0007376238937202674,
+    "mature:kmer:AAUU": -0.000746989328047888,
+    "mature:kmer:GAC": -0.0010229349124347923,
+    "mature:kmer:UUCA": -0.001061226554735098,
+    "mature:kmer:CC": -0.0010666784548143326,
+    "mature:kmer:GUUC": -0.001104512568972454,
+    "mature:kmer:ACUU": -0.0013278964814033404,
+    "mature:kmer:AGGA": -0.0013626270996928561,
+    "mature:kmer:GAUU": -0.0014268764465727845,
+    "mature:kmer:AUCU": -0.001550210950560124,
+    "mature:kmer:UGAG": -0.0016339181908321262,
+    "mature:kmer:CCA": -0.001992869219744988,
+    "mature:kmer:GCU": -0.0022506164066345845,
+    "mature:kmer:UACA": -0.002423497693947727,
+    "mature:kmer:UACU": -0.0024323865339419166,
+    "mature:kmer:UCUA": -0.0024860546551284317,
+    "mature:kmer:UGGU": -0.0024865649054942175,
+    "mature:kmer:UCAU": -0.0025892839348505272,
+    "mature:kmer:GACU": -0.0025907110002950295,
+    "mature:kmer:CAGA": -0.002595848132128706,
+    "mature:kmer:ACCA": -0.0026688787516812758,
+    "mature:kmer:AUAU": -0.0027278451258562738,
+    "mature:kmer:GAGU": -0.002756525837962742,
+    "mature:kmer:AUGA": -0.002788467082893653,
+    "mature:kmer:GUGG": -0.002850626606101787,
+    "mature:kmer:GCGG": -0.0032606886847600563,
+    "mature:kmer:CAA": -0.0033001856064413583,
+    "mature:kmer:AGUA": -0.003301302211312574,
+    "mature:kmer:GGUC": -0.0033631940570395566,
+    "mature:kmer:AGAU": -0.0033658140801511188,
+    "mature:kmer:UCUU": -0.003453226526916527,
+    "mature:kmer:UAUG": -0.0035199698765109723,
+    "mature:kmer:CCUG": -0.0035367281055525028,
+    "mature:kmer:UCAC": -0.0035995246077289624,
+    "mature:kmer:AAAG": -0.00360494308927068,
+    "mature:kmer:GGCA": -0.003904900222871925,
+    "mature:kmer:UUUC": -0.0042152738537374725,
+    "mature:kmer:AAGA": -0.004698730605978408,
+    "mature:kmer:UUGG": -0.005047711387740347,
+    "mature:kmer:UCA": -0.00505919622110313,
+    "mature:kmer:CCCC": -0.005118713198049284,
+    "mature:kmer:GCUC": -0.005181077407801661,
+    "mature:kmer:CUA": -0.005278414638574251,
+    "mature:kmer:CCUU": -0.005357541398841018,
+    "mature:kmer:GGAU": -0.005443704516272608,
+    "mature:kmer:ACA": -0.006162192937767728,
+    "mature:kmer:UGC": -0.006249451948317032,
+    "mature:kmer:UUGC": -0.006254571981545489,
+    "mature:kmer:GAGA": -0.006285205007641695,
+    "mature:kmer:GCCC": -0.00650534421788873,
+    "mature:kmer:GGCC": -0.0065133659973420355,
+    "mature:kmer:GGCU": -0.006534297275289684,
+    "mature:kmer:CUCC": -0.0065949571355335265,
+    "mature:kmer:CAC": -0.006909828460505325,
+    "mature:kmer:UGGA": -0.007253805248507258,
+    "mature:kmer:CUUC": -0.007380709203491724,
+    "mature:kmer:UUU": -0.007381727068564376,
+    "mature:kmer:GAAG": -0.007476856739667024,
+    "mature:kmer:CUG": -0.007625237483034384,
+    "mature:kmer:GGGG": -0.00813941113807673,
+    "mature:kmer:UCCU": -0.008171134398950015,
+    "mature:kmer:GGUG": -0.008601378911162574,
+    "mature:kmer:CUU": -0.008783676477346994,
+    "mature:kmer:GA": -0.009191224947227211,
+    "mature:kmer:AGGG": -0.009812589077264091,
+    "mature:kmer:UCUC": -0.010016235292725858,
+    "mature:kmer:CUGG": -0.010018250519883979,
+    "mature:kmer:UCUG": -0.011839155227550236,
+    "mature:kmer:CAU": -0.01231234982508577,
+    "mature:kmer:GGAG": -0.013673632246865134,
+    "mature:kmer:CA": -0.014244974624530683,
+    "mature:kmer:GAGG": -0.014283153095412228,
+    "mature:kmer:UUC": -0.014302780597259066,
+    "mature:kmer:AGA": -0.014831098432195145,
+    "mature:kmer:GGC": -0.01484328815882638,
+    "mature:kmer:UGGG": -0.015635570886748995,
+    "mature:kmer:AGG": -0.017846588104625374,
+    "mature:kmer:CCU": -0.018258235689900162,
+    "mature:kmer:UC": -0.01946652758953571,
+    "mature:kmer:AAG": -0.021148824978074916,
+    "mature:kmer:UGG": -0.023549886404413394,
+    "mature:kmer:GGA": -0.02621212979251373,
+    "mature:kmer:AG": -0.029950195158376186,
+    "mature:kmer:UCU": -0.031012782933900668,
+    "mature:kmer:GCC": -0.031220228545039537,
+    "mature:kmer:CUC": -0.03246255221245724,
+    "mature:kmer:GAG": -0.034511329333477454,
+    "mature:kmer:GC": -0.03512268865935232,
+    "mature:kmer:GGG": -0.04064652966906811,
+    "mature:kmer:CU": -0.0549882977973566,
+    "mature:kmer:GG": -0.08058477730199919,
+    "mature:composition:gc_fraction": -0.29470674627069654
   },
   "top_positive_features": [
     {
       "feature": "mature:composition:length",
-      "weight": 0.12042313179891197
+      "weight": 0.15485784040287146
     },
     {
       "feature": "mature:kmer:GU",
-      "weight": 0.05653699005302058
+      "weight": 0.07778232313876295
     },
     {
       "feature": "mature:kmer:UGU",
-      "weight": 0.02868690055670438
+      "weight": 0.03988824831719426
     },
     {
       "feature": "mature:kmer:UG",
-      "weight": 0.02611594648520578
+      "weight": 0.038823286762457984
     },
     {
       "feature": "mature:kmer:UA",
-      "weight": 0.025438999916230623
-    },
-    {
-      "feature": "mature:kmer:AA",
-      "weight": 0.024753293153461673
-    },
-    {
-      "feature": "mature:kmer:AAU",
-      "weight": 0.02304230698167905
+      "weight": 0.03320493733169154
     },
     {
       "feature": "mature:kmer:CG",
-      "weight": 0.02297242194411896
+      "weight": 0.03193086015873063
+    },
+    {
+      "feature": "mature:kmer:AAU",
+      "weight": 0.031184626001879944
+    },
+    {
+      "feature": "mature:kmer:AA",
+      "weight": 0.027251485546798602
     },
     {
       "feature": "mature:kmer:GUU",
-      "weight": 0.019477604122911395
-    },
-    {
-      "feature": "mature:kmer:GUG",
-      "weight": 0.018702796490586912
+      "weight": 0.026663570221743513
     },
     {
       "feature": "mature:kmer:CGU",
-      "weight": 0.01855418696097975
+      "weight": 0.02562207875581283
+    },
+    {
+      "feature": "mature:kmer:GUG",
+      "weight": 0.02510793594053308
     },
     {
       "feature": "mature:kmer:UUGU",
-      "weight": 0.015127042543242417
+      "weight": 0.02074715817741457
     },
     {
       "feature": "mature:kmer:UAG",
-      "weight": 0.014808931579368396
-    },
-    {
-      "feature": "mature:kmer:AU",
-      "weight": 0.014516456227780966
+      "weight": 0.020719797794288827
     },
     {
       "feature": "mature:kmer:UGA",
-      "weight": 0.013936100279687303
-    },
-    {
-      "feature": "structure:pair_gu_fraction",
-      "weight": 0.013755961608133709
-    },
-    {
-      "feature": "mature:kmer:UGUG",
-      "weight": 0.012703640812243682
+      "weight": 0.020670989556279603
     },
     {
       "feature": "mature:kmer:CGUG",
-      "weight": 0.012686523300072791
+      "weight": 0.017602438728312905
     },
     {
       "feature": "mature:kmer:AAUC",
-      "weight": 0.012542976682621576
+      "weight": 0.0175359727745334
+    },
+    {
+      "feature": "mature:kmer:UGUG",
+      "weight": 0.017201164302921786
+    },
+    {
+      "feature": "mature:kmer:AU",
+      "weight": 0.01699509629870853
     },
     {
       "feature": "mature:kmer:AUC",
-      "weight": 0.012160324967092942
+      "weight": 0.016055949417398786
     },
     {
       "feature": "mature:kmer:ACC",
-      "weight": 0.011251334289072159
-    },
-    {
-      "feature": "mature:kmer:UU",
-      "weight": 0.01104595194340275
-    },
-    {
-      "feature": "mature:kmer:UUA",
-      "weight": 0.010997950580460077
-    },
-    {
-      "feature": "structure:paired_fraction",
-      "weight": 0.010567618317556307
-    },
-    {
-      "feature": "mature:kmer:UGUC",
-      "weight": 0.010317286395185185
+      "weight": 0.014781673751965976
     },
     {
       "feature": "mature:kmer:AGUU",
-      "weight": 0.010284834110380097
+      "weight": 0.01418824426008934
     },
     {
-      "feature": "mature:kmer:AAC",
-      "weight": 0.010088106249875214
+      "feature": "mature:kmer:UGUC",
+      "weight": 0.014183354141536906
     },
     {
-      "feature": "mature:kmer:CCC",
-      "weight": 0.00994958776935466
-    },
-    {
-      "feature": "mature:kmer:ACCC",
-      "weight": 0.009878211919049756
-    },
-    {
-      "feature": "mature:kmer:UAA",
-      "weight": 0.00984122830395292
-    },
-    {
-      "feature": "mature:seed:AGCUUAU",
-      "weight": 0.00972030013753251
-    },
-    {
-      "feature": "mature:kmer:UUG",
-      "weight": 0.009694489798671251
-    },
-    {
-      "feature": "mature:kmer:CCG",
-      "weight": 0.009672587378412726
-    },
-    {
-      "feature": "mature:kmer:UCG",
-      "weight": 0.009507330447481189
+      "feature": "mature:kmer:UUA",
+      "weight": 0.013884986375871478
     },
     {
       "feature": "mature:kmer:UAGC",
-      "weight": 0.009502655945554536
+      "weight": 0.013796969389004305
     },
     {
-      "feature": "mature:kmer:GUC",
-      "weight": 0.009437255754683514
-    },
-    {
-      "feature": "mature:seed:UCCAGUU",
-      "weight": 0.009422046051577388
-    },
-    {
-      "feature": "mature:seed:ACCCUGU",
-      "weight": 0.009331929140121733
+      "feature": "mature:seed:AGCUUAU",
+      "weight": 0.013758872829247816
     },
     {
       "feature": "mature:kmer:ACCG",
-      "weight": 0.009268571982301766
+      "weight": 0.013502696888851681
     },
     {
-      "feature": "mature:kmer:GUUG",
-      "weight": 0.009234267995321446
+      "feature": "mature:kmer:CCG",
+      "weight": 0.013486752994628017
+    },
+    {
+      "feature": "mature:seed:UCCAGUU",
+      "weight": 0.013471070836248515
     },
     {
       "feature": "mature:kmer:GUAG",
-      "weight": 0.00904443633808354
+      "weight": 0.013415968958623584
     },
     {
-      "feature": "mature:kmer:CUUA",
-      "weight": 0.009016644609466178
+      "feature": "mature:kmer:ACCC",
+      "weight": 0.013351490076288502
     },
     {
-      "feature": "mature:kmer:UCCC",
-      "weight": 0.009009759570331689
+      "feature": "mature:seed:ACCCUGU",
+      "weight": 0.01317088924818943
     },
     {
-      "feature": "mature:kmer:GAAU",
-      "weight": 0.008981036496022018
+      "feature": "mature:kmer:UCG",
+      "weight": 0.01303001996382478
     },
     {
-      "feature": "mature:seed:UAAUGCU",
-      "weight": 0.008907871957697825
+      "feature": "mature:kmer:UUG",
+      "weight": 0.012973711798997783
+    },
+    {
+      "feature": "mature:kmer:GUC",
+      "weight": 0.01282400147720648
+    },
+    {
+      "feature": "mature:kmer:AAC",
+      "weight": 0.012801403385742932
     },
     {
       "feature": "mature:kmer:CUGA",
-      "weight": 0.008635665567613929
+      "weight": 0.012797460128820272
+    },
+    {
+      "feature": "mature:kmer:GUUG",
+      "weight": 0.012792514197633146
+    },
+    {
+      "feature": "mature:kmer:UAA",
+      "weight": 0.012717046544523153
+    },
+    {
+      "feature": "mature:kmer:CUUA",
+      "weight": 0.012686726640474615
+    },
+    {
+      "feature": "mature:kmer:CAG",
+      "weight": 0.012673129633720422
+    },
+    {
+      "feature": "mature:kmer:CCC",
+      "weight": 0.012644349673528905
+    },
+    {
+      "feature": "mature:seed:UAAUGCU",
+      "weight": 0.012552022009367765
+    },
+    {
+      "feature": "mature:kmer:GAAU",
+      "weight": 0.012447313883528967
+    },
+    {
+      "feature": "mature:kmer:UCCC",
+      "weight": 0.01242488576075292
     },
     {
       "feature": "mature:kmer:CGA",
-      "weight": 0.008149971748795806
+      "weight": 0.012066074715182423
     },
     {
-      "feature": "mature:kmer:AAA",
-      "weight": 0.007989371595352457
+      "feature": "mature:kmer:CAGU",
+      "weight": 0.012063586641899361
     },
     {
       "feature": "mature:kmer:AAUG",
-      "weight": 0.007987648629662211
+      "weight": 0.011243253389928196
+    },
+    {
+      "feature": "mature:kmer:UU",
+      "weight": 0.010736356228924366
     },
     {
       "feature": "mature:kmer:UACC",
-      "weight": 0.00797194938821085
+      "weight": 0.010627088338886339
+    },
+    {
+      "feature": "mature:kmer:GUGC",
+      "weight": 0.010356407972256298
     }
   ],
   "top_negative_features": [
     {
       "feature": "mature:composition:gc_fraction",
-      "weight": -0.2359918470058946
+      "weight": -0.29470674627069654
     },
     {
       "feature": "mature:kmer:GG",
-      "weight": -0.057039982601086114
+      "weight": -0.08058477730199919
     },
     {
       "feature": "mature:kmer:CU",
-      "weight": -0.04290794911673357
-    },
-    {
-      "feature": "mature:kmer:GC",
-      "weight": -0.029002475866509992
+      "weight": -0.0549882977973566
     },
     {
       "feature": "mature:kmer:GGG",
-      "weight": -0.028442128347739473
+      "weight": -0.04064652966906811
+    },
+    {
+      "feature": "mature:kmer:GC",
+      "weight": -0.03512268865935232
     },
     {
       "feature": "mature:kmer:GAG",
-      "weight": -0.025481312188453155
+      "weight": -0.034511329333477454
     },
     {
       "feature": "mature:kmer:CUC",
-      "weight": -0.025232096134352795
+      "weight": -0.03246255221245724
     },
     {
       "feature": "mature:kmer:GCC",
-      "weight": -0.023821831562787277
-    },
-    {
-      "feature": "mature:kmer:AG",
-      "weight": -0.023328684253303318
+      "weight": -0.031220228545039537
     },
     {
       "feature": "mature:kmer:UCU",
-      "weight": -0.0221359275338536
+      "weight": -0.031012782933900668
+    },
+    {
+      "feature": "mature:kmer:AG",
+      "weight": -0.029950195158376186
     },
     {
       "feature": "mature:kmer:GGA",
-      "weight": -0.018327679858050734
-    },
-    {
-      "feature": "structure:pair_gc_fraction",
-      "weight": -0.017940689393955718
+      "weight": -0.02621212979251373
     },
     {
       "feature": "mature:kmer:UGG",
-      "weight": -0.01603171206160026
-    },
-    {
-      "feature": "mature:kmer:UC",
-      "weight": -0.014644619090703397
+      "weight": -0.023549886404413394
     },
     {
       "feature": "mature:kmer:AAG",
-      "weight": -0.01366837123441442
+      "weight": -0.021148824978074916
+    },
+    {
+      "feature": "mature:kmer:UC",
+      "weight": -0.01946652758953571
     },
     {
       "feature": "mature:kmer:CCU",
-      "weight": -0.013575078316791871
+      "weight": -0.018258235689900162
     },
     {
       "feature": "mature:kmer:AGG",
-      "weight": -0.013075259414031513
-    },
-    {
-      "feature": "mature:kmer:GGC",
-      "weight": -0.012172325517851346
-    },
-    {
-      "feature": "mature:kmer:CA",
-      "weight": -0.011517542032143339
+      "weight": -0.017846588104625374
     },
     {
       "feature": "mature:kmer:UGGG",
-      "weight": -0.010895603077958279
+      "weight": -0.015635570886748995
     },
     {
-      "feature": "mature:kmer:GGAG",
-      "weight": -0.010555581156005776
-    },
-    {
-      "feature": "structure:unpaired_fraction",
-      "weight": -0.010376416826572699
+      "feature": "mature:kmer:GGC",
+      "weight": -0.01484328815882638
     },
     {
       "feature": "mature:kmer:AGA",
-      "weight": -0.010154613104186942
-    },
-    {
-      "feature": "mature:kmer:GAGG",
-      "weight": -0.010129082407644372
-    },
-    {
-      "feature": "structure:gc_fraction",
-      "weight": -0.010045771522639855
+      "weight": -0.014831098432195145
     },
     {
       "feature": "mature:kmer:UUC",
-      "weight": -0.009891483766473592
+      "weight": -0.014302780597259066
     },
     {
-      "feature": "mature:kmer:UCUG",
-      "weight": -0.009312786717776385
+      "feature": "mature:kmer:GAGG",
+      "weight": -0.014283153095412228
+    },
+    {
+      "feature": "mature:kmer:CA",
+      "weight": -0.014244974624530683
+    },
+    {
+      "feature": "mature:kmer:GGAG",
+      "weight": -0.013673632246865134
     },
     {
       "feature": "mature:kmer:CAU",
-      "weight": -0.008319947259595156
+      "weight": -0.01231234982508577
     },
     {
-      "feature": "mature:kmer:CUG",
-      "weight": -0.007925518658748038
+      "feature": "mature:kmer:UCUG",
+      "weight": -0.011839155227550236
     },
     {
       "feature": "mature:kmer:CUGG",
-      "weight": -0.0075549762907832696
-    },
-    {
-      "feature": "mature:kmer:AGGG",
-      "weight": -0.007184419096556744
-    },
-    {
-      "feature": "mature:kmer:GA",
-      "weight": -0.0070761473011108755
+      "weight": -0.010018250519883979
     },
     {
       "feature": "mature:kmer:UCUC",
-      "weight": -0.006995844573403086
+      "weight": -0.010016235292725858
     },
     {
-      "feature": "hairpin:kmer:GG",
-      "weight": -0.00681348513757358
+      "feature": "mature:kmer:AGGG",
+      "weight": -0.009812589077264091
     },
     {
-      "feature": "mature:kmer:UCCU",
-      "weight": -0.006131850125964647
-    },
-    {
-      "feature": "hairpin:kmer:AG",
-      "weight": -0.006116182542063843
-    },
-    {
-      "feature": "mature:kmer:UGC",
-      "weight": -0.006053483550721004
+      "feature": "mature:kmer:GA",
+      "weight": -0.009191224947227211
     },
     {
       "feature": "mature:kmer:CUU",
-      "weight": -0.005996548975766514
-    },
-    {
-      "feature": "mature:kmer:GGGG",
-      "weight": -0.005684736245109522
-    },
-    {
-      "feature": "mature:kmer:CAC",
-      "weight": -0.005471543868057731
-    },
-    {
-      "feature": "mature:kmer:GGCU",
-      "weight": -0.005345805264862012
-    },
-    {
-      "feature": "mature:kmer:CUUC",
-      "weight": -0.005194296203207654
-    },
-    {
-      "feature": "mature:kmer:GGCC",
-      "weight": -0.005176985333207633
-    },
-    {
-      "feature": "mature:kmer:ACA",
-      "weight": -0.005135998618891527
-    },
-    {
-      "feature": "structure:stem_density",
-      "weight": -0.00512402857820714
+      "weight": -0.008783676477346994
     },
     {
       "feature": "mature:kmer:GGUG",
-      "weight": -0.005108828125358563
+      "weight": -0.008601378911162574
     },
     {
-      "feature": "mature:kmer:CUCC",
-      "weight": -0.0050961352143942765
+      "feature": "mature:kmer:UCCU",
+      "weight": -0.008171134398950015
     },
     {
-      "feature": "mature:kmer:UGGA",
-      "weight": -0.00505540154936667
+      "feature": "mature:kmer:GGGG",
+      "weight": -0.00813941113807673
+    },
+    {
+      "feature": "mature:kmer:CUG",
+      "weight": -0.007625237483034384
     },
     {
       "feature": "mature:kmer:GAAG",
-      "weight": -0.004964633896005544
+      "weight": -0.007476856739667024
+    },
+    {
+      "feature": "mature:kmer:UUU",
+      "weight": -0.007381727068564376
+    },
+    {
+      "feature": "mature:kmer:CUUC",
+      "weight": -0.007380709203491724
+    },
+    {
+      "feature": "mature:kmer:UGGA",
+      "weight": -0.007253805248507258
+    },
+    {
+      "feature": "mature:kmer:CAC",
+      "weight": -0.006909828460505325
+    },
+    {
+      "feature": "mature:kmer:CUCC",
+      "weight": -0.0065949571355335265
+    },
+    {
+      "feature": "mature:kmer:GGCU",
+      "weight": -0.006534297275289684
+    },
+    {
+      "feature": "mature:kmer:GGCC",
+      "weight": -0.0065133659973420355
+    },
+    {
+      "feature": "mature:kmer:GCCC",
+      "weight": -0.00650534421788873
     },
     {
       "feature": "mature:kmer:GAGA",
-      "weight": -0.004816787881842689
+      "weight": -0.006285205007641695
+    },
+    {
+      "feature": "mature:kmer:UUGC",
+      "weight": -0.006254571981545489
+    },
+    {
+      "feature": "mature:kmer:UGC",
+      "weight": -0.006249451948317032
+    },
+    {
+      "feature": "mature:kmer:ACA",
+      "weight": -0.006162192937767728
+    },
+    {
+      "feature": "mature:kmer:GGAU",
+      "weight": -0.005443704516272608
+    },
+    {
+      "feature": "mature:kmer:CCUU",
+      "weight": -0.005357541398841018
+    },
+    {
+      "feature": "mature:kmer:CUA",
+      "weight": -0.005278414638574251
     }
   ],
   "known_markers_with_sequence": [
@@ -1219,10 +844,6 @@
       "sequence": "UGAGGUAGUAGGUUGUGUGGUU",
       "seed": "GAGGUAG",
       "family_base": "hsa-let-7b",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000063"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 1.3731343283582087,
@@ -1251,10 +872,6 @@
       "sequence": "AAAAGUGCUUACAGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-106a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000113"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 0.6865671641791044,
@@ -1283,11 +900,6 @@
       "sequence": "UGUGCAAAUCCAUGCAAAACUGA",
       "seed": "GUGCAAA",
       "family_base": "hsa-mir-19b",
-      "hairpin_count": 2,
-      "hairpin_accessions": [
-        "MI0000074",
-        "MI0000075"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 1.3731343283582087,
@@ -1316,10 +928,6 @@
       "sequence": "UAAAGUGCUUAUAGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-20a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000076"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 0.6865671641791044,
@@ -1348,10 +956,6 @@
       "sequence": "UGUCAGUUUGUCAAAUACCCCA",
       "seed": "GUCAGUU",
       "family_base": "hsa-mir-223",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000300"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 2.7462686567164174,
@@ -1380,10 +984,6 @@
       "sequence": "CAUUGCACUUGUCUCGGUCUGA",
       "seed": "AUUGCAC",
       "family_base": "hsa-mir-25",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000082"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 1.3731343283582087,
@@ -1412,10 +1012,6 @@
       "sequence": "AAUGACACGAUCACUCCCGUUGA",
       "seed": "AUGACAC",
       "family_base": "hsa-mir-425",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0001448"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 2.7462686567164174,
@@ -1444,10 +1040,6 @@
       "sequence": "AAACCGUUACCAUUACUGAGUU",
       "seed": "AACCGUU",
       "family_base": "hsa-mir-451a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0001729"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 2.7462686567164174,
@@ -1476,11 +1068,6 @@
       "sequence": "UAUUGCACUUGUCCCGGCCUGU",
       "seed": "AUUGCAC",
       "family_base": "hsa-mir-92a",
-      "hairpin_count": 2,
-      "hairpin_accessions": [
-        "MI0000093",
-        "MI0000094"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 1.3731343283582087,
@@ -1509,10 +1096,6 @@
       "sequence": "CAAAGUGCUGUUCGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-93",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000095"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 0.6865671641791044,
@@ -1541,12 +1124,6 @@
       "sequence": "UGAGGUAGUAGGUUGUAUAGUU",
       "seed": "GAGGUAG",
       "family_base": "hsa-let-7a",
-      "hairpin_count": 3,
-      "hairpin_accessions": [
-        "MI0000060",
-        "MI0000061",
-        "MI0000062"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.6865671641791044,
@@ -1575,11 +1152,6 @@
       "sequence": "UGGAAUGUAAAGAAGUAUGUAU",
       "seed": "GGAAUGU",
       "family_base": "hsa-mir-1",
-      "hairpin_count": 2,
-      "hairpin_accessions": [
-        "MI0000437",
-        "MI0000651"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.6865671641791044,
@@ -1608,10 +1180,6 @@
       "sequence": "UACCCUGUAGAACCGAAUUUGUG",
       "seed": "ACCCUGU",
       "family_base": "hsa-mir-10b",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000267"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 3,
       "family_balanced_weight": 4.119402985074626,
@@ -1640,10 +1208,6 @@
       "sequence": "AAUGGAUUUUUGGAGCAGG",
       "seed": "AUGGAUU",
       "family_base": "hsa-mir-1246",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0006381"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -1672,10 +1236,6 @@
       "sequence": "UCCCUGAGACCCUUUAACCUGUGA",
       "seed": "CCCUGAG",
       "family_base": "hsa-mir-125a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000469"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.6865671641791044,
@@ -1704,11 +1264,6 @@
       "sequence": "UCCCUGAGACCCUAACUUGUGA",
       "seed": "CCCUGAG",
       "family_base": "hsa-mir-125b",
-      "hairpin_count": 2,
-      "hairpin_accessions": [
-        "MI0000446",
-        "MI0000470"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 3,
       "family_balanced_weight": 2.059701492537313,
@@ -1737,10 +1292,6 @@
       "sequence": "ACUCGGCGUGGCGUCGGUCGUG",
       "seed": "CUCGGCG",
       "family_base": "hsa-mir-1307",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0006444"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -1769,10 +1320,6 @@
       "sequence": "UCUACAGUGCACGUGUCUCCAGU",
       "seed": "CUACAGU",
       "family_base": "hsa-mir-139",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000261"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -1801,10 +1348,6 @@
       "sequence": "GUCCAGUUUUCCCAGGAAUCCCU",
       "seed": "UCCAGUU",
       "family_base": "hsa-mir-145",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000461"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 3,
       "family_balanced_weight": 4.119402985074626,
@@ -1833,10 +1376,6 @@
       "sequence": "UUAAUGCUAAUCGUGAUAGGGGUU",
       "seed": "UAAUGCU",
       "family_base": "hsa-mir-155",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000681"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 3,
       "family_balanced_weight": 4.119402985074626,
@@ -1865,11 +1404,6 @@
       "sequence": "UAGCAGCACGUAAAUAUUGGCG",
       "seed": "AGCAGCA",
       "family_base": "hsa-mir-16",
-      "hairpin_count": 2,
-      "hairpin_accessions": [
-        "MI0000070",
-        "MI0000115"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 0.9154228855721391,
@@ -1898,10 +1432,6 @@
       "sequence": "CAAAGUGCUUACAGUGCAGGUAG",
       "seed": "AAAGUGC",
       "family_base": "hsa-mir-17",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000071"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.3432835820895522,
@@ -1930,11 +1460,6 @@
       "sequence": "AACAUUCAUUGCUGUCGGUGGGU",
       "seed": "ACAUUCA",
       "family_base": "hsa-mir-181b",
-      "hairpin_count": 2,
-      "hairpin_accessions": [
-        "MI0000270",
-        "MI0000683"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -1963,10 +1488,6 @@
       "sequence": "CAACGGAAUCCCAAAAGCAGCUG",
       "seed": "AACGGAA",
       "family_base": "hsa-mir-191",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000465"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -1995,10 +1516,6 @@
       "sequence": "UAGCAGCACAGAAAUAUUGGC",
       "seed": "AGCAGCA",
       "family_base": "hsa-mir-195",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000489"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 3,
       "family_balanced_weight": 1.3731343283582087,
@@ -2027,10 +1544,6 @@
       "sequence": "UGUGCAAAUCUAUGCAAAACUGA",
       "seed": "GUGCAAA",
       "family_base": "hsa-mir-19a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000073"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 1.3731343283582087,
@@ -2059,10 +1572,6 @@
       "sequence": "UAACACUGUCUGGUAACGAUGU",
       "seed": "AACACUG",
       "family_base": "hsa-mir-200a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000737"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2091,10 +1600,6 @@
       "sequence": "UCCUUCAUUCCACCGGAGUCUG",
       "seed": "CCUUCAU",
       "family_base": "hsa-mir-205",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000285"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2123,10 +1628,6 @@
       "sequence": "UGGAAUGUAAGGAAGUGUGUGG",
       "seed": "GGAAUGU",
       "family_base": "hsa-mir-206",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000490"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.6865671641791044,
@@ -2155,10 +1656,6 @@
       "sequence": "UAGCUUAUCAGACUGAUGUUGA",
       "seed": "AGCUUAU",
       "family_base": "hsa-mir-21",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000077"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 3,
       "family_balanced_weight": 4.119402985074626,
@@ -2187,10 +1684,6 @@
       "sequence": "CUGUGCGUGUGACAGCGGCUGA",
       "seed": "UGUGCGU",
       "family_base": "hsa-mir-210",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000286"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 2.7462686567164174,
@@ -2219,11 +1712,6 @@
       "sequence": "UGGCUCAGUUCAGCAGGAACAG",
       "seed": "GGCUCAG",
       "family_base": "hsa-mir-24",
-      "hairpin_count": 2,
-      "hairpin_accessions": [
-        "MI0000080",
-        "MI0000081"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2252,10 +1740,6 @@
       "sequence": "AGGCAAGAUGCUGGCAUAGCU",
       "seed": "GGCAAGA",
       "family_base": "hsa-mir-31",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000089"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2284,10 +1768,6 @@
       "sequence": "UGGCAGUGUCUUAGCUGGUUGU",
       "seed": "GGCAGUG",
       "family_base": "hsa-mir-34a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000268"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 2,
       "family_balanced_weight": 2.7462686567164174,
@@ -2316,10 +1796,6 @@
       "sequence": "UAAUGCCCCUAAAAAUCCUUAU",
       "seed": "AAUGCCC",
       "family_base": "hsa-mir-365a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000767"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2348,10 +1824,6 @@
       "sequence": "GAAGUGCUUCGAUUUUGGGGUGU",
       "seed": "AAGUGCU",
       "family_base": "hsa-mir-373",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000781"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.6865671641791044,
@@ -2380,10 +1852,6 @@
       "sequence": "GAAGUUGUUCGUGGUGGAUUCG",
       "seed": "AAGUUGU",
       "family_base": "hsa-mir-382",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000790"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2412,10 +1880,6 @@
       "sequence": "CGGCGCGACCGGCCCGGGG",
       "seed": "GGCGCGA",
       "family_base": "hsa-mir-4634",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0017261"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2444,10 +1908,6 @@
       "sequence": "CAGCAGCACACUGUGGUUUGU",
       "seed": "AGCAGCA",
       "family_base": "hsa-mir-497",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0003138"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.45771144278606957,
@@ -2476,10 +1936,6 @@
       "sequence": "AAAGUGCUUCCUUUUAGAGGGU",
       "seed": "AAGUGCU",
       "family_base": "hsa-mir-520c",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0003158"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 0.6865671641791044,
@@ -2508,10 +1964,6 @@
       "sequence": "ACUGGGUAGGUGGGGCUCCAGG",
       "seed": "CUGGGUA",
       "family_base": "hsa-mir-6861",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0022708"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2540,10 +1992,6 @@
       "sequence": "UGAGGGACCCAGGACAGGAGA",
       "seed": "GAGGGAC",
       "family_base": "hsa-mir-6875",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0022722"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2572,10 +2020,6 @@
       "sequence": "AACCCGUAGAUCCGAUCUUGUG",
       "seed": "ACCCGUA",
       "family_base": "hsa-mir-99a",
-      "hairpin_count": 1,
-      "hairpin_accessions": [
-        "MI0000101"
-      ],
       "resolution_method": "exact",
       "evidence_weight": 1,
       "family_balanced_weight": 1.3731343283582087,
@@ -2602,11 +2046,6 @@
   "candidate_count": 2613,
   "candidate_count_global_mirbase": 2613,
   "candidate_count_with_expression_available": 611,
-  "candidate_count_with_hairpin_available": 2612,
-  "candidate_names_without_hairpin": [
-    "mir-517-5p"
-  ],
-  "positive_marker_count_with_hairpin_available": 43,
   "training_history": [
     {
       "bag": 1,
@@ -2617,23 +2056,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6340127401484146
+          "weighted_log_loss": 0.6311592403172096
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.6337122563675756
+          "weighted_log_loss": 0.6305714678997967
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6336498602194249
+          "weighted_log_loss": 0.630454002508608
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.6336327856443547
+          "weighted_log_loss": 0.6304222166690977
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.6336311625838572
+          "weighted_log_loss": 0.6304191770861958
         }
       ]
     },
@@ -2646,23 +2085,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6329398022768976
+          "weighted_log_loss": 0.6324605754347449
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.6325193459488595
+          "weighted_log_loss": 0.6320146138152847
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6324335526832954
+          "weighted_log_loss": 0.6319262043037557
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.6324105106931222
+          "weighted_log_loss": 0.6319026981252959
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.6324083506759873
+          "weighted_log_loss": 0.6319004897463377
         }
       ]
     },
@@ -2675,23 +2114,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6347992332650367
+          "weighted_log_loss": 0.6315244238430998
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.6345939367054771
+          "weighted_log_loss": 0.6309863209250491
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6345516519460402
+          "weighted_log_loss": 0.6308816667282819
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.634540228269549
+          "weighted_log_loss": 0.6308544875861893
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.6345391545876041
+          "weighted_log_loss": 0.6308519835962132
         }
       ]
     },
@@ -2704,23 +2143,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6337276504343943
+          "weighted_log_loss": 0.6331081836422889
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.6333970589699937
+          "weighted_log_loss": 0.632730212382201
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6333291884545259
+          "weighted_log_loss": 0.6326555436372514
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.6333108533053977
+          "weighted_log_loss": 0.6326359750904897
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.6333091275466826
+          "weighted_log_loss": 0.6326341666082856
         }
       ]
     },
@@ -2733,23 +2172,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6333439619060627
+          "weighted_log_loss": 0.632271330498435
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.6329705702636322
+          "weighted_log_loss": 0.6318102227794495
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6328944442181343
+          "weighted_log_loss": 0.6317201629692276
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.6328740497669854
+          "weighted_log_loss": 0.6316967086952932
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.6328721428465662
+          "weighted_log_loss": 0.6316945451331368
         }
       ]
     },
@@ -2762,23 +2201,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6340862928195301
+          "weighted_log_loss": 0.6324561784815033
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.6337958648076514
+          "weighted_log_loss": 0.6320119397733616
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6337357562832663
+          "weighted_log_loss": 0.6319250020648399
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.633719362942036
+          "weighted_log_loss": 0.6319023965496097
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.6337178084305918
+          "weighted_log_loss": 0.6319003178169353
         }
       ]
     },
@@ -2791,23 +2230,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6334383201727668
+          "weighted_log_loss": 0.6317405374315792
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.6330777376497511
+          "weighted_log_loss": 0.6312278087551527
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6330044352298141
+          "weighted_log_loss": 0.631128670351238
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.6329848438369687
+          "weighted_log_loss": 0.6311031480214474
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.6329830147109751
+          "weighted_log_loss": 0.6311008155980605
         }
       ]
     },
@@ -2820,23 +2259,23 @@
         },
         {
           "epoch": 100,
-          "weighted_log_loss": 0.6342258486710011
+          "weighted_log_loss": 0.631235034992683
         },
         {
           "epoch": 200,
-          "weighted_log_loss": 0.633952523710964
+          "weighted_log_loss": 0.6306713710290278
         },
         {
           "epoch": 300,
-          "weighted_log_loss": 0.6338960531764972
+          "weighted_log_loss": 0.6305626754151382
         },
         {
           "epoch": 400,
-          "weighted_log_loss": 0.6338806842539287
+          "weighted_log_loss": 0.6305347270514781
         },
         {
           "epoch": 420,
-          "weighted_log_loss": 0.63387922929497
+          "weighted_log_loss": 0.6305321728239962
         }
       ]
     }
@@ -2848,11 +2287,11 @@
     "marker_count": 43,
     "marker_metrics": {
       "count": 43,
-      "mean_percentile": 0.6318575949641144,
+      "mean_percentile": 0.6338423136174715,
       "recovered_at_1_percent": 0,
       "recall_at_1_percent": 0,
-      "recovered_at_5_percent": 1,
-      "recall_at_5_percent": 0.023255813953488372,
+      "recovered_at_5_percent": 2,
+      "recall_at_5_percent": 0.046511627906976744,
       "recovered_at_10_percent": 5,
       "recall_at_10_percent": 0.11627906976744186,
       "recovered_at_20_percent": 12,
@@ -2860,22 +2299,22 @@
     },
     "family_metrics": {
       "count": 32,
-      "mean_percentile": 0.6035020543409444,
+      "mean_percentile": 0.6054612027022046,
       "recovered_at_1_percent": 0,
       "recall_at_1_percent": 0,
-      "recovered_at_5_percent": 0,
-      "recall_at_5_percent": 0,
+      "recovered_at_5_percent": 1,
+      "recall_at_5_percent": 0.03125,
       "recovered_at_10_percent": 3,
       "recall_at_10_percent": 0.09375,
-      "recovered_at_20_percent": 10,
-      "recall_at_20_percent": 0.3125
+      "recovered_at_20_percent": 9,
+      "recall_at_20_percent": 0.28125
     },
     "bootstrap_95_ci": {
       "method": "bootstrap_by_seed_family",
       "iterations": 4000,
       "mean_percentile_95_ci": [
-        0.5178988070386716,
-        0.687976771475063
+        0.5186847904207598,
+        0.6901556780119595
       ],
       "recall_at_10_percent_95_ci": [
         0,
@@ -2886,7 +2325,7 @@
       "method": "deterministic_random_ranking_monte_carlo_preserving_family_marker_counts",
       "iterations": 10000,
       "preserves_marker_count_per_seed_family": true,
-      "p_value_mean_percentile": 0.011998800119988001,
+      "p_value_mean_percentile": 0.0110988901109889,
       "p_value_recall_at_10_percent": 0.47225277472252775
     },
     "baselines": {
@@ -2919,53 +2358,53 @@
       "centroide_kmer_maduro": {
         "marker_metrics": {
           "count": 43,
-          "mean_percentile": 0.5314965927372424,
+          "mean_percentile": 0.5336329166814933,
           "recovered_at_1_percent": 1,
           "recall_at_1_percent": 0.023255813953488372,
           "recovered_at_5_percent": 2,
           "recall_at_5_percent": 0.046511627906976744,
           "recovered_at_10_percent": 3,
           "recall_at_10_percent": 0.06976744186046512,
-          "recovered_at_20_percent": 6,
-          "recall_at_20_percent": 0.13953488372093023
+          "recovered_at_20_percent": 7,
+          "recall_at_20_percent": 0.16279069767441862
         },
         "family_metrics": {
           "count": 32,
-          "mean_percentile": 0.5089977556676641,
+          "mean_percentile": 0.5118684409677512,
           "recovered_at_1_percent": 1,
           "recall_at_1_percent": 0.03125,
           "recovered_at_5_percent": 1,
           "recall_at_5_percent": 0.03125,
           "recovered_at_10_percent": 2,
           "recall_at_10_percent": 0.0625,
-          "recovered_at_20_percent": 5,
-          "recall_at_20_percent": 0.15625
+          "recovered_at_20_percent": 6,
+          "recall_at_20_percent": 0.1875
         }
       },
-      "centroide_kmer_hairpin": {
+      "similaridade_composicao_madura": {
         "marker_metrics": {
           "count": 43,
-          "mean_percentile": 0.6620013303755388,
-          "recovered_at_1_percent": 1,
-          "recall_at_1_percent": 0.023255813953488372,
+          "mean_percentile": 0.6559990587356755,
+          "recovered_at_1_percent": 0,
+          "recall_at_1_percent": 0,
           "recovered_at_5_percent": 3,
           "recall_at_5_percent": 0.06976744186046512,
-          "recovered_at_10_percent": 7,
-          "recall_at_10_percent": 0.16279069767441862,
-          "recovered_at_20_percent": 16,
-          "recall_at_20_percent": 0.37209302325581395
+          "recovered_at_10_percent": 8,
+          "recall_at_10_percent": 0.18604651162790697,
+          "recovered_at_20_percent": 14,
+          "recall_at_20_percent": 0.32558139534883723
         },
         "family_metrics": {
           "count": 32,
-          "mean_percentile": 0.6685923061942632,
-          "recovered_at_1_percent": 1,
-          "recall_at_1_percent": 0.03125,
+          "mean_percentile": 0.6354057613300098,
+          "recovered_at_1_percent": 0,
+          "recall_at_1_percent": 0,
           "recovered_at_5_percent": 2,
           "recall_at_5_percent": 0.0625,
           "recovered_at_10_percent": 3,
           "recall_at_10_percent": 0.09375,
-          "recovered_at_20_percent": 13,
-          "recall_at_20_percent": 0.40625
+          "recovered_at_20_percent": 9,
+          "recall_at_20_percent": 0.28125
         }
       },
       "ranking_aleatorio_deterministico": {
@@ -3008,37 +2447,37 @@
           "GAGGGAC"
         ],
         "held_out_marker_count": 9,
-        "selected_config": "k2345_mature70_hairpin20_structure10",
+        "selected_config": "k2345_mature_seed_l2_002_u045",
         "inner_comparison": [
           {
-            "config": "k2345_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6155411039529269,
-            "family_recall_at_10_percent": 0.16
-          },
-          {
-            "config": "k234_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6139960007445648,
-            "family_recall_at_10_percent": 0.16
-          },
-          {
-            "config": "k2345_mature60_hairpin25_structure15",
-            "family_mean_percentile": 0.6087673661382987,
-            "family_recall_at_10_percent": 0.04
-          },
-          {
-            "config": "k3456_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6075923000369532,
-            "family_recall_at_10_percent": 0.04
-          },
-          {
-            "config": "k234567_structure25_mature50_hairpin25",
-            "family_mean_percentile": 0.5857274404486852,
+            "config": "k2345_mature_seed_l2_002_u045",
+            "family_mean_percentile": 0.6166219020616441,
             "family_recall_at_10_percent": 0.08
           },
           {
-            "config": "k2345_balanced50_hairpin30_structure20",
-            "family_mean_percentile": 0.5814427204422092,
-            "family_recall_at_10_percent": 0.12
+            "config": "k234_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.61617868655183,
+            "family_recall_at_10_percent": 0.04
+          },
+          {
+            "config": "k2345_mature_seed_l2_003_u040",
+            "family_mean_percentile": 0.6144416549674087,
+            "family_recall_at_10_percent": 0.04
+          },
+          {
+            "config": "k2345_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6144387096614656,
+            "family_recall_at_10_percent": 0.04
+          },
+          {
+            "config": "k3456_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6093965227313884,
+            "family_recall_at_10_percent": 0.04
+          },
+          {
+            "config": "k234567_mature_seed_l2_005_u035",
+            "family_mean_percentile": 0.6093277008605344,
+            "family_recall_at_10_percent": 0.04
           }
         ]
       },
@@ -3054,36 +2493,36 @@
           "GAGGUAG"
         ],
         "held_out_marker_count": 11,
-        "selected_config": "k234_mature70_hairpin20_structure10",
+        "selected_config": "k234_mature_seed_l2_003_u050",
         "inner_comparison": [
           {
-            "config": "k234_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6170984925922134,
+            "config": "k234_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6299554208650339,
             "family_recall_at_10_percent": 0.2
           },
           {
-            "config": "k2345_mature60_hairpin25_structure15",
-            "family_mean_percentile": 0.6089851332387163,
-            "family_recall_at_10_percent": 0.2
-          },
-          {
-            "config": "k2345_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6079181636265902,
+            "config": "k2345_mature_seed_l2_003_u040",
+            "family_mean_percentile": 0.6182950380145811,
             "family_recall_at_10_percent": 0.16
           },
           {
-            "config": "k2345_balanced50_hairpin30_structure20",
-            "family_mean_percentile": 0.6067423950698967,
+            "config": "k3456_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6164399356951449,
             "family_recall_at_10_percent": 0.16
           },
           {
-            "config": "k3456_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6019314861123399,
-            "family_recall_at_10_percent": 0.12
+            "config": "k2345_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6146234081155133,
+            "family_recall_at_10_percent": 0.16
           },
           {
-            "config": "k234567_structure25_mature50_hairpin25",
-            "family_mean_percentile": 0.5924160006175182,
+            "config": "k2345_mature_seed_l2_002_u045",
+            "family_mean_percentile": 0.6106459862525622,
+            "family_recall_at_10_percent": 0.16
+          },
+          {
+            "config": "k234567_mature_seed_l2_005_u035",
+            "family_mean_percentile": 0.6100621928705574,
             "family_recall_at_10_percent": 0.12
           }
         ]
@@ -3099,37 +2538,37 @@
           "AUGACAC"
         ],
         "held_out_marker_count": 11,
-        "selected_config": "k234_mature70_hairpin20_structure10",
+        "selected_config": "k234_mature_seed_l2_003_u050",
         "inner_comparison": [
           {
-            "config": "k234_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6012788873780033,
+            "config": "k234_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6074477315723347,
+            "family_recall_at_10_percent": 0.11538461538461539
+          },
+          {
+            "config": "k2345_mature_seed_l2_003_u040",
+            "family_mean_percentile": 0.6053199806837378,
             "family_recall_at_10_percent": 0.07692307692307693
           },
           {
-            "config": "k2345_mature60_hairpin25_structure15",
-            "family_mean_percentile": 0.601175136904108,
+            "config": "k234567_mature_seed_l2_005_u035",
+            "family_mean_percentile": 0.603286304605329,
             "family_recall_at_10_percent": 0.11538461538461539
           },
           {
-            "config": "k2345_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.600286837521664,
+            "config": "k2345_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6029140631148967,
             "family_recall_at_10_percent": 0.11538461538461539
           },
           {
-            "config": "k3456_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.5956595500847415,
-            "family_recall_at_10_percent": 0.07692307692307693
-          },
-          {
-            "config": "k2345_balanced50_hairpin30_structure20",
-            "family_mean_percentile": 0.5925196409217596,
+            "config": "k3456_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6020416479858073,
             "family_recall_at_10_percent": 0.11538461538461539
           },
           {
-            "config": "k234567_structure25_mature50_hairpin25",
-            "family_mean_percentile": 0.5838527540743171,
-            "family_recall_at_10_percent": 0.11538461538461539
+            "config": "k2345_mature_seed_l2_002_u045",
+            "family_mean_percentile": 0.599965709850114,
+            "family_recall_at_10_percent": 0.038461538461538464
           }
         ]
       },
@@ -3144,37 +2583,37 @@
           "AAGUUGU"
         ],
         "held_out_marker_count": 6,
-        "selected_config": "k234_mature70_hairpin20_structure10",
+        "selected_config": "k2345_mature_seed_l2_003_u050",
         "inner_comparison": [
           {
-            "config": "k234_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.607680667649907,
+            "config": "k2345_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6059947442175544,
             "family_recall_at_10_percent": 0.11538461538461539
           },
           {
-            "config": "k2345_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6013563005405275,
+            "config": "k2345_mature_seed_l2_002_u045",
+            "family_mean_percentile": 0.605190120277928,
+            "family_recall_at_10_percent": 0.11538461538461539
+          },
+          {
+            "config": "k2345_mature_seed_l2_003_u040",
+            "family_mean_percentile": 0.6047669883484409,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k234_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.6037839315078745,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k234567_mature_seed_l2_005_u035",
+            "family_mean_percentile": 0.5957255172740293,
             "family_recall_at_10_percent": 0.038461538461538464
           },
           {
-            "config": "k2345_mature60_hairpin25_structure15",
-            "family_mean_percentile": 0.5993520740896613,
-            "family_recall_at_10_percent": 0.11538461538461539
-          },
-          {
-            "config": "k2345_balanced50_hairpin30_structure20",
-            "family_mean_percentile": 0.596411122966246,
-            "family_recall_at_10_percent": 0.15384615384615385
-          },
-          {
-            "config": "k3456_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.591059276664329,
+            "config": "k3456_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.594411154893134,
             "family_recall_at_10_percent": 0
-          },
-          {
-            "config": "k234567_structure25_mature50_hairpin25",
-            "family_mean_percentile": 0.5838922010599277,
-            "family_recall_at_10_percent": 0.11538461538461539
           }
         ]
       },
@@ -3189,36 +2628,36 @@
           "UCCAGUU"
         ],
         "held_out_marker_count": 6,
-        "selected_config": "k2345_balanced50_hairpin30_structure20",
+        "selected_config": "k234_mature_seed_l2_003_u050",
         "inner_comparison": [
           {
-            "config": "k2345_balanced50_hairpin30_structure20",
-            "family_mean_percentile": 0.6207252465184075,
-            "family_recall_at_10_percent": 0.23076923076923078
+            "config": "k234_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.613622169938667,
+            "family_recall_at_10_percent": 0.07692307692307693
           },
           {
-            "config": "k2345_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.60735978013284,
+            "config": "k2345_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.609120113113281,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k2345_mature_seed_l2_002_u045",
+            "family_mean_percentile": 0.6050785683670232,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k2345_mature_seed_l2_003_u040",
+            "family_mean_percentile": 0.6022459434155321,
+            "family_recall_at_10_percent": 0.07692307692307693
+          },
+          {
+            "config": "k3456_mature_seed_l2_003_u050",
+            "family_mean_percentile": 0.5957747016054457,
             "family_recall_at_10_percent": 0.15384615384615385
           },
           {
-            "config": "k234_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.6067333477816308,
-            "family_recall_at_10_percent": 0.07692307692307693
-          },
-          {
-            "config": "k2345_mature60_hairpin25_structure15",
-            "family_mean_percentile": 0.5920726766629605,
-            "family_recall_at_10_percent": 0.07692307692307693
-          },
-          {
-            "config": "k3456_mature70_hairpin20_structure10",
-            "family_mean_percentile": 0.5863476988403201,
-            "family_recall_at_10_percent": 0.07692307692307693
-          },
-          {
-            "config": "k234567_structure25_mature50_hairpin25",
-            "family_mean_percentile": 0.5832091036343628,
+            "config": "k234567_mature_seed_l2_005_u035",
+            "family_mean_percentile": 0.595508815056498,
             "family_recall_at_10_percent": 0.07692307692307693
           }
         ]
@@ -3228,8 +2667,8 @@
       {
         "seed_family": "GUGCAAA",
         "marker_count": 2,
-        "percentile": 0.890164561806353,
-        "best_percentile": 0.9223115193264447,
+        "percentile": 0.8913126674320704,
+        "best_percentile": 0.9238423268274014,
         "markers": [
           "mir-19b-3p",
           "mir-19a-3p"
@@ -3238,8 +2677,8 @@
       {
         "seed_family": "AUUGCAC",
         "marker_count": 2,
-        "percentile": 0.5247221157531621,
-        "best_percentile": 0.5626676887696436,
+        "percentile": 0.5297048677654274,
+        "best_percentile": 0.5745496358758144,
         "markers": [
           "mir-25-3p",
           "mir-92a-3p"
@@ -3248,8 +2687,8 @@
       {
         "seed_family": "UAAUGCU",
         "marker_count": 1,
-        "percentile": 0.9054726368159204,
-        "best_percentile": 0.9054726368159204,
+        "percentile": 0.9092996555683123,
+        "best_percentile": 0.9092996555683123,
         "markers": [
           "mir-155-5p"
         ]
@@ -3257,8 +2696,8 @@
       {
         "seed_family": "ACAUUCA",
         "marker_count": 1,
-        "percentile": 0.6554235339210426,
-        "best_percentile": 0.6554235339210426,
+        "percentile": 0.6565733997700268,
+        "best_percentile": 0.6565733997700268,
         "markers": [
           "mir-181b-5p"
         ]
@@ -3275,8 +2714,8 @@
       {
         "seed_family": "GAGGGAC",
         "marker_count": 1,
-        "percentile": 0.19869831546707506,
-        "best_percentile": 0.19869831546707506,
+        "percentile": 0.19716692189892804,
+        "best_percentile": 0.19716692189892804,
         "markers": [
           "mir-6875-5p"
         ]
@@ -3284,8 +2723,8 @@
       {
         "seed_family": "ACCCGUA",
         "marker_count": 1,
-        "percentile": 0.6254308693986979,
-        "best_percentile": 0.6254308693986979,
+        "percentile": 0.6246648793565683,
+        "best_percentile": 0.6246648793565683,
         "markers": [
           "mir-99a-5p"
         ]
@@ -3293,8 +2732,8 @@
       {
         "seed_family": "GAGGUAG",
         "marker_count": 2,
-        "percentile": 0.8022273425499232,
-        "best_percentile": 0.8851766513056836,
+        "percentile": 0.7987711213517665,
+        "best_percentile": 0.8809523809523809,
         "markers": [
           "let-7b-5p",
           "let-7a-5p"
@@ -3303,8 +2742,8 @@
       {
         "seed_family": "GGAAUGU",
         "marker_count": 2,
-        "percentile": 0.8483920367534457,
-        "best_percentile": 0.9785604900459418,
+        "percentile": 0.8447549770290965,
+        "best_percentile": 0.9781776416539051,
         "markers": [
           "mir-1-3p",
           "mir-206"
@@ -3313,8 +2752,8 @@
       {
         "seed_family": "AUGGAUU",
         "marker_count": 1,
-        "percentile": 0.6153846153846154,
-        "best_percentile": 0.6153846153846154,
+        "percentile": 0.5977803291236128,
+        "best_percentile": 0.5977803291236128,
         "markers": [
           "mir-1246"
         ]
@@ -3322,8 +2761,8 @@
       {
         "seed_family": "CCCUGAG",
         "marker_count": 2,
-        "percentile": 0.6265313935681469,
-        "best_percentile": 0.6558192955589586,
+        "percentile": 0.6466309341500767,
+        "best_percentile": 0.6822358346094947,
         "markers": [
           "mir-125a-5p",
           "mir-125b-5p"
@@ -3332,8 +2771,8 @@
       {
         "seed_family": "CUACAGU",
         "marker_count": 1,
-        "percentile": 0.6130884041331803,
-        "best_percentile": 0.6130884041331803,
+        "percentile": 0.6238040566398775,
+        "best_percentile": 0.6238040566398775,
         "markers": [
           "mir-139-5p"
         ]
@@ -3341,8 +2780,8 @@
       {
         "seed_family": "AAGUGCU",
         "marker_count": 2,
-        "percentile": 0.7087975412985017,
-        "best_percentile": 0.7483672685363043,
+        "percentile": 0.7086054552439494,
+        "best_percentile": 0.7510564733000384,
         "markers": [
           "mir-373-3p",
           "mir-520c-3p"
@@ -3351,8 +2790,8 @@
       {
         "seed_family": "CUGGGUA",
         "marker_count": 1,
-        "percentile": 0.11213164944508225,
-        "best_percentile": 0.11213164944508225,
+        "percentile": 0.11634137007271339,
+        "best_percentile": 0.11634137007271339,
         "markers": [
           "mir-6861-5p"
         ]
@@ -3360,8 +2799,8 @@
       {
         "seed_family": "AAAGUGC",
         "marker_count": 4,
-        "percentile": 0.738118052893829,
-        "best_percentile": 0.8761977769260253,
+        "percentile": 0.7423342276734382,
+        "best_percentile": 0.875047911077041,
         "markers": [
           "mir-106a-5p",
           "mir-20a-5p",
@@ -3372,8 +2811,8 @@
       {
         "seed_family": "AUGACAC",
         "marker_count": 1,
-        "percentile": 0.6724071947952546,
-        "best_percentile": 0.6724071947952546,
+        "percentile": 0.7034060466896288,
+        "best_percentile": 0.7034060466896288,
         "markers": [
           "mir-425-5p"
         ]
@@ -3381,8 +2820,8 @@
       {
         "seed_family": "AACCGUU",
         "marker_count": 1,
-        "percentile": 0.8993494068120934,
-        "best_percentile": 0.8993494068120934,
+        "percentile": 0.9020283199387678,
+        "best_percentile": 0.9020283199387678,
         "markers": [
           "mir-451a"
         ]
@@ -3390,8 +2829,8 @@
       {
         "seed_family": "CUCGGCG",
         "marker_count": 1,
-        "percentile": 0.12935323383084574,
-        "best_percentile": 0.12935323383084574,
+        "percentile": 0.13432835820895528,
+        "best_percentile": 0.13432835820895528,
         "markers": [
           "mir-1307-3p"
         ]
@@ -3399,8 +2838,8 @@
       {
         "seed_family": "AGCAGCA",
         "marker_count": 3,
-        "percentile": 0.621310847067842,
-        "best_percentile": 0.6880030663089306,
+        "percentile": 0.6168391465440143,
+        "best_percentile": 0.6845534687619778,
         "markers": [
           "mir-16-5p",
           "mir-195-5p",
@@ -3410,8 +2849,8 @@
       {
         "seed_family": "AACGGAA",
         "marker_count": 1,
-        "percentile": 0.5331037122081899,
-        "best_percentile": 0.5331037122081899,
+        "percentile": 0.5553004209720628,
+        "best_percentile": 0.5553004209720628,
         "markers": [
           "mir-191-5p"
         ]
@@ -3419,8 +2858,8 @@
       {
         "seed_family": "AACACUG",
         "marker_count": 1,
-        "percentile": 0.8039816232771823,
-        "best_percentile": 0.8039816232771823,
+        "percentile": 0.80895865237366,
+        "best_percentile": 0.80895865237366,
         "markers": [
           "mir-200a-3p"
         ]
@@ -3428,8 +2867,8 @@
       {
         "seed_family": "CCUUCAU",
         "marker_count": 1,
-        "percentile": 0.438193647148871,
-        "best_percentile": 0.438193647148871,
+        "percentile": 0.43781094527363185,
+        "best_percentile": 0.43781094527363185,
         "markers": [
           "mir-205-5p"
         ]
@@ -3437,8 +2876,8 @@
       {
         "seed_family": "UGUGCGU",
         "marker_count": 1,
-        "percentile": 0.26942212016838885,
-        "best_percentile": 0.26942212016838885,
+        "percentile": 0.2705702257941064,
+        "best_percentile": 0.2705702257941064,
         "markers": [
           "mir-210-3p"
         ]
@@ -3446,8 +2885,8 @@
       {
         "seed_family": "GGCAGUG",
         "marker_count": 1,
-        "percentile": 0.5954022988505747,
-        "best_percentile": 0.5954022988505747,
+        "percentile": 0.5919540229885057,
+        "best_percentile": 0.5919540229885057,
         "markers": [
           "mir-34a-5p"
         ]
@@ -3455,8 +2894,8 @@
       {
         "seed_family": "AAUGCCC",
         "marker_count": 1,
-        "percentile": 0.9467840735068913,
-        "best_percentile": 0.9467840735068913,
+        "percentile": 0.9502297090352221,
+        "best_percentile": 0.9502297090352221,
         "markers": [
           "mir-365a-3p"
         ]
@@ -3464,8 +2903,8 @@
       {
         "seed_family": "AAGUUGU",
         "marker_count": 1,
-        "percentile": 0.632988901645618,
-        "best_percentile": 0.632988901645618,
+        "percentile": 0.624569460390356,
+        "best_percentile": 0.624569460390356,
         "markers": [
           "mir-382-5p"
         ]
@@ -3473,8 +2912,8 @@
       {
         "seed_family": "GUCAGUU",
         "marker_count": 1,
-        "percentile": 0.8040566398775354,
-        "best_percentile": 0.8040566398775354,
+        "percentile": 0.8327592805204745,
+        "best_percentile": 0.8327592805204745,
         "markers": [
           "mir-223-3p"
         ]
@@ -3482,8 +2921,8 @@
       {
         "seed_family": "ACCCUGU",
         "marker_count": 1,
-        "percentile": 0.8143185298621746,
-        "best_percentile": 0.8143185298621746,
+        "percentile": 0.8418836140888208,
+        "best_percentile": 0.8418836140888208,
         "markers": [
           "mir-10b-5p"
         ]
@@ -3491,8 +2930,8 @@
       {
         "seed_family": "UCCAGUU",
         "marker_count": 1,
-        "percentile": 0.5099540581929556,
-        "best_percentile": 0.5099540581929556,
+        "percentile": 0.5141653905053598,
+        "best_percentile": 0.5141653905053598,
         "markers": [
           "mir-145-5p"
         ]
@@ -3500,8 +2939,8 @@
       {
         "seed_family": "AGCUUAU",
         "marker_count": 1,
-        "percentile": 0.9257274119448698,
-        "best_percentile": 0.9257274119448698,
+        "percentile": 0.8748085758039816,
+        "best_percentile": 0.8748085758039816,
         "markers": [
           "mir-21-5p"
         ]
@@ -3509,8 +2948,8 @@
       {
         "seed_family": "GGCUCAG",
         "marker_count": 1,
-        "percentile": 0.4156142365097589,
-        "best_percentile": 0.4156142365097589,
+        "percentile": 0.4006888633754305,
+        "best_percentile": 0.4006888633754305,
         "markers": [
           "mir-24-3p"
         ]
@@ -3518,8 +2957,8 @@
       {
         "seed_family": "GGCAAGA",
         "marker_count": 1,
-        "percentile": 0.43398392652123996,
-        "best_percentile": 0.43398392652123996,
+        "percentile": 0.42518178339073864,
+        "best_percentile": 0.42518178339073864,
         "markers": [
           "mir-31-5p"
         ]
@@ -3530,68 +2969,68 @@
         "marker": "mir-19b-3p",
         "seed_family": "GUGCAAA",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.7096244594501183,
-        "rank": 372,
-        "percentile": 0.8580176042862611,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.8467169355546915,
+        "rank": 370,
+        "percentile": 0.8587830080367393,
         "pool_size": 2614
       },
       {
         "marker": "mir-25-3p",
         "seed_family": "AUUGCAC",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.6891380803559284,
-        "rank": 1142,
-        "percentile": 0.5626676887696436,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.7892409203551278,
+        "rank": 1111,
+        "percentile": 0.5745496358758144,
         "pool_size": 2610
       },
       {
         "marker": "mir-92a-3p",
         "seed_family": "AUUGCAC",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.6842270503559172,
-        "rank": 1340,
-        "percentile": 0.4867765427366807,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.7730676192073281,
+        "rank": 1345,
+        "percentile": 0.4848600996550403,
         "pool_size": 2610
       },
       {
         "marker": "mir-155-5p",
         "seed_family": "UAAUGCU",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.7128531164640624,
-        "rank": 248,
-        "percentile": 0.9054726368159204,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.856410185375364,
+        "rank": 238,
+        "percentile": 0.9092996555683123,
         "pool_size": 2614
       },
       {
         "marker": "mir-181b-5p",
         "seed_family": "ACAUUCA",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.6947588855494096,
-        "rank": 900,
-        "percentile": 0.6554235339210426,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.8047623524166441,
+        "rank": 897,
+        "percentile": 0.6565733997700268,
         "pool_size": 2610
       },
       {
         "marker": "mir-19a-3p",
         "seed_family": "GUGCAAA",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.7154398282853442,
-        "rank": 204,
-        "percentile": 0.9223115193264447,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.8640816277503517,
+        "rank": 200,
+        "percentile": 0.9238423268274014,
         "pool_size": 2614
       },
       {
         "marker": "mir-4634",
         "seed_family": "GGCGCGA",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.6136963024201096,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.5692270513392782,
         "rank": 2610,
         "percentile": 0.001530807500956799,
         "pool_size": 2614
@@ -3600,360 +3039,360 @@
         "marker": "mir-6875-5p",
         "seed_family": "GAGGGAC",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.6668991319285883,
-        "rank": 2094,
-        "percentile": 0.19869831546707506,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.7240553111143506,
+        "rank": 2098,
+        "percentile": 0.19716692189892804,
         "pool_size": 2613
       },
       {
         "marker": "mir-99a-5p",
         "seed_family": "ACCCGUA",
         "outer_fold": 1,
-        "selected_model_config": "k2345_mature70_hairpin20_structure10",
-        "score": 0.6924394194561874,
-        "rank": 979,
-        "percentile": 0.6254308693986979,
+        "selected_model_config": "k2345_mature_seed_l2_002_u045",
+        "score": 0.7967914143438335,
+        "rank": 981,
+        "percentile": 0.6246648793565683,
         "pool_size": 2612
       },
       {
         "marker": "let-7b-5p",
         "seed_family": "GAGGUAG",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6991313654566065,
-        "rank": 732,
-        "percentile": 0.7192780337941629,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.706395179263715,
+        "rank": 739,
+        "percentile": 0.7165898617511521,
         "pool_size": 2605
       },
       {
         "marker": "let-7a-5p",
         "seed_family": "GAGGUAG",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7133988823232756,
-        "rank": 300,
-        "percentile": 0.8851766513056836,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7353898158572123,
+        "rank": 311,
+        "percentile": 0.8809523809523809,
         "pool_size": 2605
       },
       {
         "marker": "mir-1-3p",
         "seed_family": "GGAAUGU",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7286504879705296,
-        "rank": 57,
-        "percentile": 0.9785604900459418,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.767597606568964,
+        "rank": 58,
+        "percentile": 0.9781776416539051,
         "pool_size": 2613
       },
       {
         "marker": "mir-1246",
         "seed_family": "AUGGAUU",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6919775619631762,
-        "rank": 1006,
-        "percentile": 0.6153846153846154,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.689317624652735,
+        "rank": 1052,
+        "percentile": 0.5977803291236128,
         "pool_size": 2614
       },
       {
         "marker": "mir-125a-5p",
         "seed_family": "CCCUGAG",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6955584216107826,
-        "rank": 900,
-        "percentile": 0.6558192955589586,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7027906933806112,
+        "rank": 831,
+        "percentile": 0.6822358346094947,
         "pool_size": 2613
       },
       {
         "marker": "mir-125b-5p",
         "seed_family": "CCCUGAG",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.690832372581764,
-        "rank": 1053,
-        "percentile": 0.5972434915773354,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6911435911955166,
+        "rank": 1017,
+        "percentile": 0.6110260336906586,
         "pool_size": 2613
       },
       {
         "marker": "mir-139-5p",
         "seed_family": "CUACAGU",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.691808202189686,
-        "rank": 1012,
-        "percentile": 0.6130884041331803,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6930287637021239,
+        "rank": 984,
+        "percentile": 0.6238040566398775,
         "pool_size": 2614
       },
       {
         "marker": "mir-206",
         "seed_family": "GGAAUGU",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6993016201447413,
-        "rank": 737,
-        "percentile": 0.7182235834609494,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7060120966997243,
+        "rank": 755,
+        "percentile": 0.7113323124042878,
         "pool_size": 2613
       },
       {
         "marker": "mir-373-3p",
         "seed_family": "AAGUGCU",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6962150517332544,
-        "rank": 862,
-        "percentile": 0.6692278140606992,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7003363341832599,
+        "rank": 870,
+        "percentile": 0.6661544371878602,
         "pool_size": 2604
       },
       {
         "marker": "mir-520c-3p",
         "seed_family": "AAGUGCU",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7019602375537759,
-        "rank": 656,
-        "percentile": 0.7483672685363043,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7121037881821313,
+        "rank": 649,
+        "percentile": 0.7510564733000384,
         "pool_size": 2604
       },
       {
         "marker": "mir-6861-5p",
         "seed_family": "CUGGGUA",
         "outer_fold": 2,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6543831855816713,
-        "rank": 2321,
-        "percentile": 0.11213164944508225,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6143401361400612,
+        "rank": 2310,
+        "percentile": 0.11634137007271339,
         "pool_size": 2614
       },
       {
         "marker": "mir-106a-5p",
         "seed_family": "AAAGUGC",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7035774594357007,
-        "rank": 580,
-        "percentile": 0.7780758911460329,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7148878851395135,
+        "rank": 573,
+        "percentile": 0.7807589114603296,
         "pool_size": 2610
       },
       {
         "marker": "mir-20a-5p",
         "seed_family": "AAAGUGC",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7111993890380398,
-        "rank": 324,
-        "percentile": 0.8761977769260253,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7291155248931088,
+        "rank": 327,
+        "percentile": 0.875047911077041,
         "pool_size": 2610
       },
       {
         "marker": "mir-425-5p",
         "seed_family": "AUGACAC",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6964892156036462,
-        "rank": 857,
-        "percentile": 0.6724071947952546,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7037041464562317,
+        "rank": 776,
+        "percentile": 0.7034060466896288,
         "pool_size": 2614
       },
       {
         "marker": "mir-451a",
         "seed_family": "AACCGUU",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7129253722163881,
-        "rank": 264,
-        "percentile": 0.8993494068120934,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7328618845650281,
+        "rank": 257,
+        "percentile": 0.9020283199387678,
         "pool_size": 2614
       },
       {
         "marker": "mir-93-5p",
         "seed_family": "AAAGUGC",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6923078879716273,
-        "rank": 1006,
-        "percentile": 0.6147949405902644,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6938418131439634,
+        "rank": 979,
+        "percentile": 0.625143733231123,
         "pool_size": 2610
       },
       {
         "marker": "mir-1307-3p",
         "seed_family": "CUCGGCG",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6599423711749511,
-        "rank": 2276,
-        "percentile": 0.12935323383084574,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6281498926842641,
+        "rank": 2263,
+        "percentile": 0.13432835820895528,
         "pool_size": 2614
       },
       {
         "marker": "mir-16-5p",
         "seed_family": "AGCAGCA",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6973811915852672,
-        "rank": 815,
-        "percentile": 0.6880030663089306,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7015214594504484,
+        "rank": 824,
+        "percentile": 0.6845534687619778,
         "pool_size": 2610
       },
       {
         "marker": "mir-17-5p",
         "seed_family": "AAAGUGC",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6971569524109814,
-        "rank": 827,
-        "percentile": 0.6834036029129935,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7019631453958126,
+        "rank": 814,
+        "percentile": 0.6883863549252587,
         "pool_size": 2610
       },
       {
         "marker": "mir-191-5p",
         "seed_family": "AACGGAA",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6881074511922352,
-        "rank": 1221,
-        "percentile": 0.5331037122081899,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6859324954301764,
+        "rank": 1163,
+        "percentile": 0.5553004209720628,
         "pool_size": 2614
       },
       {
         "marker": "mir-195-5p",
         "seed_family": "AGCAGCA",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6964546730041633,
-        "rank": 856,
-        "percentile": 0.6722882330394787,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.69974954705034,
+        "rank": 871,
+        "percentile": 0.6665389037945573,
         "pool_size": 2610
       },
       {
         "marker": "mir-497-5p",
         "seed_family": "AGCAGCA",
         "outer_fold": 3,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6859876181905538,
-        "rank": 1296,
-        "percentile": 0.5036412418551168,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6797264085192347,
+        "rank": 1307,
+        "percentile": 0.4994250670755078,
         "pool_size": 2610
       },
       {
         "marker": "mir-200a-3p",
         "seed_family": "AACACUG",
         "outer_fold": 4,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7066828404778028,
-        "rank": 513,
-        "percentile": 0.8039816232771823,
+        "selected_model_config": "k2345_mature_seed_l2_003_u050",
+        "score": 0.7223535036147672,
+        "rank": 500,
+        "percentile": 0.80895865237366,
         "pool_size": 2613
       },
       {
         "marker": "mir-205-5p",
         "seed_family": "CCUUCAU",
         "outer_fold": 4,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6804562774731334,
-        "rank": 1469,
-        "percentile": 0.438193647148871,
+        "selected_model_config": "k2345_mature_seed_l2_003_u050",
+        "score": 0.6701459016880689,
+        "rank": 1470,
+        "percentile": 0.43781094527363185,
         "pool_size": 2614
       },
       {
         "marker": "mir-210-3p",
         "seed_family": "UGUGCGU",
         "outer_fold": 4,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6686074449796542,
-        "rank": 1910,
-        "percentile": 0.26942212016838885,
+        "selected_model_config": "k2345_mature_seed_l2_003_u050",
+        "score": 0.6435944462265929,
+        "rank": 1907,
+        "percentile": 0.2705702257941064,
         "pool_size": 2614
       },
       {
         "marker": "mir-34a-5p",
         "seed_family": "GGCAGUG",
         "outer_fold": 4,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6903213143114472,
-        "rank": 1057,
-        "percentile": 0.5954022988505747,
+        "selected_model_config": "k2345_mature_seed_l2_003_u050",
+        "score": 0.6887051070427882,
+        "rank": 1066,
+        "percentile": 0.5919540229885057,
         "pool_size": 2611
       },
       {
         "marker": "mir-365a-3p",
         "seed_family": "AAUGCCC",
         "outer_fold": 4,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.7224256796645178,
-        "rank": 140,
-        "percentile": 0.9467840735068913,
+        "selected_model_config": "k2345_mature_seed_l2_003_u050",
+        "score": 0.7547121434362172,
+        "rank": 131,
+        "percentile": 0.9502297090352221,
         "pool_size": 2613
       },
       {
         "marker": "mir-382-5p",
         "seed_family": "AAGUUGU",
         "outer_fold": 4,
-        "selected_model_config": "k234_mature70_hairpin20_structure10",
-        "score": 0.6933138927164216,
-        "rank": 960,
-        "percentile": 0.632988901645618,
+        "selected_model_config": "k2345_mature_seed_l2_003_u050",
+        "score": 0.6920175626869292,
+        "rank": 982,
+        "percentile": 0.624569460390356,
         "pool_size": 2614
       },
       {
         "marker": "mir-223-3p",
         "seed_family": "GUCAGUU",
         "outer_fold": 5,
-        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
-        "score": 0.9195382008326969,
-        "rank": 513,
-        "percentile": 0.8040566398775354,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7139544115474482,
+        "rank": 438,
+        "percentile": 0.8327592805204745,
         "pool_size": 2614
       },
       {
         "marker": "mir-10b-5p",
         "seed_family": "ACCCUGU",
         "outer_fold": 5,
-        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
-        "score": 0.9197990258516219,
-        "rank": 486,
-        "percentile": 0.8143185298621746,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7149857496137612,
+        "rank": 414,
+        "percentile": 0.8418836140888208,
         "pool_size": 2613
       },
       {
         "marker": "mir-145-5p",
         "seed_family": "UCCAGUU",
         "outer_fold": 5,
-        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
-        "score": 0.9138142265547414,
-        "rank": 1281,
-        "percentile": 0.5099540581929556,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6836993545284347,
+        "rank": 1270,
+        "percentile": 0.5141653905053598,
         "pool_size": 2613
       },
       {
         "marker": "mir-21-5p",
         "seed_family": "AGCUUAU",
         "outer_fold": 5,
-        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
-        "score": 0.9231909262404533,
-        "rank": 195,
-        "percentile": 0.9257274119448698,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.7194391538555921,
+        "rank": 328,
+        "percentile": 0.8748085758039816,
         "pool_size": 2613
       },
       {
         "marker": "mir-24-3p",
         "seed_family": "GGCUCAG",
         "outer_fold": 5,
-        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
-        "score": 0.9120682459343599,
-        "rank": 1528,
-        "percentile": 0.4156142365097589,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6728027286490132,
+        "rank": 1567,
+        "percentile": 0.4006888633754305,
         "pool_size": 2614
       },
       {
         "marker": "mir-31-5p",
         "seed_family": "GGCAAGA",
         "outer_fold": 5,
-        "selected_model_config": "k2345_balanced50_hairpin30_structure20",
-        "score": 0.9123520619256332,
-        "rank": 1480,
-        "percentile": 0.43398392652123996,
+        "selected_model_config": "k234_mature_seed_l2_003_u050",
+        "score": 0.6748299457589207,
+        "rank": 1503,
+        "percentile": 0.42518178339073864,
         "pool_size": 2614
       }
     ],

@@ -11,415 +11,161 @@ const html = `<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Guia didático — Pipeline de descoberta de miRNAs</title>
   <style>
-    :root {
-      --ink: #15243a;
-      --muted: #506079;
-      --blue: #1856a5;
-      --cyan: #0b7895;
-      --green: #257a57;
-      --gold: #a96300;
-      --red: #a33c45;
-      --paper: #ffffff;
-      --soft: #f1f5fa;
-      --line: #cfdae8;
-    }
-    * { box-sizing: border-box; }
-    @page { size: A4; margin: 15mm 14mm 16mm; }
-    body { margin: 0; color: var(--ink); background: var(--paper); font-family: "Segoe UI", Arial, sans-serif; font-size: 10.4pt; line-height: 1.48; }
-    h1, h2, h3, h4 { color: #113865; line-height: 1.18; margin-top: 1.25em; margin-bottom: .5em; page-break-after: avoid; }
-    h1 { font-size: 27pt; }
-    h2 { font-size: 18pt; padding-bottom: 5px; border-bottom: 2px solid #a9c8ea; }
-    h3 { font-size: 13.5pt; }
-    h4 { font-size: 11pt; color: var(--cyan); }
-    p { margin: .42em 0 .76em; }
-    ul, ol { margin-top: .4em; padding-left: 1.35em; }
-    li { margin: .25em 0; }
-    code { font-family: Consolas, monospace; background: #edf2f8; padding: 1px 4px; border-radius: 4px; }
-    .cover { min-height: 250mm; display: flex; flex-direction: column; justify-content: center; position: relative; page-break-after: always; }
-    .cover::before { content: ""; position: absolute; inset: 0 auto 0 -14mm; width: 7mm; background: linear-gradient(180deg, var(--blue), var(--cyan), var(--green)); }
-    .eyebrow { color: var(--cyan); text-transform: uppercase; font-size: 9pt; letter-spacing: 1.6px; font-weight: 700; }
-    .subtitle { font-size: 15pt; line-height: 1.4; color: var(--muted); max-width: 150mm; }
-    .cover-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20mm 0 10mm; }
-    .cover-card { border-radius: 11px; padding: 14px 12px; color: white; min-height: 30mm; }
-    .cover-card:nth-child(1) { background: var(--blue); }
-    .cover-card:nth-child(2) { background: var(--cyan); }
-    .cover-card:nth-child(3) { background: var(--green); }
-    .cover-card strong { display: block; font-size: 18pt; }
-    .meta { color: var(--muted); font-size: 9pt; margin-top: 18mm; }
-    .page-break { page-break-before: always; }
-    .avoid-break, table, .card, .callout, .flow, .term { break-inside: avoid; }
-    .lead { font-size: 12pt; color: #314865; }
-    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 9px 0; }
-    .card { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; background: #fff; }
-    .card strong { color: var(--blue); }
-    .callout { border-left: 5px solid var(--cyan); background: #eef8fb; padding: 10px 13px; margin: 10px 0; border-radius: 0 8px 8px 0; }
-    .callout.warning { border-color: var(--gold); background: #fff8e8; }
-    .callout.danger { border-color: var(--red); background: #fff1f2; }
-    .callout.success { border-color: var(--green); background: #eef8f2; }
-    .flow { display: flex; align-items: stretch; gap: 5px; margin: 11px 0; }
-    .flow .step { flex: 1; padding: 9px 7px; border: 1px solid #abc5e4; background: #edf5ff; border-radius: 8px; text-align: center; font-size: 9pt; }
-    .flow .arrow { align-self: center; font-size: 16pt; color: var(--blue); }
-    .sequence { font-family: Consolas, monospace; letter-spacing: 1.1px; font-weight: 700; color: #143b69; }
-    .seed { background: #ffe39a; color: #6c4100; padding: 2px 4px; border-radius: 4px; }
-    .term { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 10px 0; }
-    .term-title { padding: 8px 11px; color: white; background: var(--blue); font-weight: 700; font-size: 12pt; }
-    .term:nth-of-type(even) .term-title { background: var(--cyan); }
-    .term-body { padding: 10px 12px; }
-    .term .plain { font-size: 11pt; font-weight: 650; color: #214d78; }
-    table { width: 100%; border-collapse: collapse; margin: 9px 0 13px; font-size: 9.4pt; }
-    th { background: #174f8e; color: white; text-align: left; padding: 7px 8px; }
-    td { border: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
-    tr:nth-child(even) td { background: #f6f9fc; }
-    .metric { font-weight: 700; color: var(--blue); white-space: nowrap; }
-    .mini { color: var(--muted); font-size: 8.8pt; }
-    .rank { display: grid; grid-template-columns: 20mm 1fr; gap: 7px; margin: 4px 0; }
-    .rank span:first-child { color: white; background: var(--green); border-radius: 12px; text-align: center; font-weight: 700; }
-    .bar { background: #e4edf7; height: 9px; border-radius: 6px; overflow: hidden; }
-    .bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); }
-    .say { border: 1px dashed #7ca1c8; background: #f5f9fd; border-radius: 9px; padding: 9px 12px; font-style: italic; }
-    .toc a { color: var(--blue); text-decoration: none; }
-    .two-col { columns: 2; column-gap: 18px; }
-    .footer-note { margin-top: 12px; padding-top: 7px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8.5pt; }
+    :root { --ink:#15243a; --muted:#506079; --blue:#1856a5; --cyan:#0b7895; --green:#257a57; --gold:#a96300; --red:#a33c45; --soft:#f1f5fa; --line:#cfdae8; }
+    * { box-sizing:border-box; }
+    @page { size:A4; margin:15mm 14mm 16mm; }
+    body { margin:0; color:var(--ink); background:#fff; font-family:"Segoe UI",Arial,sans-serif; font-size:10.5pt; line-height:1.48; }
+    h1,h2,h3 { color:#113865; line-height:1.18; page-break-after:avoid; }
+    h1 { font-size:27pt; } h2 { font-size:18pt; padding-bottom:5px; border-bottom:2px solid #a9c8ea; } h3 { font-size:13.5pt; }
+    p { margin:.42em 0 .76em; } li { margin:.25em 0; } code { font-family:Consolas,monospace; background:#edf2f8; padding:1px 4px; border-radius:4px; }
+    .cover { min-height:250mm; display:flex; flex-direction:column; justify-content:center; position:relative; page-break-after:always; }
+    .cover::before { content:""; position:absolute; inset:0 auto 0 -14mm; width:7mm; background:linear-gradient(180deg,var(--blue),var(--cyan),var(--green)); }
+    .eyebrow { color:var(--cyan); text-transform:uppercase; font-size:9pt; letter-spacing:1.6px; font-weight:700; }
+    .subtitle { font-size:15pt; color:var(--muted); max-width:150mm; }
+    .cover-grid,.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
+    .cover-grid { margin:20mm 0 10mm; }
+    .cover-card { border-radius:11px; padding:14px 12px; color:#fff; min-height:30mm; background:var(--blue); }
+    .cover-card:nth-child(2) { background:var(--cyan); } .cover-card:nth-child(3) { background:var(--green); } .cover-card strong { display:block; font-size:18pt; }
+    .meta,.mini { color:var(--muted); font-size:9pt; }
+    .page { page-break-before:always; }
+    .card,.callout,.flow,table { break-inside:avoid; }
+    .card { border:1px solid var(--line); border-radius:9px; padding:10px 12px; } .card strong { color:var(--blue); }
+    .callout { border-left:5px solid var(--cyan); background:#eef8fb; padding:10px 13px; margin:10px 0; border-radius:0 8px 8px 0; }
+    .warning { border-color:var(--gold); background:#fff8e8; } .danger { border-color:var(--red); background:#fff1f2; } .success { border-color:var(--green); background:#eef8f2; }
+    .flow { display:flex; align-items:stretch; gap:5px; margin:12px 0; } .step { flex:1; padding:9px 7px; border:1px solid #abc5e4; background:#edf5ff; border-radius:8px; text-align:center; font-size:9pt; } .arrow { align-self:center; color:var(--blue); font-size:16pt; }
+    .sequence { font-family:Consolas,monospace; letter-spacing:1px; font-weight:700; color:#143b69; } .seed { background:#ffe39a; color:#6c4100; padding:2px 4px; border-radius:4px; }
+    table { width:100%; border-collapse:collapse; margin:9px 0 13px; font-size:9.4pt; } th { background:#174f8e; color:#fff; text-align:left; padding:7px 8px; } td { border:1px solid var(--line); padding:6px 8px; vertical-align:top; } tr:nth-child(even) td { background:#f6f9fc; }
+    .metric { font-weight:700; color:var(--blue); white-space:nowrap; } .say { border:1px dashed #7ca1c8; background:#f5f9fd; border-radius:9px; padding:10px 13px; font-style:italic; }
   </style>
 </head>
 <body>
   <section class="cover">
     <div class="eyebrow">Trabalho de Conclusão de Curso · Guia para apresentação</div>
     <h1>Como o pipeline de descoberta de miRNAs funciona</h1>
-    <p class="subtitle">Da sequência <span class="sequence">AUGC...</span> ao ranking integrado: k-mers, seed, precursor hairpin, estrutura, aprendizado Positive-Unlabeled e validação em pacientes.</p>
+    <p class="subtitle">Da sequência madura <span class="sequence">AUGC...</span> ao ranking integrado: k-mers, seed, aprendizado Positive-Unlabeled e validação em pacientes.</p>
     <div class="cover-grid">
-      <div class="cover-card"><strong>43</strong>biomarcadores positivos curados</div>
-      <div class="cover-card"><strong>2.613</strong>candidatos ranqueados no Modelo 1</div>
-      <div class="cover-card"><strong>611</strong>candidatos avaliados no Modelo 2</div>
+      <div class="cover-card"><strong>43</strong>miRNAs positivos curados</div>
+      <div class="cover-card"><strong>2.613</strong>candidatos no Modelo 1</div>
+      <div class="cover-card"><strong>611</strong>avaliados no Modelo 2</div>
     </div>
-    <p class="meta">Versão metodológica vigente em 10/10/2026 · Projeto TCC-miRNA-Model</p>
+    <p class="meta">Versão vigente em 10/10/2026 · Modelo centrado na sequência madura · TCC-miRNA-Model</p>
   </section>
 
   <section>
-    <h2>Como usar este guia</h2>
-    <p class="lead">O objetivo é explicar o processo sem depender de fórmulas. Pense no projeto como duas peneiras sucessivas.</p>
-    <div class="flow">
-      <div class="step"><strong>Biomarcadores conhecidos</strong><br>referência positiva</div><div class="arrow">→</div>
-      <div class="step"><strong>Modelo 1</strong><br>sequência e estrutura</div><div class="arrow">→</div>
-      <div class="step"><strong>Ranking global</strong><br>2.613 candidatos</div><div class="arrow">→</div>
-      <div class="step"><strong>Modelo 2</strong><br>expressão nos pacientes</div><div class="arrow">→</div>
-      <div class="step"><strong>Ranking integrado</strong><br>hipóteses priorizadas</div>
-    </div>
-    <div class="callout success"><strong>Ideia central:</strong> o Modelo 1 pergunta se um miRNA compartilha padrões moleculares com os positivos conhecidos. O Modelo 2 pergunta se sua expressão também está associada aos pacientes doentes.</div>
-    <div class="callout danger"><strong>Limite científico:</strong> o resultado é uma priorização computacional. Ele não confirma causalidade, diagnóstico, biomarcador clínico nem novidade na literatura.</div>
+    <h2>1. Visão geral: duas perguntas, dois modelos</h2>
+    <p>O projeto funciona como duas peneiras sucessivas. A primeira procura semelhança molecular com marcadores conhecidos; a segunda verifica associação de expressão nos pacientes.</p>
+    <div class="flow"><div class="step"><strong>43 positivos</strong><br>referências curadas</div><div class="arrow">→</div><div class="step"><strong>Modelo 1</strong><br>sequência madura</div><div class="arrow">→</div><div class="step"><strong>2.613</strong><br>candidatos</div><div class="arrow">→</div><div class="step"><strong>Modelo 2</strong><br>expressão</div><div class="arrow">→</div><div class="step"><strong>Ranking</strong><br>integrado</div></div>
+    <div class="callout"><strong>Resposta curta para a banca:</strong> o Modelo 1 prioriza candidatos por padrões da sequência madura; o Modelo 2 verifica se a expressão disponível separa doentes e saudáveis. Nenhum dos dois confirma sozinho um biomarcador.</div>
 
-    <h3>Sumário</h3>
-    <ol class="toc two-col">
-      <li>Os cinco termos biológicos fundamentais</li>
-      <li>Como a sequência vira k-mers</li>
-      <li>Como o Modelo 1 aprende</li>
-      <li>Como o ranking out-of-bag é produzido</li>
-      <li>Como o Modelo 1 é validado</li>
-      <li>Significado das métricas do Modelo 1</li>
-      <li>Como o Modelo 2 funciona</li>
-      <li>Significado das métricas do Modelo 2</li>
-      <li>Ranking integrado e interpretação científica</li>
-      <li>Roteiro curto para a banca</li>
-    </ol>
+    <h3>Por que o hairpin não aparece mais?</h3>
+    <p>O hairpin é biologicamente parte da formação do miRNA, mas foi retirado do pipeline para reduzir complexidade e manter a pergunta do TCC centrada no miRNA maduro. O percentil médio passou de 60,35% para 60,55% e o Recall@10% permaneceu em 9,38%. A mudança é pequena e não prova melhora estatística, mas mostra que a simplificação não prejudicou a métrica principal observada.</p>
+    <div class="callout success"><strong>Escopo atual:</strong> k-mers, seed, comprimento e fração GC da sequência madura. Hairpin, estrutura secundária e MFE não entram no modelo.</div>
   </section>
 
-  <section class="page-break">
-    <h2>1. Os cinco termos biológicos fundamentais</h2>
-
-    <div class="term">
-      <div class="term-title">Sequência madura</div>
-      <div class="term-body">
-        <p class="plain">É a sequência curta do miRNA que já terminou seu processamento e atua na célula.</p>
-        <p>Ela normalmente possui cerca de duas dezenas de nucleotídeos e usa o alfabeto do RNA: <strong>A, U, C e G</strong>. É essa molécula madura que participa do reconhecimento de RNAs-alvo e da regulação da expressão gênica.</p>
-        <p>Exemplo ilustrativo: <span class="sequence">AUGCUACUGAAC...</span></p>
-        <p><strong>No projeto:</strong> a sequência madura fornece k-mers, seed, comprimento e conteúdo GC.</p>
-      </div>
+  <section class="page">
+    <h2>2. Os termos essenciais</h2>
+    <div class="cards">
+      <div class="card"><strong>Sequência madura</strong><br>Pequeno RNA funcional após o processamento do precursor. É a sequência usada pelo Modelo 1.</div>
+      <div class="card"><strong>Seed</strong><br>Posições 2 a 8 da sequência madura. É importante para o reconhecimento de alvos e para agrupar miRNAs relacionados.</div>
+      <div class="card"><strong>k-mer</strong><br>Fragmento de comprimento k extraído da sequência. Ex.: para k=3, <code>AUG</code>, <code>UGC</code> e <code>GCU</code>.</div>
+      <div class="card"><strong>Fração GC</strong><br>Proporção de G e C na sequência madura. Resume sua composição.</div>
+      <div class="card"><strong>Peso de evidência</strong><br>Importância dada a cada positivo segundo a curadoria: alta=3, média=2, exploratória=1.</div>
+      <div class="card"><strong>Família de seed</strong><br>Grupo de marcadores com a mesma seed. É a unidade principal da validação.</div>
     </div>
-
-    <div class="term">
-      <div class="term-title">Região seed</div>
-      <div class="term-body">
-        <p class="plain">É uma pequena região inicial do miRNA maduro que tem grande influência sobre quais alvos ele reconhece.</p>
-        <p>De maneira simplificada, pode ser entendida como a parte mais importante da “chave” usada pelo miRNA para encontrar moléculas compatíveis.</p>
-        <p>Exemplo ilustrativo: <span class="sequence">A<span class="seed">UGCUAC</span>UGAAC...</span></p>
-        <p>MiRNAs com a mesma seed podem pertencer à mesma família funcional. Por isso, o projeto mantém famílias de seed inteiras juntas durante a validação, evitando que parentes quase duplicados sejam divididos entre treino e teste.</p>
-      </div>
-    </div>
-
-    <div class="term">
-      <div class="term-title">Sequência precursora hairpin</div>
-      <div class="term-body">
-        <p class="plain">É a sequência maior que antecede o miRNA maduro e tende a se dobrar no formato de um grampo.</p>
-        <p>O miRNA maduro não surge isoladamente: ele é recortado de uma molécula precursora chamada pre-miRNA. Essa sequência contém dois braços e uma região de loop.</p>
-        <div class="flow">
-          <div class="step">Precursor maior</div><div class="arrow">→</div><div class="step">Hairpin / grampo</div><div class="arrow">→</div><div class="step">Processamento celular</div><div class="arrow">→</div><div class="step">miRNA maduro</div>
-        </div>
-        <p><strong>No projeto:</strong> o hairpin também é quebrado em k-mers. Isso permite observar padrões de biogênese que podem não estar visíveis apenas no fragmento maduro.</p>
-      </div>
-    </div>
-
-    <div class="term">
-      <div class="term-title">Características da estrutura do hairpin</div>
-      <div class="term-body">
-        <p class="plain">São números que descrevem como o precursor está dobrado, e não apenas quais letras aparecem em sua sequência.</p>
-        <p>A estrutura é representada no formato dot-bracket. Parênteses representam bases pareadas e pontos representam bases livres:</p>
-        <p class="sequence">((((...))))....((...))</p>
-        <p>O projeto registra fração pareada, fração livre, stems, loops, bulges, conteúdo GC e proporções de pares AU, GC e GU.</p>
-        <p>A execução atual usa um proxy Nussinov ponderado. Ele aproxima o pareamento, mas não calcula energia termodinâmica real. Portanto, o resultado atual não deve ser apresentado como MFE do RNAfold.</p>
-      </div>
-    </div>
-
-    <div class="term">
-      <div class="term-title">Peso de evidência científica</div>
-      <div class="term-body">
-        <p class="plain">É a importância atribuída a cada marcador positivo conforme a força da evidência que motivou sua inclusão.</p>
-        <p>Um marcador sustentado por evidência mais forte influencia mais o aprendizado que um marcador incluído de forma exploratória:</p>
-        <table><thead><tr><th>Nível</th><th>Peso inicial</th><th>Interpretação</th></tr></thead><tbody>
-          <tr><td>Alta</td><td>3</td><td>Maior confiança para orientar o padrão positivo.</td></tr>
-          <tr><td>Média</td><td>2</td><td>Evidência intermediária ou marcador do painel inicial.</td></tr>
-          <tr><td>Exploratória</td><td>1</td><td>Contribui, mas com menor influência.</td></tr>
-        </tbody></table>
-        <p>Depois, esse peso é balanceado pelo número de positivos da mesma família de seed. Assim, famílias grandes não dominam o modelo apenas por terem mais membros.</p>
-      </div>
-    </div>
+    <h3>Exemplo de quebra em k-mers</h3>
+    <p class="sequence">A U <span class="seed">G C U A A C G</span> U A</p>
+    <table><thead><tr><th>k</th><th>Fragmentos sucessivos</th><th>O que representa</th></tr></thead><tbody>
+      <tr><td>2</td><td><code>AU</code>, <code>UG</code>, <code>GC</code>, ...</td><td>Padrões muito locais e frequentes.</td></tr>
+      <tr><td>3</td><td><code>AUG</code>, <code>UGC</code>, <code>GCU</code>, ...</td><td>Contexto local um pouco maior.</td></tr>
+      <tr><td>4</td><td><code>AUGC</code>, <code>UGCU</code>, ...</td><td>Motivos mais específicos.</td></tr>
+    </tbody></table>
+    <p>As contagens são normalizadas pelo total de fragmentos, evitando que uma sequência pareça mais importante apenas por ser um pouco maior. A configuração final usa k=2,3,4.</p>
   </section>
 
-  <section class="page-break">
-    <h2>2. Da sequência aos k-mers</h2>
-    <p class="lead">K-mers são pequenos fragmentos consecutivos usados como um vocabulário molecular.</p>
-    <p>Considere a sequência ilustrativa <span class="sequence">AUGCUA</span>:</p>
-    <table>
-      <thead><tr><th>Tamanho</th><th>Fragmentos gerados</th><th>O que capturam</th></tr></thead>
-      <tbody>
-        <tr><td class="metric">k=2</td><td class="sequence">AU · UG · GC · CU · UA</td><td>Padrões muito locais e frequentes.</td></tr>
-        <tr><td class="metric">k=3</td><td class="sequence">AUG · UGC · GCU · CUA</td><td>Contextos um pouco mais específicos.</td></tr>
-        <tr><td class="metric">k=4</td><td class="sequence">AUGC · UGCU · GCUA</td><td>Motivos locais mais detalhados.</td></tr>
-      </tbody>
-    </table>
-    <p>A validação testou faixas de k-mers até k=7 e escolheu <strong>k=2, 3 e 4</strong>. Com apenas 43 positivos, fragmentos menores aparecem mais vezes e são menos propensos a memorizar sequências individuais.</p>
-    <div class="callout"><strong>Normalização:</strong> as contagens viram frequências. Uma sequência maior não recebe score alto apenas porque produz mais fragmentos.</div>
-
-    <h3>A impressão digital de um miRNA</h3>
-    <div class="card-grid">
-      <div class="card"><strong>Sequência madura</strong><br>k-mers, seed, comprimento e conteúdo GC.</div>
-      <div class="card"><strong>Precursor hairpin</strong><br>k-mers do precursor e média entre loci equivalentes.</div>
-      <div class="card"><strong>Estrutura</strong><br>pareamento, stems, loops, bulges e tipos de pares.</div>
-      <div class="card"><strong>Contexto científico</strong><br>peso de evidência e balanceamento por família.</div>
-    </div>
-    <p>A configuração final aplica multiplicadores de bloco de 70% para madura/seed, 20% para hairpin e 10% para estrutura. Esses valores equilibram os blocos; não representam porcentagens biológicas da decisão.</p>
-
-    <h3>Vocabulário final</h3>
-    <p>Depois de remover k-mers excessivamente raros e preservar seed, composição e estrutura, o modelo final possui <strong>650 features</strong>. Cada miRNA vira uma linha de números nesse mesmo vocabulário.</p>
-  </section>
-
-  <section class="page-break">
+  <section class="page">
     <h2>3. Como o Modelo 1 aprende</h2>
-    <h3>Por que Positive-Unlabeled?</h3>
-    <p>Temos 43 positivos conhecidos, mas não existe uma lista confiável de miRNAs comprovadamente irrelevantes ao câncer de mama. Ausência da lista positiva não é prova de negatividade.</p>
-    <div class="card-grid">
-      <div class="card"><strong>P — positivos</strong><br>43 biomarcadores curados e ponderados.</div>
-      <div class="card"><strong>U — não rotulados</strong><br>podem conter irrelevantes, pouco estudados ou candidatos verdadeiros.</div>
-    </div>
-    <p>O conjunto U é usado somente como contraste temporário. A saída logística não é interpretada como probabilidade de câncer.</p>
-
-    <h3>Bagging em oito modelos</h3>
-    <p>São treinados oito modelos. Cada um recebe todos os positivos e uma amostra determinística diferente de 800 não rotulados.</p>
-    <div class="flow">
-      <div class="step">43 positivos<br>em todos os bags</div><div class="arrow">+</div>
-      <div class="step">800 não rotulados<br>por bag</div><div class="arrow">→</div>
-      <div class="step">8 modelos<br>regularizados</div><div class="arrow">→</div>
-      <div class="step">consenso PU</div>
-    </div>
-    <p>Cada modelo aprende quais features aproximam uma sequência do perfil positivo e quais a aproximam do contraste utilizado naquele bag.</p>
-
-    <h3>Pontuação out-of-bag</h3>
-    <p>Um candidato não pode ser avaliado por um bag no qual ele foi usado como contraste. Ele é pontuado apenas pelos modelos que não o viram durante o treinamento.</p>
-    <div class="callout success"><strong>Resultado:</strong> cada candidato atual possui entre 2 e 8 modelos out-of-bag, e nenhum precisou de fallback. As features explicativas também são calculadas pelos mesmos modelos usados no score.</div>
-
-    <h3>Do score bruto ao ranking</h3>
-    <p>Os logits out-of-bag são usados para ordenar os 2.613 candidatos. A posição é convertida em percentil:</p>
-    <div class="rank"><span>0,99</span><div>o candidato ficou acima de aproximadamente 99% da lista.</div></div>
-    <div class="rank"><span>0,50</span><div>o candidato ficou aproximadamente no meio da lista.</div></div>
-    <div class="rank"><span>0,05</span><div>o candidato ficou próximo da parte inferior.</div></div>
-    <div class="callout warning"><strong>Não dizer:</strong> “score 0,99 significa 99% de chance de ser biomarcador”. O score é posição relativa, não probabilidade clínica.</div>
+    <ol>
+      <li>Carrega os 43 miRNAs positivos e suas sequências maduras.</li>
+      <li>Converte cada sequência em um vetor de k-mers, seed, comprimento e fração GC.</li>
+      <li>Aplica o peso de evidência e divide o peso entre positivos da mesma família de seed.</li>
+      <li>Usa os demais miRNAs como conjunto <em>não rotulado</em>, e não como negativos biológicos.</li>
+      <li>Treina 8 modelos com amostras diferentes de 800 não rotulados.</li>
+      <li>Pontua cada candidato somente pelos modelos que não o usaram como contraste: pontuação out-of-bag.</li>
+      <li>Converte o logit em percentil dentro dos 2.613 candidatos e produz o ranking.</li>
+    </ol>
+    <div class="callout warning"><strong>Por que Positive-Unlabeled?</strong> Estar fora da lista dos 43 não significa ser biologicamente negativo. Alguns não rotulados podem ser candidatos verdadeiros ainda pouco estudados.</div>
+    <h3>O que significa out-of-bag?</h3>
+    <p>Se um candidato entrou como contraste temporário em determinado bag, aquele modelo não pode pontuá-lo. Ele recebe a média apenas dos bags em que ficou de fora. Isso reduz a penalização artificial causada pelo próprio processo PU.</p>
+    <h3>O score é probabilidade de câncer?</h3>
+    <p>Não. <code>score_modelo_sequencial</code> é uma posição relativa: 0,99 indica que o candidato ficou acima de aproximadamente 99% do universo avaliado. A probabilidade PU bruta também é apenas uma saída contrastiva interna.</p>
   </section>
 
-  <section class="page-break">
-    <h2>4. Como o Modelo 1 é validado</h2>
-    <p class="lead">A pergunta da validação é: o modelo consegue colocar no alto do ranking famílias positivas que nunca viu?</p>
-    <ol>
-      <li>As 32 famílias de seed são divididas em cinco grupos externos.</li>
-      <li>Um grupo inteiro é escondido.</li>
-      <li>O modelo aprende somente com as famílias restantes.</li>
-      <li>Três grupos internos escolhem k-mers, pesos e regularização.</li>
-      <li>As famílias escondidas são comparadas com todo o background elegível.</li>
-      <li>O procedimento é repetido até todas as famílias terem sido escondidas.</li>
-    </ol>
-    <div class="callout"><strong>Por família, não por marcador:</strong> se parentes com a mesma seed fossem separados entre treino e teste, o modelo poderia reconhecer uma quase duplicata e o desempenho seria inflado.</div>
-
-    <h3>Resultado atual do Modelo 1</h3>
-    <table>
-      <thead><tr><th>Métrica</th><th>Resultado</th><th>Leitura prática</th></tr></thead>
-      <tbody>
-        <tr><td>Percentil médio por família</td><td class="metric">60,35%</td><td>Uma família nunca vista ficou, em média, acima de 60,35% do background.</td></tr>
-        <tr><td>IC95% bootstrap</td><td class="metric">51,79%–68,80%</td><td>Faixa de incerteza ao reamostrar as 32 famílias.</td></tr>
-        <tr><td>Recall@1%</td><td class="metric">0/32</td><td>Nenhuma família chegou ao 1% mais alto.</td></tr>
-        <tr><td>Recall@5%</td><td class="metric">0/32</td><td>Nenhuma família chegou aos 5% mais altos.</td></tr>
-        <tr><td>Recall@10%</td><td class="metric">3/32 = 9,38%</td><td>Três famílias chegaram ao decil superior.</td></tr>
-        <tr><td>Recall@20%</td><td class="metric">10/32 = 31,25%</td><td>Dez famílias chegaram ao quinto superior.</td></tr>
-        <tr><td>Recall@10% por marcador</td><td class="metric">5/43 = 11,63%</td><td>Métrica secundária que conta marcadores, não famílias.</td></tr>
-      </tbody>
-    </table>
-
-    <h3>Teste contra ranking aleatório</h3>
-    <p>Foram simulados 10.000 rankings aleatórios preservando o número de marcadores de cada família.</p>
-    <table><thead><tr><th>Teste</th><th>p-valor</th><th>Conclusão</th></tr></thead><tbody>
-      <tr><td>Percentil médio</td><td class="metric">0,0120</td><td>Há sinal médio acima do nulo de ranking definido.</td></tr>
-      <tr><td>Recall@10%</td><td class="metric">0,4723</td><td>O enriquecimento específico no top 10% não foi significativo.</td></tr>
+  <section class="page">
+    <h2>4. Como testamos se o Modelo 1 generaliza</h2>
+    <p>A avaliação esconde famílias inteiras de seed. Isso impede que um parente quase equivalente apareça no treino e torne o teste artificialmente fácil.</p>
+    <div class="flow"><div class="step"><strong>5 folds externos</strong><br>medem desempenho</div><div class="arrow">→</div><div class="step"><strong>3 folds internos</strong><br>escolhem configuração</div><div class="arrow">→</div><div class="step"><strong>Background completo</strong><br>mede o rank real</div></div>
+    <table><thead><tr><th>Métrica principal por família</th><th>Resultado</th><th>Leitura prática</th></tr></thead><tbody>
+      <tr><td>Percentil médio</td><td class="metric">60,55%</td><td>Em média, a família escondida ficou acima de 60,55% do background.</td></tr>
+      <tr><td>IC95% do percentil</td><td class="metric">51,87%–69,02%</td><td>Incerteza obtida por 4.000 reamostragens das famílias.</td></tr>
+      <tr><td>p do nulo</td><td class="metric">0,0111</td><td>O desempenho global é improvável sob ranking aleatório.</td></tr>
+      <tr><td>Recall@5%</td><td class="metric">1/32 (3,13%)</td><td>Uma família apareceu entre os 5% primeiros.</td></tr>
+      <tr><td>Recall@10%</td><td class="metric">3/32 (9,38%)</td><td>Três famílias apareceram entre os 10% primeiros.</td></tr>
+      <tr><td>p do Recall@10%</td><td class="metric">0,4723</td><td>O enriquecimento no topo não foi significativo.</td></tr>
+      <tr><td>Recall@20%</td><td class="metric">9/32 (28,13%)</td><td>Nove famílias apareceram entre os 20% primeiros.</td></tr>
     </tbody></table>
-    <div class="say">“O modelo apresenta sinal global acima do acaso, mas ainda não demonstrou concentração robusta das famílias positivas nas primeiras posições.”</div>
-
-    <h3>Comparação com baselines</h3>
+    <div class="callout warning"><strong>Defesa correta:</strong> existe sinal global acima do nulo, mas ainda não há evidência robusta de concentração no top 10%. Percentil médio e Recall@10% respondem perguntas diferentes.</div>
+    <h3>Baselines</h3>
     <table><thead><tr><th>Método</th><th>Percentil médio</th><th>Recall@10%</th></tr></thead><tbody>
-      <tr><td>Ensemble PU completo</td><td>60,35%</td><td>9,38%</td></tr>
-      <tr><td>Similaridade de seed</td><td>53,08%</td><td>0%</td></tr>
-      <tr><td>Centroide k-mer maduro</td><td>50,90%</td><td>6,25%</td></tr>
-      <tr><td>Centroide k-mer hairpin</td><td>66,86%</td><td>9,38%</td></tr>
-      <tr><td>Ranking aleatório determinístico</td><td>54,34%</td><td>9,38%</td></tr>
+      <tr><td>Ensemble PU maduro</td><td>60,55%</td><td>9,38%</td></tr>
+      <tr><td>Seed</td><td>53,08%</td><td>0,00%</td></tr>
+      <tr><td>Centroide k-mer maduro</td><td>51,19%</td><td>6,25%</td></tr>
+      <tr><td>Composição madura</td><td>63,54%</td><td>9,38%</td></tr>
+      <tr><td>Aleatório determinístico</td><td>54,34%</td><td>9,38%</td></tr>
     </tbody></table>
-    <div class="callout warning"><strong>Leitura honesta:</strong> o baseline hairpin teve percentil observado maior que o ensemble. O precursor carrega sinal importante, e o modelo combinado ainda não provou superioridade geral.</div>
   </section>
 
-  <section class="page-break">
-    <h2>5. Como o Modelo 2 funciona</h2>
-    <p>Dos 2.613 candidatos, 611 possuem uma feature de expressão compatível no dataset de pacientes. A cobertura é <strong>23,38%</strong>.</p>
-    <div class="flow">
-      <div class="step">Candidato do Modelo 1</div><div class="arrow">→</div>
-      <div class="step">Coluna(s) de expressão</div><div class="arrow">→</div>
-      <div class="step">Transformação logarítmica</div><div class="arrow">→</div>
-      <div class="step">Mini-modelo individual</div><div class="arrow">→</div>
-      <div class="step">Predições out-of-fold</div>
-    </div>
-    <p>Cada candidato é testado sozinho por uma regressão logística univariada. Se existirem várias colunas precursoras associadas, a expressão média é utilizada.</p>
-
-    <h3>Validação cruzada em cinco folds</h3>
-    <p>Os pacientes são separados de forma estratificada. Em cada rodada, quatro grupos treinam e o quinto é avaliado. No final, cada paciente possui uma predição produzida sem ter participado daquele treinamento.</p>
-    <div class="callout"><strong>Out-of-fold:</strong> reduz o otimismo de medir o modelo nos mesmos pacientes usados para ajustar seus parâmetros. Ainda assim, não elimina lote, fonte ou outros fatores confundidores presentes em todos os folds.</div>
-
-    <h3>Por que alguns braços compartilham resultados?</h3>
-    <p>O ranking trabalha com miRNAs maduros, como 5p e 3p, mas a base de expressão frequentemente possui colunas no nível do precursor ou família. Assim, dois braços podem usar a mesma feature e receber as mesmas métricas no Modelo 2.</p>
-  </section>
-
-  <section class="page-break">
-    <h2>6. O que cada métrica do Modelo 2 representa</h2>
-    <table>
-      <thead><tr><th>Métrica</th><th>Pergunta prática</th><th>Como interpretar</th></tr></thead>
-      <tbody>
-        <tr><td class="metric">AUC</td><td>O candidato ordena doentes acima de saudáveis?</td><td>0,50 é semelhante ao acaso; valores próximos de 1 indicam separação interna muito forte.</td></tr>
-        <tr><td class="metric">Acurácia</td><td>Qual fração total recebeu a classe correta?</td><td>Mistura acertos em doentes e saudáveis.</td></tr>
-        <tr><td class="metric">Precisão</td><td>Entre os previstos como doentes, quantos eram doentes?</td><td>Alta precisão significa poucos falsos positivos.</td></tr>
-        <tr><td class="metric">Sensibilidade</td><td>Entre os doentes, quantos foram encontrados?</td><td>Alta sensibilidade significa poucos doentes perdidos.</td></tr>
-        <tr><td class="metric">Especificidade</td><td>Entre os saudáveis, quantos foram reconhecidos?</td><td>Alta especificidade significa poucos saudáveis classificados como doentes.</td></tr>
-        <tr><td class="metric">F1</td><td>Precisão e sensibilidade estão equilibradas?</td><td>Cai quando uma das duas é baixa.</td></tr>
-        <tr><td class="metric">TP</td><td>Quantos doentes foram corretamente previstos?</td><td>Verdadeiros positivos.</td></tr>
-        <tr><td class="metric">TN</td><td>Quantos saudáveis foram corretamente previstos?</td><td>Verdadeiros negativos.</td></tr>
-        <tr><td class="metric">FP</td><td>Quantos saudáveis foram chamados de doentes?</td><td>Falsos positivos.</td></tr>
-        <tr><td class="metric">FN</td><td>Quantos doentes foram chamados de saudáveis?</td><td>Falsos negativos.</td></tr>
-        <tr><td class="metric">Log2 fold-change</td><td>A expressão aumentou ou diminuiu nos doentes?</td><td>Positivo: maior nos doentes. Negativo: menor nos doentes. Módulo maior: diferença maior.</td></tr>
-        <tr><td class="metric">Média e mediana</td><td>Qual é o nível de expressão em cada classe?</td><td>A mediana é menos influenciada por valores extremos.</td></tr>
-        <tr><td class="metric">Presença &gt; 0</td><td>Em quantos pacientes o miRNA foi detectado?</td><td>Ajuda a separar diferença de intensidade de diferença de presença.</td></tr>
-      </tbody>
-    </table>
-
-    <h3>Resultados descritivos atuais</h3>
-    <div class="card-grid">
-      <div class="card"><strong>28,97%</strong><br>177 de 611 com AUC OOF ≥ 0,90.</div>
-      <div class="card"><strong>42,23%</strong><br>258 de 611 com AUC OOF ≥ 0,80.</div>
-      <div class="card"><strong>23,90%</strong><br>146 de 611 com precisão OOF ≥ 0,90.</div>
-      <div class="card"><strong>23,38%</strong><br>cobertura: 611 de 2.613 candidatos.</div>
-    </div>
-    <div class="callout danger"><strong>Importante:</strong> essas porcentagens descrevem desempenho interno neste dataset. Não representam quantos biomarcadores foram confirmados. A origem/lote pode estar associada à classe e inflar a separação.</div>
-
-    <h3>Score de validação em pacientes</h3>
-    <p>O score resume três sinais: capacidade de separação out-of-fold, intensidade da diferença de expressão e diferença de detecção entre classes. A AUC recebe o maior peso. O score serve para ordenar candidatos e não é probabilidade clínica.</p>
-  </section>
-
-  <section class="page-break">
-    <h2>7. Ranking integrado</h2>
-    <p>O ranking final combina igualmente:</p>
-    <div class="card-grid">
-      <div class="card"><strong>50% Modelo 1</strong><br>suporte relativo de sequência, seed, hairpin e estrutura.</div>
-      <div class="card"><strong>50% Modelo 2</strong><br>associação interna da expressão com os pacientes.</div>
-    </div>
-    <p>O peso 50/50 é uma escolha transparente de priorização, não um peso biológico aprendido.</p>
-
-    <h3>Exemplos do efeito da segunda peneira</h3>
-    <table><thead><tr><th>Candidato</th><th>Rank Modelo 1</th><th>AUC OOF</th><th>Rank integrado</th><th>Leitura</th></tr></thead><tbody>
-      <tr><td>mir-590-3p</td><td>4</td><td>0,539</td><td>311</td><td>Forte padrão molecular, mas associação fraca nos pacientes.</td></tr>
-      <tr><td>mir-374a-3p</td><td>10</td><td>0,771</td><td>136</td><td>Associação moderada; perde prioridade.</td></tr>
-      <tr><td>mir-32-3p</td><td>14</td><td>≈1,000</td><td>1</td><td>Combina suporte alto nos dois modelos.</td></tr>
-      <tr><td>mir-369-3p</td><td>16</td><td>0,933</td><td>13</td><td>Mantém prioridade alta.</td></tr>
-      <tr><td>mir-95-5p</td><td>18</td><td>0,975</td><td>4</td><td>Sobe pela forte associação interna.</td></tr>
+  <section class="page">
+    <h2>5. O que cada métrica representa</h2>
+    <table><thead><tr><th>Métrica</th><th>Significado prático</th></tr></thead><tbody>
+      <tr><td>Percentil médio</td><td>Posição relativa média dos marcadores escondidos no ranking.</td></tr>
+      <tr><td>Recall@X%</td><td>Fração das famílias escondidas recuperadas dentro dos X% primeiros.</td></tr>
+      <tr><td>IC95% bootstrap</td><td>Faixa de resultados plausíveis ao reamostrar as famílias observadas.</td></tr>
+      <tr><td>p do teste nulo</td><td>Frequência com que rankings aleatórios igualam ou superam o observado.</td></tr>
+      <tr><td>AUC OOF</td><td>Capacidade do candidato de ordenar doentes acima de saudáveis em amostras não usadas no treino daquele fold; 0,5 é acaso.</td></tr>
+      <tr><td>Acurácia OOF</td><td>Proporção total de classificações corretas.</td></tr>
+      <tr><td>Precisão OOF</td><td>Entre amostras previstas como doentes, quantas realmente são doentes.</td></tr>
+      <tr><td>Sensibilidade</td><td>Entre os doentes, quantos foram identificados.</td></tr>
+      <tr><td>Especificidade</td><td>Entre os saudáveis, quantos foram identificados.</td></tr>
+      <tr><td>F1</td><td>Equilíbrio entre precisão e sensibilidade.</td></tr>
+      <tr><td>log2 fold-change</td><td>Magnitude e direção da diferença média de expressão entre doentes e saudáveis.</td></tr>
     </tbody></table>
+  </section>
 
+  <section class="page">
+    <h2>6. Como funciona o Modelo 2</h2>
+    <p>Dos 2.613 candidatos, 611 possuem uma feature de expressão compatível. Para cada candidato, uma regressão logística univariada é avaliada por validação cruzada estratificada de 5 folds. Toda amostra recebe uma previsão out-of-fold de um modelo que não a viu durante o treino.</p>
+    <div class="cards">
+      <div class="card"><strong>70% AUC</strong><br>força de separação entre doentes e saudáveis.</div>
+      <div class="card"><strong>20% |log2FC|</strong><br>magnitude da diferença de expressão.</div>
+      <div class="card"><strong>10% detecção</strong><br>presença de expressão nas amostras.</div>
+    </div>
+    <p>O ranking integrado combina 50% do percentil do Modelo 1 com 50% do score do Modelo 2.</p>
+    <div class="callout danger"><strong>Limite importante:</strong> AUCs muito altas podem refletir diferença de fonte ou lote entre doentes e saudáveis. Validação cruzada interna não corrige esse confundimento.</div>
     <h3>Top 5 integrado atual</h3>
-    <ol>
-      <li><strong>mir-32-3p</strong> — score integrado 0,997488</li>
-      <li><strong>let-7f-5p</strong> — score integrado 0,981814</li>
-      <li><strong>mir-32-5p</strong> — score integrado 0,979877</li>
-      <li><strong>mir-95-5p</strong> — score integrado 0,931170</li>
-      <li><strong>mir-26a-2-3p</strong> — score integrado 0,918963</li>
-    </ol>
+    <ol><li><strong>mir-32-3p</strong> — 0,9973</li><li><strong>let-7f-5p</strong> — 0,9818</li><li><strong>mir-32-5p</strong> — 0,9774</li><li><strong>mir-95-5p</strong> — 0,9321</li><li><strong>mir-200b-3p</strong> — 0,9253</li></ol>
   </section>
 
-  <section class="page-break">
-    <h2>8. Como interpretar sem exagerar</h2>
-    <table>
-      <thead><tr><th>Evite dizer</th><th>Prefira dizer</th></tr></thead>
-      <tbody>
-        <tr><td>“60,35% de acurácia.”</td><td>“Percentil médio de 60,35% na validação externa por família.”</td></tr>
-        <tr><td>“Score 0,99 significa 99% de chance de câncer.”</td><td>“O candidato ficou acima de aproximadamente 99% da lista do Modelo 1.”</td></tr>
-        <tr><td>“O modelo validou 177 biomarcadores.”</td><td>“177 candidatos tiveram AUC OOF ≥ 0,90 na avaliação computacional interna.”</td></tr>
-        <tr><td>“p=0,012 prova que o modelo está correto.”</td><td>“O percentil médio foi improvável sob o nulo de ranking utilizado.”</td></tr>
-        <tr><td>“AUC 1 prova valor clínico.”</td><td>“A feature separou internamente as classes, mas pode refletir lote ou origem.”</td></tr>
-        <tr><td>“Descobrimos novos biomarcadores.”</td><td>“Priorizamos hipóteses que precisam de literatura, coorte externa e laboratório.”</td></tr>
-      </tbody>
-    </table>
-
-    <h3>Limitações que fortalecem a defesa quando reconhecidas</h3>
-    <ul>
-      <li>43 positivos e 32 famílias ainda são uma amostra pequena.</li>
-      <li>O conjunto não rotulado pode conter positivos desconhecidos.</li>
-      <li>A estrutura atual é proxy Nussinov, não termodinâmica RNAfold.</li>
-      <li>O baseline hairpin teve percentil observado maior que o ensemble.</li>
-      <li>Recall@10% não foi significativo.</li>
-      <li>O Modelo 2 pode capturar lote ou origem das amostras.</li>
-      <li>O ranking integrado 50/50 é uma regra heurística.</li>
-      <li>Novidade científica exige revisão sistemática da literatura.</li>
-      <li>Confirmação exige coorte externa e validação laboratorial.</li>
-    </ul>
-  </section>
-
-  <section class="page-break">
-    <h2>9. Roteiro curto para a apresentação</h2>
-    <div class="say">“Primeiro, representamos cada miRNA por pequenos padrões chamados k-mers, extraídos tanto da sequência madura quanto do precursor hairpin. Também incluímos a seed, composição e características da estrutura secundária. Como temos positivos confiáveis, mas não negativos biológicos, usamos um ensemble Positive-Unlabeled com balanceamento por família. Cada candidato é pontuado somente por modelos out-of-bag que não o utilizaram como contraste. O Modelo 1 gera um ranking molecular e é avaliado escondendo famílias inteiras de seed. Depois, o Modelo 2 testa os candidatos que possuem expressão disponível e verifica, por predições out-of-fold, se sua expressão está associada a doentes e saudáveis. O ranking integrado combina as duas evidências e serve para priorizar hipóteses, não para confirmar biomarcadores.”</div>
-
+  <section class="page">
+    <h2>7. Roteiro para a apresentação</h2>
+    <div class="say">“Primeiro, transformamos cada sequência madura em pequenos padrões chamados k-mers. Também representamos a seed, o comprimento e a composição GC. Como temos positivos confiáveis, mas não negativos biológicos confirmados, usamos um ensemble Positive-Unlabeled com balanceamento por família. Cada candidato é pontuado somente por modelos out-of-bag que não o usaram como contraste. O Modelo 1 é testado escondendo famílias inteiras de seed. Depois, o Modelo 2 usa predições out-of-fold para verificar se a expressão disponível está associada a doentes e saudáveis. O ranking integrado combina essas duas evidências e prioriza hipóteses, sem confirmar biomarcadores.”</div>
     <h3>Perguntas rápidas da banca</h3>
-    <div class="card"><strong>Por que k-mers?</strong><br>Representam motivos locais sem exigir alinhamento e funcionam melhor que modelos muito complexos quando há poucos positivos.</div>
-    <div class="card"><strong>Por que hairpin?</strong><br>O precursor pode carregar informação de biogênese e estrutura ausente no fragmento maduro.</div>
-    <div class="card"><strong>Por que não chamar os outros de negativos?</strong><br>Porque ausência da lista positiva não comprova ausência de associação.</div>
-    <div class="card"><strong>Por que separar por família de seed?</strong><br>Para impedir vazamento entre parentes quase equivalentes.</div>
-    <div class="card"><strong>Qual é a principal conclusão?</strong><br>Há sinal molecular global acima do nulo, mas o enriquecimento no top 10% ainda não é robusto; o Modelo 2 acrescenta uma segunda evidência interna que precisa de validação externa.</div>
-
-    <h3>Arquivos para consulta</h3>
-    <ul>
-      <li><code>docs/METODOLOGIA_MODELOS_MIRNA.md</code></li>
-      <li><code>reports/modelo_mirna_candidate_discovery_report.txt</code></li>
-      <li><code>reports/modelo_mirna_patient_candidate_validation_report.txt</code></li>
-      <li><code>reports/auditoria_pipeline_descoberta_mirna.txt</code></li>
-      <li><code>reports/mirna_rankings_dashboard.html</code></li>
-    </ul>
-    <p class="footer-note">Documento gerado a partir da implementação vigente do repositório em 10/10/2026. Os números devem ser atualizados se o pipeline for reexecutado com novos dados, RNAfold ou outra configuração.</p>
+    <div class="card"><strong>Por que k-mers?</strong><br>Representam motivos locais sem exigir alinhamento e são adequados a um conjunto pequeno de positivos.</div>
+    <div class="card"><strong>Por que retirar hairpin?</strong><br>Para manter o foco na sequência madura e reduzir complexidade. A métrica principal não caiu após a retirada.</div>
+    <div class="card"><strong>Por que não chamar os demais de negativos?</strong><br>Ausência da lista positiva não comprova ausência de associação.</div>
+    <div class="card"><strong>Qual é a conclusão?</strong><br>Há sinal global acima do nulo, mas o top 10% ainda não é robusto. Os resultados são candidatos para investigação externa.</div>
+    <h3>Limitações que devem ser declaradas</h3>
+    <ul><li>43 positivos e 32 famílias são uma amostra pequena.</li><li>O conjunto não rotulado pode conter positivos desconhecidos.</li><li>Recall@10% não foi significativo.</li><li>O baseline de composição madura teve percentil observado maior que o ensemble.</li><li>O Modelo 2 pode capturar lote ou origem.</li><li>O dataset pode não distinguir 5p de 3p.</li><li>Confirmação exige coorte externa e validação laboratorial.</li></ul>
+    <p class="mini">Documento gerado a partir da implementação vigente em 10/10/2026. Consulte <code>docs/METODOLOGIA_MODELOS_MIRNA.md</code> e <code>reports/auditoria_pipeline_descoberta_mirna.txt</code>.</p>
   </section>
 </body>
 </html>`;
@@ -427,4 +173,3 @@ const html = `<!doctype html>
 fs.mkdirSync(path.dirname(OUTPUT_HTML), { recursive: true });
 fs.writeFileSync(OUTPUT_HTML, html, "utf8");
 console.log(`Guia didatico HTML gerado: ${OUTPUT_HTML}`);
-

@@ -77,10 +77,8 @@ function compactSequenceRows(rows) {
     score: toNumber(row.score_modelo_sequencial),
     prob: toNumber(row.probabilidade_pu_consenso_bruta ?? row.probabilidade_contrastiva_bruta),
     logit: toNumber(row.logit_modelo_sequencial),
-    hairpins: toNumber(row.numero_hairpins_associados),
     features: row.features_expressao_associadas,
     referencias: row.marcadores_referencia_mais_proximos,
-    metodoEstrutura: row.metodo_estrutura_hairpin,
     kmers: row.features_modelo_mais_influentes ?? row.features_kmer_mais_influentes,
   }));
 }
@@ -160,7 +158,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
   const metricDefinitions = [
     renderDefinition(
       "Modelo 1 candidatos",
-      "Total de miRNAs maduros humanos ranqueados pelo ensemble PU com k-mers, seed, hairpin e estrutura."
+      "Total de miRNAs maduros humanos ranqueados pelo ensemble PU com k-mers, seed e composicao da sequencia madura."
     ),
     renderDefinition(
       "Com expressão",
@@ -448,7 +446,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
 <body>
   <header>
     <h1>miRNA Rankings Dashboard</h1>
-    <p>Visualização dos rankings gerados pelo Modelo 1 PU de sequência/estrutura, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
+    <p>Visualização dos rankings gerados pelo Modelo 1 PU de sequência madura, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
   </header>
 
   <main>
@@ -468,7 +466,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       <div class="grid-2">
         <div>
           <div id="scatter" class="chart"></div>
-          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte de sequência/estrutura do Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito combinam as duas fontes de evidência computacional.</p>
+          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte da sequência madura no Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito combinam as duas fontes de evidência computacional.</p>
         </div>
         <div>
           <div id="bar" class="chart"></div>
@@ -484,7 +482,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
       <div class="tabs">
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
         <button type="button" class="tab" data-view="validation">Validação em pacientes</button>
-        <button type="button" class="tab" data-view="sequence">Modelo 1 PU/estrutura</button>
+        <button type="button" class="tab" data-view="sequence">Modelo 1 PU/sequência madura</button>
       </div>
       <div class="toolbar">
         <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direção, referência ou k-mer">
@@ -559,7 +557,6 @@ function buildHtml({ sequenceRows, validationRows, integratedRows }) {
           ["prob", "Consenso PU bruto"],
           ["logit", "Logit"],
           ["features", "Features expressão"],
-          ["metodoEstrutura", "Método estrutural"],
           ["referencias", "Referências próximas"],
           ["kmers", "Features influentes"]
         ]

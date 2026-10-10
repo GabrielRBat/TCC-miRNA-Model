@@ -99,14 +99,12 @@ miRNA/
 │   ├── external/
 │   │   ├── rnacentral_mirbase_mapping.tsv
 │   │   ├── mirbase_mature.fa
-│   │   ├── mirbase_hairpin.fa
 │   │   ├── breast_cancer_mirna_positive_markers.csv
 │   │   └── breast_cancer_mirna_training_policy.csv
 │   └── processed/
 │       ├── dataset_mirna_balanceado.csv
 │       ├── dataset_mirna_balanceado_colunas_comuns.csv
 │       ├── dataset_mirna_painel_12_disponiveis.csv
-│       ├── mirna_hairpin_structure_features.csv
 │       ├── mirna_candidate_discovery_model_ranking.csv
 │       ├── mirna_patient_candidate_validation.csv
 │       └── mirna_patient_candidate_integrated_ranking.csv
@@ -136,7 +134,6 @@ miRNA/
 │   ├── train_mirna_panel_model.js
 │   ├── predict_mirna_with_model.js
 │   ├── predict_mirna_panel_model.js
-│   ├── generate_mirna_secondary_structure_features.js
 │   ├── generate_mirna_didactic_guide.js
 │   ├── train_mirna_candidate_discovery_model.js
 │   ├── validate_mirna_candidates_in_patients_model.js
@@ -1908,3 +1905,68 @@ Preferir:
 ```text
 o modelo prioriza miRNAs candidatos hipoteticamente associados ao cancer de mama
 ```
+
+## Atualizacao Vigente: Modelo 1 Somente com Sequencia Madura
+
+> Atualizado em 10/10/2026. Esta secao substitui, para o fluxo ativo, as descricoes anteriores que mencionam hairpin, estrutura secundaria, Nussinov ou RNAfold.
+
+Por decisao de escopo do TCC, o Modelo 1 foi simplificado para se concentrar nos miRNAs maduros. O precursor hairpin e as features de estrutura secundaria nao participam mais do treinamento, da selecao de hiperparametros, do ranking nem das explicacoes de features.
+
+Representacao ativa do Modelo 1:
+
+```text
+k-mers normalizados da sequencia madura
+seed nas posicoes 2 a 8
+comprimento normalizado
+fracao GC
+```
+
+O desenho estatistico foi preservado: 43 positivos curados, balanceamento por familia e peso de evidencia, ensemble Positive-Unlabeled com bagging, pontuacao out-of-bag e validacao aninhada com 5 folds externos e 3 internos por familia de seed.
+
+Resultado apos a simplificacao:
+
+```text
+Tipo: bagged_positive_unlabeled_mature_sequence_model
+Candidatos: 2613
+Candidatos enviados ao Modelo 2: 611
+Configuracao final: k234_mature_seed_l2_003_u050
+Vocabulario: 304 features
+Percentil medio por familia: 0.6055
+IC95%: 0.5187 a 0.6902
+p do nulo para percentil medio: 0.0111
+Recall@10%: 3/32 (9.38%)
+p do nulo para Recall@10%: 0.4723
+```
+
+Na versao imediatamente anterior, com hairpin e estrutura, o percentil medio era 0.6035 e o Recall@10% era 9.38%. A versao madura passou a 0.6055 e manteve o mesmo Recall@10%. A diferenca de +0.0020 no percentil e pequena e nao deve ser anunciada como ganho estatistico; a conclusao defensavel e que a simplificacao nao piorou a metrica principal observada e deixa o metodo mais alinhado ao objetivo do trabalho.
+
+Top 5 atual do Modelo 1:
+
+```text
+mir-1277-5p
+mir-2054
+mir-1277-3p
+mir-590-3p
+mir-548f-3p
+```
+
+Top 5 atual do ranking integrado:
+
+```text
+mir-32-3p
+let-7f-5p
+mir-32-5p
+mir-95-5p
+mir-200b-3p
+```
+
+Fluxo vigente:
+
+```powershell
+node scripts\train_mirna_candidate_discovery_model.js
+node scripts\validate_mirna_candidates_in_patients_model.js
+node scripts\generate_mirna_rankings_html.js
+node scripts\audit_mirna_discovery_pipeline.js
+```
+
+O FASTA de hairpins, o CSV estrutural derivado e o gerador Nussinov/RNAfold foram removidos do estado vigente. Permanecem recuperaveis pelo historico do Git, mas nao sao dependencias do pipeline acima.
