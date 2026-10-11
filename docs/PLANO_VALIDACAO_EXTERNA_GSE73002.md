@@ -62,3 +62,13 @@ Serao apresentados:
 - a elevada amostra pode tornar efeitos pequenos estatisticamente significativos, por isso AUC e tamanhos de efeito devem acompanhar o FDR.
 
 Qualquer analise que exclua os cinco marcadores de Shimomura sera apresentada como sensibilidade secundaria e nao substituira o resultado do modelo congelado.
+
+## Adendo de auditoria posterior aos resultados
+
+Este adendo foi escrito depois da analise e nao altera retrospectivamente o protocolo predefinido acima.
+
+A matriz oficial do GEO possui 4.113 amostras, enquanto o ZIP recebido possui 3.966. A conferencia identificou exatamente 147 amostras oficiais nao incluidas no ZIP: 93 `TR_PR` de doenca prostatica e 54 `TS_G` de doenca benigna da mama. O contraste primario `TS_B` versus `TS_N` continua completo e inalterado, mas a ausencia de `TS_G` impede avaliar especificidade contra doenca mamaria benigna.
+
+Os metadados das 3.966 amostras locais foram comparados com a matriz oficial, assim como 144 celulas numericas distribuidas entre amostras e miRNAs. Todos os itens conferiram; a maior diferenca absoluta foi `0,000049071`, dentro da tolerancia de arredondamento a quatro casas decimais.
+
+Tambem e necessario qualificar a palavra "independente": nao houve coincidencia literal entre IDs GSM externos e IDs internos. Como os sistemas de identificacao diferem, isso nao demonstra sozinho independencia no nivel da pessoa. O cruzamento individual exigiria uma chave comum que nao esta disponivel no repositorio. Por esse motivo, a documentacao usa preferencialmente "coorte externa distinta" e explicita essa limitacao.

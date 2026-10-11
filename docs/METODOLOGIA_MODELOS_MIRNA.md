@@ -11,7 +11,7 @@ Atualizado em 11/10/2026. O pipeline ativo trabalha exclusivamente com sequencia
   -> 611 candidatos com expressao disponivel
   -> Modelo 2: avalia associacao com doente vs saudavel
   -> ranking integrado e analise de sensibilidade
-  -> coorte externa GSE73002 TS, sem retreinamento
+  -> coorte externa de validacao em soro (GEO GSE73002), sem retreinamento
 ```
 
 O Modelo 1 usa aprendizado Positive-Unlabeled (PU): os demais miRNAs sao nao rotulados e servem somente como contraste temporario. O Modelo 2 e uma avaliacao interna da expressao. Nenhum score e probabilidade clinica ou confirmacao de biomarcador.
@@ -41,7 +41,7 @@ node scripts\validate_mirna_external_cohort.js caminho\coorte_externa.csv --scal
 
 O formato esperado esta em `docs/FORMATO_COORTE_EXTERNA.md`.
 
-A auditoria automatizada atual cobre 120 invariantes do projeto e esta aprovada sem falhas. Em revisao de reprodutibilidade, os sete artefatos ativos dos Modelos 1 e 2 foram reconstruidos de forma byte a byte identica; seis artefatos cientificos historicos tambem permaneceram identicos ao serem regenerados. Isso demonstra determinismo computacional, nao validade clinica.
+A auditoria automatizada atual cobre 141 invariantes do projeto e esta aprovada sem falhas. Em revisao de reprodutibilidade, os sete artefatos ativos dos Modelos 1 e 2 foram reconstruidos de forma byte a byte identica; a preparacao externa preservou 2/2 artefatos e a repeticao das analises externas preservou 8/8 saidas. Isso demonstra determinismo computacional, nao validade clinica.
 
 ## Modelo 1: sequencia madura
 
@@ -179,7 +179,9 @@ A analise primaria utilizou exclusivamente `TS_B` e `TS_N` do teste original:
 - 2.540 medidas de miRNA;
 - escala log2 normalizada por quantis;
 - IDs GSM originais na entrada preparada;
-- nenhum `sample_id` da coorte externa sobreposto aos IDs presentes na base interna.
+- nenhuma coincidencia literal entre `sample_id` da coorte externa e IDs da base interna. Como os namespaces diferem, isso nao prova sozinho independencia no nivel da pessoa.
+
+`GSE73002` e o acesso oficial da serie no GEO, nao um terceiro modelo. A matriz oficial possui 4.113 amostras e o ZIP recebido possui 3.966. As 147 amostras nao incluidas no ZIP correspondem a 93 casos `TR_PR` de doenca prostatica e 54 casos `TS_G` de doenca benigna da mama. O contraste primario `TS_B` versus `TS_N` permanece completo, mas nao mede especificidade contra doenca mamaria benigna. A auditoria conferiu os metadados das 3.966 amostras e 144 celulas numericas distribuidas contra a fonte oficial.
 
 Os valores log2 foram usados diretamente. Valores negativos foram preservados porque representam a escala transformada, nao expressao biologica negativa. Para cada hipotese foram calculados AUC direcional, IC95%, p unilateral, FDR, Cliff's delta, Hedges g e diferenca media na escala log2.
 
@@ -219,4 +221,8 @@ Assim, a coorte apoia um conjunto amplo de sinais concordantes e um nucleo madur
 6. No Modelo 2 interno, classe e fonte de entrada estao estruturalmente confundidas; ele pode capturar origem/processamento em vez de doenca.
 7. FDR pequeno na base atual nao elimina confundimento sistematico.
 8. A GSE73002 possui deslocamento global de intensidade e dependencia bibliografica parcial; os resultados robustos devem ser definidos pela concordancia entre analise primaria e sensibilidade.
-9. Uma segunda coorte independente e validacao laboratorial continuam desejaveis.
+9. O ZIP recebido nao inclui 54 amostras oficiais de doenca mamaria benigna, portanto nao avalia esse diagnostico diferencial.
+10. A ausencia de IDs literais repetidos nao comprova sozinha independencia individual quando as bases usam identificadores diferentes.
+11. Uma segunda coorte independente e validacao laboratorial continuam desejaveis.
+
+As metricas consolidadas estao em `reports/metricas_coorte_externa_gse73002.csv`, e a explicacao didatica especifica desta etapa esta em `docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`.

@@ -8,6 +8,9 @@ Regra predefinida: somente amostras TS_B e TS_N do teste original
 Escala: log2 normalizada por quantis conforme metadados GEO
 Transformacao adicional: nenhuma
 Linhas na matriz completa: 3966
+Linhas unicas no mapa: 3966
+GSMs unicos no mapa: 3966
+Grupos no mapa: TR_B=74; TR_N=1343; TS_B=1206; TS_N=1343
 Amostras TS selecionadas: 2549
 Cancer de mama (classe 1): 1206
 Controles sem cancer (classe 0): 1343

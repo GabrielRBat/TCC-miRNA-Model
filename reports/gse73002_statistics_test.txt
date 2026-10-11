@@ -1,0 +1,21 @@
+Testes unitarios das estatisticas da coorte externa GSE73002
+
+Resultado: APROVADO
+Testes: 15
+Falhas: 0
+
+OK	parser CSV preserva virgula e aspas escapadas
+OK	normalizacao remove prefixo humano e troca sublinhado
+OK	familia remove braco maduro
+OK	familia remove locus numerico sem confundir o nome-base
+OK	AUC perfeita crescente vale 1
+OK	AUC perfeitamente invertida vale 0
+OK	AUC com empates completos vale 0,5
+OK	IC da AUC fica contido em zero a um
+OK	p unilateral sob AUC 0,5 fica aproximadamente 0,5
+OK	p unilateral diminui quando a AUC aumenta
+OK	Benjamini-Hochberg produz valores conhecidos e monotonicos
+OK	Hedges g preserva a direcao da diferenca
+OK	IC da diferenca contem a diferenca observada
+OK	Spearman identifica ordenacao igual
+OK	Spearman identifica ordenacao inversa

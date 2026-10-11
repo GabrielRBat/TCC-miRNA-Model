@@ -1,12 +1,17 @@
 param(
-  [string]$ZipPath = (Join-Path $PSScriptRoot '..\base_mirna_mama_GSE73002.zip'),
-  [string]$OutputPath = (Join-Path $PSScriptRoot '..\data\processed\gse73002_external_validation_ts.csv'),
-  [string]$MapOutputPath = (Join-Path $PSScriptRoot '..\data\processed\gse73002_external_validation_ts_map.csv'),
-  [string]$ReportPath = (Join-Path $PSScriptRoot '..\reports\gse73002_external_preparation_report.txt')
+  [string]$ZipPath,
+  [string]$OutputPath,
+  [string]$MapOutputPath,
+  [string]$ReportPath
 )
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+if (-not $ZipPath) { $ZipPath = Join-Path $PSScriptRoot '..\base_mirna_mama_GSE73002.zip' }
+if (-not $OutputPath) { $OutputPath = Join-Path $PSScriptRoot '..\data\processed\gse73002_external_validation_ts.csv' }
+if (-not $MapOutputPath) { $MapOutputPath = Join-Path $PSScriptRoot '..\data\processed\gse73002_external_validation_ts_map.csv' }
+if (-not $ReportPath) { $ReportPath = Join-Path $PSScriptRoot '..\reports\gse73002_external_preparation_report.txt' }
 
 function Csv-Cell([string]$Value) {
   if ($Value -match '[,"\r\n]') { return '"' + $Value.Replace('"', '""') + '"' }
@@ -38,14 +43,29 @@ try {
   try { $mapRows = @($mapReader.ReadToEnd() | ConvertFrom-Csv) }
   finally { $mapReader.Dispose() }
 
+  if ($mapRows.Count -ne 3966) { throw "Quantidade inesperada de linhas no mapa: $($mapRows.Count)" }
+
   $mapBySyntheticId = @{}
+  $allGsm = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+  $cohortCounts = @{}
   foreach ($row in $mapRows) {
     if ([string]::IsNullOrWhiteSpace($row.sample_id) -or [string]::IsNullOrWhiteSpace($row.gsm)) {
       throw 'O mapa possui sample_id ou GSM vazio.'
     }
     if ($mapBySyntheticId.ContainsKey($row.sample_id)) { throw "sample_id duplicado no mapa: $($row.sample_id)" }
+    if (-not $allGsm.Add($row.gsm)) { throw "GSM duplicado no mapa: $($row.gsm)" }
     if ($row.classe -notin @('0', '1')) { throw "Classe invalida no mapa: $($row.sample_id)=$($row.classe)" }
+    if (($row.classe -eq '1' -and $row.diagnostico_geo -ne 'breast cancer') -or ($row.classe -eq '0' -and $row.diagnostico_geo -ne 'non-cancer')) {
+      throw "Diagnostico incompativel com a classe no mapa: $($row.sample_id)"
+    }
+    if ($row.titulo_geo -notmatch '^(TR|TS)_([BN]):') { throw "Titulo GEO sem grupo reconhecido: $($row.sample_id)=$($row.titulo_geo)" }
+    $group = "$($Matches[1])_$($Matches[2])"
+    $cohortCounts[$group] = 1 + [int]($cohortCounts[$group])
     $mapBySyntheticId[$row.sample_id] = $row
+  }
+  $expectedCounts = @{ TR_B = 74; TR_N = 1343; TS_B = 1206; TS_N = 1343 }
+  foreach ($group in $expectedCounts.Keys) {
+    if ([int]$cohortCounts[$group] -ne $expectedCounts[$group]) { throw "Contagem inesperada no grupo $group`: $($cohortCounts[$group])" }
   }
 
   $matrixReader = [System.IO.StreamReader]::new($matrixEntry.Open())
@@ -65,6 +85,7 @@ try {
     $missingMap = 0
     $classMismatch = 0
     $seenGsm = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $seenSyntheticId = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
     while (($line = $matrixReader.ReadLine()) -ne $null) {
       if ([string]::IsNullOrWhiteSpace($line)) { continue }
@@ -75,6 +96,7 @@ try {
       if (($line.Split(',')).Length -ne $headerCount) { throw "Quantidade de colunas invalida na linha $($matrixRows + 1)." }
 
       $syntheticId = $line.Substring(0, $firstComma)
+      if (-not $seenSyntheticId.Add($syntheticId)) { throw "sample_id duplicado na matriz: $syntheticId" }
       $classValue = $line.Substring($firstComma + 1, $secondComma - $firstComma - 1)
       if (-not $mapBySyntheticId.ContainsKey($syntheticId)) { $missingMap += 1; continue }
       $metadata = $mapBySyntheticId[$syntheticId]
@@ -105,6 +127,7 @@ try {
 finally { $zip.Dispose() }
 
 if ($missingMap -ne 0 -or $classMismatch -ne 0) { throw "Falha de integridade: sem mapa=$missingMap; classe divergente=$classMismatch" }
+if ($seenSyntheticId.Count -ne $mapBySyntheticId.Count) { throw "Mapa e matriz nao cobrem o mesmo conjunto de amostras: matriz=$($seenSyntheticId.Count); mapa=$($mapBySyntheticId.Count)" }
 if ($matrixRows -ne 3966 -or $selectedRows -ne 2549 -or $diseaseCount -ne 1206 -or $controlCount -ne 1343) {
   throw "Contagens inesperadas: matriz=$matrixRows; TS=$selectedRows; cancer=$diseaseCount; controle=$controlCount"
 }
@@ -122,6 +145,9 @@ $report = @(
   'Escala: log2 normalizada por quantis conforme metadados GEO',
   'Transformacao adicional: nenhuma',
   "Linhas na matriz completa: $matrixRows",
+  "Linhas unicas no mapa: $($mapBySyntheticId.Count)",
+  "GSMs unicos no mapa: $($allGsm.Count)",
+  "Grupos no mapa: TR_B=$($cohortCounts['TR_B']); TR_N=$($cohortCounts['TR_N']); TS_B=$($cohortCounts['TS_B']); TS_N=$($cohortCounts['TS_N'])",
   "Amostras TS selecionadas: $selectedRows",
   "Cancer de mama (classe 1): $diseaseCount",
   "Controles sem cancer (classe 0): $controlCount",

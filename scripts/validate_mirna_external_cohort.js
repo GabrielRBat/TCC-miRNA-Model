@@ -447,4 +447,23 @@ function main() {
   console.log(report);
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = {
+  parseCsvLine,
+  normalizeMirna,
+  matureFamily,
+  mean,
+  sampleVariance,
+  median,
+  hedgesG,
+  meanDifferenceConfidenceInterval,
+  computeAuc,
+  aucConfidenceInterval,
+  normalCdf,
+  aucPValue,
+  benjaminiHochberg,
+  rankValues,
+  pearson,
+  spearman,
+};

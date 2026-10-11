@@ -63,10 +63,16 @@ miRNA/
 │   ├── modelo_mirna_candidate_discovery_report.txt
 │   ├── modelo_mirna_patient_candidate_validation_report.txt
 │   ├── auditoria_pipeline_descoberta_mirna.txt
+│   ├── metricas_coorte_externa_gse73002.csv
+│   ├── gse73002_provenance_check.txt
+│   ├── gse73002_statistics_test.txt
 │   └── mirna_rankings_dashboard.html
 ├── docs/
 │   ├── METODOLOGIA_MODELOS_MIRNA.md
 │   ├── FORMATO_COORTE_EXTERNA.md
+│   ├── PLANO_VALIDACAO_EXTERNA_GSE73002.md
+│   ├── ANALISE_SENSIBILIDADE_GSE73002.md
+│   ├── EXPLICACAO_COORTE_EXTERNA_GSE73002.md
 │   ├── GUIA_DIDATICO_PIPELINE_MIRNA.html
 │   └── GUIA_DIDATICO_PIPELINE_MIRNA.pdf
 ├── scripts/
@@ -79,6 +85,10 @@ miRNA/
 │   ├── train_mirna_candidate_discovery_model.js
 │   ├── validate_mirna_candidates_in_patients_model.js
 │   ├── validate_mirna_external_cohort.js
+│   ├── prepare_gse73002_external_cohort.ps1
+│   ├── audit_gse73002_official_provenance.ps1
+│   ├── test_gse73002_statistics.js
+│   ├── generate_gse73002_cohort_deliverables.js
 │   ├── generate_mirna_rankings_html.js
 │   └── audit_mirna_discovery_pipeline.js
 ├── README.md
@@ -1332,7 +1342,7 @@ node scripts\generate_mirna_rankings_html.js
 node scripts\audit_mirna_discovery_pipeline.js
 ```
 
-A auditoria automatizada vigente executa 120 verificacoes sobre arquivos, dimensoes e classes das bases, separacao de positivos/candidatos, integridade dos rankings, metricas, mapeamento externo, hashes dos artefatos congelados, documentacao e portabilidade. O resultado atual e `120/120`, sem falhas. Alem disso, uma reconstrucao integral confirmou `7/7` artefatos ativos byte a byte identicos, e a repeticao dos geradores historicos preservou `6/6` artefatos cientificos historicos.
+A auditoria automatizada vigente executa 141 verificacoes sobre arquivos, dimensoes e classes das bases, separacao de positivos/candidatos, integridade dos rankings, metricas, mapeamento e proveniencia externos, hashes dos artefatos congelados, documentacao e portabilidade. O resultado atual e `141/141`, sem falhas. Alem disso, uma reconstrucao integral confirmou `7/7` artefatos ativos dos Modelos 1 e 2 byte a byte identicos; nesta revisao, a preparacao da coorte preservou `2/2` artefatos e a reexecucao externa preservou `8/8` saidas byte a byte.
 
 Para reproduzir a preparacao e a validacao principal da GSE73002:
 
@@ -1341,13 +1351,27 @@ powershell -ExecutionPolicy Bypass -File scripts\prepare_gse73002_external_cohor
 node --max-old-space-size=4096 scripts\validate_mirna_external_cohort.js data\processed\gse73002_external_validation_ts.csv --scale log2 --output-stem gse73002_ts_external_validation --cohort-label GSE73002_TS
 node scripts\audit_gse73002_global_shift.js data\processed\gse73002_external_validation_ts.csv
 node --max-old-space-size=4096 scripts\validate_mirna_external_cohort.js data\processed\gse73002_external_validation_ts.csv --scale log2 --sample-center mean --output-stem gse73002_ts_external_validation_centered_sensitivity --cohort-label GSE73002_TS_centered_posthoc
+node scripts\test_gse73002_statistics.js
+node scripts\generate_gse73002_cohort_deliverables.js
+```
+
+A conferencia ampliada contra a fonte oficial e opcional na reproducao local porque requer o arquivo `GSE73002_series_matrix.txt.gz`, obtido diretamente do GEO:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\audit_gse73002_official_provenance.ps1 -OfficialMatrixGz caminho\GSE73002_series_matrix.txt.gz
 ```
 
 O validador exige que a escala seja declarada (`linear` ou `log2`), rejeita sobreposicao de `sample_id` e valores invalidos, prefere miRNAs maduros exatos, marca separadamente proxies e aplica ranking/direcoes congelados. O criterio de reproducao exige direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR abaixo de 0,05. AUC direcional de pelo menos 0,60 aparece apenas como filtro descritivo de magnitude, nao como limiar clinico.
 
-### Resultado da Validacao Externa GSE73002
+### Resultado da Coorte Externa de Validacao em Soro — GEO GSE73002
+
+`GSE73002` e o identificador oficial da serie no NCBI GEO, nao o nome de um terceiro modelo. O aprendizado termina no Modelo 2; esta etapa apenas avalia o ranking congelado, sem retreinamento. A explicacao didatica completa esta em [`docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`](docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md), e todas as metricas consolidadas e interpretadas estao em [`reports/metricas_coorte_externa_gse73002.csv`](reports/metricas_coorte_externa_gse73002.csv).
 
 A analise principal usou somente a divisao de teste original (`TS`), formada por 1.206 amostras de soro de cancer de mama e 1.343 controles sem cancer. A matriz possui 2.540 miRNAs em escala log2 normalizada, e nenhuma transformacao logaritmica adicional foi aplicada.
+
+A auditoria ampliada comparou o material recebido com a matriz oficial. A fonte oficial contem 4.113 amostras; o ZIP recebido contem 3.966. As 147 amostras nao incluidas sao 93 de doenca prostatica (`TR_PR`) e 54 de doenca benigna da mama (`TS_G`). Isso nao altera o contraste principal predefinido `TS_B` versus `TS_N`, mas significa que este projeto **nao avaliou especificidade contra doenca mamaria benigna**. Todos os 3.966 metadados locais e 144 celulas numericas distribuidas foram conferidos contra a fonte oficial; a maior diferenca foi `0,000049071`, compativel com o arredondamento local a quatro casas.
+
+Nao houve coincidencia literal entre os acessos GSM externos e os IDs da base interna. Como os dois conjuntos usam identificadores de naturezas diferentes, esse teste exclui reutilizacao literal de IDs, mas nao prova sozinho independencia no nivel de pessoa. A comprovacao individual exigiria uma chave comum, inexistente no repositorio.
 
 ```text
 Candidatos congelados: 611
@@ -1379,15 +1403,18 @@ Como diagnostico pos-resultado, foi subtraida a media dos 2.540 miRNAs de cada a
 
 Como 552/611 candidatos do Modelo 2 interno usam features que nao distinguem completamente os bracos maduros, os 211 nao possuem todos o mesmo nivel de evidencia. Ao exigir simultaneamente correspondencia madura externa exata, reproducao nas duas analises e ausencia de ambiguidade interna 5p/3p, restam **22 candidatos**. Desses, **21** mantem AUC direcional de pelo menos 0,60 nas duas analises. Esse e o nucleo mais rigoroso para afirmacoes especificamente sobre miRNA maduro.
 
-Essa sensibilidade nao substitui o resultado principal. A leitura defendivel e que existe um conjunto amplo de 211 sinais concordantes e um nucleo maduro estrito de 22 candidatos, mas a magnitude global do ranking nao se transporta bem e a coorte possui confundimento sistematico. Cinco dos 43 positivos do Modelo 1 tambem vieram da publicacao ligada a GSE73002; essa dependencia indireta esta declarada no plano.
+Essa sensibilidade nao substitui o resultado principal. A leitura defendivel e que existe um conjunto amplo de 211 sinais concordantes e um nucleo maduro estrito de 22 candidatos, mas a magnitude global do ranking nao se transporta bem e a coorte possui forte deslocamento sistematico de intensidade. Cinco dos 43 positivos do Modelo 1 tambem vieram da publicacao ligada a GSE73002; essa dependencia indireta esta declarada no plano.
 
 Arquivos principais:
 
 ```text
 docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md
 docs/ANALISE_SENSIBILIDADE_GSE73002.md
+docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md
+reports/metricas_coorte_externa_gse73002.csv
 reports/gse73002_external_preparation_report.txt
 reports/gse73002_provenance_check.txt
+reports/gse73002_statistics_test.txt
 reports/gse73002_global_shift_audit.txt
 reports/gse73002_ts_external_validation_report.txt
 reports/gse73002_ts_external_validation_summary.json

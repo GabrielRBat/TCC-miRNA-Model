@@ -1,0 +1,44 @@
+secao,metrica,valor,unidade,analise,interpretacao
+identificacao,acesso_geo,GSE73002,identificador,proveniencia,Identificador oficial da serie no NCBI GEO; nao e nome de um modelo.
+proveniencia,amostras_matriz_oficial,4113,amostras,auditoria_oficial,Total observado na matriz oficial do GEO.
+proveniencia,amostras_zip_recebido,3966,amostras,auditoria_oficial,Subconjunto presente no ZIP usado pelo projeto.
+proveniencia,amostras_oficiais_nao_incluidas_zip,147,amostras,auditoria_oficial,93 de doenca prostatica no treino e 54 de doenca benigna da mama no teste.
+proveniencia,celulas_numericas_conferidas,144,celulas,auditoria_oficial,Comparacao distribuida ZIP versus matriz oficial.
+proveniencia,maior_diferenca_absoluta,0.000049071,unidade_log2,auditoria_oficial,Dentro da tolerancia de arredondamento local a quatro casas decimais.
+coorte_primaria,amostras_ts_total,2549,amostras,principal,Somente TS_B e TS_N.
+coorte_primaria,cancer_mama,1206,amostras,principal,Classe 1.
+coorte_primaria,controles_sem_cancer,1343,amostras,principal,Classe 0; doenca benigna da mama nao esta no ZIP.
+coorte_primaria,mirnas_medidos,2540,miRNAs,principal,Valores log2 normalizados por quantis.
+coorte_primaria,ids_coincidentes_base_interna,0,IDs,principal,Zero coincidencias literais; nao comprova sozinho independencia no nivel de pessoa.
+cobertura,candidatos_congelados,611,candidatos,principal,Ranking recebido sem retreino.
+cobertura,mapeamento_maduro_exato,579,candidatos,principal,Desfecho de mapeamento primario.
+cobertura,proxy_familia,23,candidatos,principal,Resultado secundario; nao somado silenciosamente aos exatos.
+cobertura,ausentes,9,candidatos,principal,Nao avaliados na coorte.
+cobertura,hipoteses_externas_distintas,588,hipoteses,principal,Quantidade usada na correcao FDR BH.
+resultado_principal,direcao_concordante,269,candidatos_mapeados,principal,Direcao externa igual a direcao interna congelada.
+resultado_principal,sinais_reproduzidos_todos_mapeamentos,267,candidatos,principal,Inclui exatos e proxies.
+resultado_principal,replicacoes_maduras_exatas,255,candidatos,principal,"Direcao concordante, IC95% da AUC acima de 0,5 e FDR abaixo de 0,05."
+resultado_principal,replicacoes_exatas_auc_ge_060,254,candidatos,principal,Filtro descritivo de magnitude; nao e limiar clinico.
+resultado_principal,replicacoes_exatas_sem_ambiguidade_interna,27,candidatos,principal,Exclui candidatos cuja evidência interna compartilhava feature entre bracos.
+resultado_principal,top_10_reproduzidos,7,de_10_encontrados,principal,Somente correspondencia madura exata.
+resultado_principal,top_20_reproduzidos,13,de_19_encontrados,principal,Somente correspondencia madura exata.
+resultado_principal,top_50_reproduzidos,34,de_47_encontrados,principal,Somente correspondencia madura exata.
+resultado_principal,top_100_reproduzidos,60,de_96_encontrados,principal,Somente correspondencia madura exata.
+resultado_principal,spearman_score_interno_auc_externa,0.08521356551036564,rho,principal,Associacao global baixa entre ordem interna e magnitude externa.
+deslocamento_global,auc_media_global_amostra,0.971274182574346,AUC,auditoria,A media dos 2.540 miRNAs separa fortemente as classes.
+deslocamento_global,mirnas_media_maior_cancer,2430,de_2540,auditoria,Predominio quase universal da mesma direcao.
+deslocamento_global,proporcao_media_maior_cancer,0.9566929133858267,proporcao,auditoria,Motivou a sensibilidade centrada pos-hoc.
+sensibilidade_centrada,replicacoes_maduras_exatas,271,candidatos,pos_hoc,Valores log2 menos a media de cada amostra.
+sensibilidade_centrada,replicacoes_exatas_auc_ge_060,258,candidatos,pos_hoc,Filtro descritivo de magnitude.
+sensibilidade_centrada,replicacoes_exatas_sem_ambiguidade_interna,28,candidatos,pos_hoc,Resultado centrado sem ambiguidade interna de braco.
+sensibilidade_centrada,spearman_score_interno_auc_externa,-0.005528264509233027,rho,pos_hoc,A ordenacao completa nao acompanha a magnitude centrada.
+convergencia,replicacoes_exatas_nas_duas_analises,211,candidatos,intersecao,Conjunto amplo concordante principal mais centrada.
+convergencia,replicacoes_exatas_auc_ge_060_nas_duas,203,candidatos,intersecao,Intersecao ampla com magnitude descritiva.
+convergencia,nucleo_maduro_estrito,22,candidatos,intersecao,Sem ambiguidade interna de braco nas duas analises.
+convergencia,nucleo_estrito_auc_ge_060_nas_duas,21,candidatos,intersecao,Subconjunto mais rigoroso com magnitude descritiva.
+convergencia,top_20_reproduzidos_nas_duas,13,candidatos,intersecao,Concordancia no topo do ranking congelado.
+criterios,minimo_amostras_por_classe,10,amostras,principal,"Piso tecnico, nao calculo de poder."
+criterios,limite_inferior_ic_auc,>0.5,AUC,principal,Criterio de reproducao estatistica.
+criterios,fdr_bh,<0.05,FDR,principal,Criterio de reproducao estatistica.
+criterios,auc_magnitude_descritiva,>=0.6,AUC,principal,Nao representa utilidade clinica.
+dependencia,positivos_modelo1_ligados_gse73002,5,de_43_positivos,limitacao,Dependencia bibliografica indireta; os cinco nao sao candidatos testados.

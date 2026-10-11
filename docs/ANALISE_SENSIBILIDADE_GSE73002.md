@@ -29,3 +29,5 @@ A correlacao de Spearman entre o score integrado interno e a AUC externa foi bai
 ## Interpretacao cientifica
 
 O conjunto de 211 replicacoes concordantes e mais conservador que apresentar isoladamente as 255 ou 271 replicacoes. Para conclusoes especificamente sobre o braco maduro, o conjunto de 22 sem ambiguidade interna e a referencia mais rigorosa. Ambos devem ser descritos como evidencia computacional externa, nao como confirmacao clinica de biomarcadores. A centralizacao foi decidida apos observar o deslocamento global e deve permanecer identificada como analise de sensibilidade pos-hoc.
+
+Esta etapa e uma avaliacao externa do ranking, nao um terceiro modelo. A matriz recebida tambem nao inclui as 54 amostras de doenca mamaria benigna existentes na fonte oficial; portanto, nem a analise primaria nem esta sensibilidade testam especificidade contra essa condicao. As metricas consolidadas e a explicacao completa estao em `reports/metricas_coorte_externa_gse73002.csv` e `docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`.

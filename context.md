@@ -2022,7 +2022,7 @@ Ele exige `sample_id` e `classe`, rejeita IDs presentes na base interna e valore
 
 Foi recebida a base GSE73002 com uma matriz de 3.966 amostras por 2.540 miRNAs e um mapa separado de rastreabilidade GSM. A auditoria encontrou 1.280 casos de cancer de mama, 2.686 controles sem cancer, nenhuma linha ou ID duplicado, nenhuma celula vazia e correspondencia integral entre matriz e mapa. A matriz esta em escala log2 e contem valores negativos legitimos.
 
-O desfecho principal foi predefinido antes do calculo no documento `docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md`. O estado anterior ao resultado foi registrado no commit `e1910ac` e na tag `pre-resultados-gse73002-v1`. A analise principal usou somente a divisao TS original: 1.206 casos e 1.343 controles, totalizando 2.549 amostras de soro. Os IDs sinteticos foram substituidos pelos acessos GSM e nenhuma amostra sobrepos os IDs da base interna.
+O desfecho principal foi predefinido antes do calculo no documento `docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md`. O estado anterior ao resultado foi registrado no commit `e1910ac` e na tag `pre-resultados-gse73002-v1`. A analise principal usou somente a divisao TS original: 1.206 casos e 1.343 controles, totalizando 2.549 amostras de soro. Os IDs sinteticos foram substituidos pelos acessos GSM e nao houve coincidencia literal com os IDs da base interna. Como os namespaces sao diferentes, isso nao prova sozinho independencia individual.
 
 Cobertura e resultado principal:
 
@@ -2047,14 +2047,24 @@ Duas passagens adicionais por todo o repositorio corrigiram descricoes historica
 
 A explicacao completa foi consolidada em `docs/LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md`. A verificacao mostrou 1.339/1.339 controles com IDs `GTEX-*` e 1.339/1.339 doentes com UUIDs terminados em `.mirbase21.mirnas.quantification` ou `.mirnaseq.mirnas.quantification`. Nao ha manifesto clinico versionado que permita afirmar, amostra por amostra, que esses UUIDs pertencem ao projeto TCGA-BRCA. A descricao rigorosa usa `CSV original de doentes com IDs UUID de quantificacao`.
 
-A auditoria automatizada foi ampliada para 120 verificacoes e esta aprovada sem falhas. Ela agora confere tambem dimensoes e classes das bases, IDs, valores de expressao, lista de 43 positivos, universo FASTA, dependencia bibliografica parcial da GSE73002, mapa TS, hashes congelados, nucleo estrito, documentacao e ausencia de caminhos absolutos de usuario.
+A auditoria automatizada foi ampliada inicialmente para 120 verificacoes e, na revisao final da coorte, para 141; esta aprovada sem falhas. Ela confere dimensoes e classes das bases, IDs, valores de expressao, lista de 43 positivos, universo FASTA, dependencia bibliografica parcial da GSE73002, mapa TS, proveniencia oficial, metricas consolidadas, hashes congelados, nucleo estrito, documentacao e ausencia de caminhos absolutos de usuario.
 
 Reprodutibilidade confirmada:
 
 ```text
 Modelos 1 e 2: 7/7 artefatos reconstruidos byte a byte identicos
 Geradores historicos: 6/6 artefatos cientificos preservados
-Auditoria final: 120/120 verificacoes aprovadas
+Auditoria final: 141/141 verificacoes aprovadas
 ```
 
 Os relatorios passaram a registrar caminhos relativos ao projeto. Essa melhoria de portabilidade e o determinismo dos artefatos nao removem as limitacoes biologicas ou de coorte descritas acima.
+
+## Auditoria Final da Coorte Externa e Entregaveis (11/10/2026)
+
+`GSE73002` foi padronizado na apresentacao como **coorte externa de validacao em soro — GEO GSE73002**. Ele e o identificador oficial da serie, nao um terceiro modelo: o aprendizado termina no Modelo 2 e a coorte apenas avalia o ranking congelado.
+
+A proveniencia foi ampliada para a matriz oficial completa. Ela possui 4.113 amostras, enquanto o ZIP recebido possui 3.966. As 147 amostras oficiais nao incluidas no ZIP sao 93 `TR_PR` de doenca prostatica e 54 `TS_G` de doenca benigna da mama. O contraste primario `TS_B` versus `TS_N` esta completo e permaneceu inalterado; contudo, a pesquisa nao testou especificidade contra doenca mamaria benigna. Foram conferidos todos os 3.966 metadados locais e 144 valores numericos distribuidos; a maior diferenca absoluta foi 0,000049071, compativel com arredondamento a quatro casas.
+
+A preparacao foi repetida e preservou byte a byte a matriz TS e o mapa GSM. As analises primaria, de deslocamento global e centrada foram executadas novamente; os oito artefatos resultantes mantiveram exatamente os mesmos hashes. Quinze testes unitarios independentes cobriram o parser CSV, normalizacao de nomes, mapeamento, AUC com empates e direcoes, IC, p unilateral, FDR BH, Hedges g, IC da diferenca media e Spearman.
+
+Foram adicionados os entregaveis `reports/metricas_coorte_externa_gse73002.csv` e `docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`, ambos gerados por `scripts/generate_gse73002_cohort_deliverables.js`. O primeiro consolida valores, unidade, tipo de analise e interpretacao; o segundo explica fluxo, proveniencia, criterios, resultados, hierarquia de evidencia, limitacoes e afirmacoes permitidas.

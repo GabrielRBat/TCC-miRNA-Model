@@ -32,6 +32,13 @@ const FILES = {
   didacticGuide: fromRoot("docs", "GUIA_DIDATICO_PIPELINE_MIRNA.html"),
   dashboard: fromRoot("reports", "mirna_rankings_dashboard.html"),
   externalPreparationReport: fromRoot("reports", "gse73002_external_preparation_report.txt"),
+  externalProvenanceReport: fromRoot("reports", "gse73002_provenance_check.txt"),
+  externalStatisticsTestReport: fromRoot("reports", "gse73002_statistics_test.txt"),
+  externalMetrics: fromRoot("reports", "metricas_coorte_externa_gse73002.csv"),
+  externalExplanation: fromRoot("docs", "EXPLICACAO_COORTE_EXTERNA_GSE73002.md"),
+  externalDeliverablesGenerator: fromRoot("scripts", "generate_gse73002_cohort_deliverables.js"),
+  externalStatisticsTest: fromRoot("scripts", "test_gse73002_statistics.js"),
+  externalProvenanceAudit: fromRoot("scripts", "audit_gse73002_official_provenance.ps1"),
   legacyBaselineReport: fromRoot("reports", "modelo_mirna_metricas.txt"),
   legacyPanelReport: fromRoot("reports", "modelo_mirna_painel_metricas.txt"),
   legacySequenceReport: fromRoot("reports", "mirna_sequence_candidate_discovery_report.txt"),
@@ -204,6 +211,9 @@ function main() {
   const primarySummary = JSON.parse(fs.readFileSync(FILES.externalPrimarySummary, "utf8"));
   const centeredSummary = JSON.parse(fs.readFileSync(FILES.externalCenteredSummary, "utf8"));
   const globalShift = JSON.parse(fs.readFileSync(FILES.globalShift, "utf8"));
+  const externalMetrics = readCsv(FILES.externalMetrics);
+  const externalMetricByKey = new Map(externalMetrics.map((row) => [`${row.metrica}|${row.analise}`, row]));
+  const externalMetricValue = (name, analysis) => externalMetricByKey.get(`${name}|${analysis}`)?.valor;
   const primaryExact = new Set(externalPrimary.filter((row) => row.replicacao_madura_exata === "sim").map((row) => row.mirna));
   const centeredExact = new Set(externalCentered.filter((row) => row.replicacao_madura_exata === "sim").map((row) => row.mirna));
   const replicatedBoth = [...primaryExact].filter((mirna) => centeredExact.has(mirna));
@@ -226,6 +236,10 @@ function main() {
   check(unambiguousPracticalBoth.length === 21, "nucleo maduro estrito com AUC >= 0,60 nas duas analises confere", unambiguousPracticalBoth.length);
   check(globalShift.globalSampleMean?.aucCancerHigher > 0.9 && globalShift.featureMeanDirection?.proportionHigherInCancer > 0.9, "auditoria detecta e documenta forte deslocamento global", `${globalShift.globalSampleMean?.aucCancerHigher}/${globalShift.featureMeanDirection?.proportionHigherInCancer}`);
   check(Math.abs(primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact) < 0.1, "baixa correlacao ranking interno versus efeito externo permanece explicitamente quantificada", primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact);
+  check(Number(externalMetricValue("amostras_matriz_oficial", "auditoria_oficial")) === 4113 && Number(externalMetricValue("amostras_zip_recebido", "auditoria_oficial")) === 3966 && Number(externalMetricValue("amostras_oficiais_nao_incluidas_zip", "auditoria_oficial")) === 147, "CSV consolidado registra universo oficial, ZIP e exclusoes corretamente");
+  check(Number(externalMetricValue("replicacoes_maduras_exatas", "principal")) === 255 && Number(externalMetricValue("replicacoes_exatas_nas_duas_analises", "intersecao")) === 211 && Number(externalMetricValue("nucleo_maduro_estrito", "intersecao")) === 22, "CSV consolidado reproduz a hierarquia 255/211/22");
+  check(Number(externalMetricValue("auc_media_global_amostra", "auditoria")) === globalShift.globalSampleMean?.aucCancerHigher, "CSV consolidado preserva AUC do deslocamento global", externalMetricValue("auc_media_global_amostra", "auditoria"));
+  check(new Set(externalMetrics.map((row) => `${row.metrica}|${row.analise}`)).size === externalMetrics.length, "CSV consolidado nao possui chaves metrica/analise duplicadas", externalMetrics.length);
 
   const externalMap = readCsv(FILES.externalMap);
   const externalMapCancer = externalMap.filter((row) => Number(row.classe) === 1 && row.diagnostico_geo === "breast cancer");
@@ -245,13 +259,20 @@ function main() {
   const projectContext = fs.readFileSync(FILES.projectContext, "utf8");
   const internalConfoundingDoc = fs.readFileSync(FILES.internalConfoundingDoc, "utf8");
   const externalPlan = fs.readFileSync(FILES.externalPlan, "utf8");
+  const externalExplanation = fs.readFileSync(FILES.externalExplanation, "utf8");
+  const externalProvenanceReport = fs.readFileSync(FILES.externalProvenanceReport, "utf8");
+  const externalStatisticsTestReport = fs.readFileSync(FILES.externalStatisticsTestReport, "utf8");
+  const externalPreparationReport = fs.readFileSync(FILES.externalPreparationReport, "utf8");
   const didacticGuide = fs.readFileSync(FILES.didacticGuide, "utf8");
   const dashboard = fs.readFileSync(FILES.dashboard, "utf8");
   const portableTextArtifacts = [
     readme,
     projectContext,
     internalConfoundingDoc,
-    fs.readFileSync(FILES.externalPreparationReport, "utf8"),
+    externalPreparationReport,
+    externalProvenanceReport,
+    externalStatisticsTestReport,
+    externalExplanation,
     fs.readFileSync(FILES.legacyBaselineReport, "utf8"),
     fs.readFileSync(FILES.legacyPanelReport, "utf8"),
     fs.readFileSync(FILES.legacySequenceReport, "utf8"),
@@ -268,6 +289,17 @@ function main() {
   check(/núcleo maduro estrito possui 22|nucleo maduro estrito de 22/i.test(`${didacticGuide}\n${methodology}`), "guia e metodologia destacam o nucleo maduro estrito de 22");
   check((dashboard.match(/\"nucleo_estrito\":\"sim\"/g) ?? []).length === 44, "dashboard marca os 22 candidatos estritos nas duas abas", (dashboard.match(/\"nucleo_estrito\":\"sim\"/g) ?? []).length);
   check(/AUC 0[,.]971[\s\S]*95[,.]67%/i.test(`${readme}\n${didacticGuide}`), "documentacao exibe o alerta quantitativo de deslocamento global");
+  check(/Amostras na matriz oficial:\s*4113/i.test(externalProvenanceReport) && /ZIP e conferidas:\s*3966\/3966/i.test(externalProvenanceReport), "proveniencia ampliada confere 4.113 amostras oficiais e 3.966 locais");
+  check(/nao incluidas no ZIP:\s*147[\s\S]*TR_PR\/prostate disease=93[\s\S]*TS_G\/benign breast disease=54/i.test(externalProvenanceReport), "proveniencia quantifica as 147 amostras nao incluidas por grupo");
+  check(/Celulas numericas conferidas:\s*144\/144/i.test(externalProvenanceReport) && Number((externalProvenanceReport.match(/Maior diferenca absoluta:\s*([0-9.]+)/i) ?? [])[1]) <= 0.000051, "proveniencia numerica oficial respeita a tolerancia de arredondamento");
+  check(/Resultado:\s*APROVADO[\s\S]*Testes:\s*15[\s\S]*Falhas:\s*0/i.test(externalStatisticsTestReport), "suite estatistica externa aprova 15/15 testes");
+  check(/Linhas na matriz completa:\s*3966[\s\S]*Linhas unicas no mapa:\s*3966[\s\S]*GSMs unicos no mapa:\s*3966/i.test(externalPreparationReport), "preparacao registra cobertura e unicidade integrais da matriz e do mapa");
+  check(/TR_B=74; TR_N=1343; TS_B=1206; TS_N=1343/i.test(externalPreparationReport), "preparacao valida todos os grupos esperados do ZIP");
+  check(/nao e um terceiro modelo/i.test(externalExplanation) && /nao testa especificidade contra doenca benigna da mama/i.test(externalExplanation), "explicacao separa coorte de modelo e delimita o diagnostico nao testado");
+  check(/nao e, sozinho, prova documental de independencia no nivel da pessoa/i.test(externalExplanation), "explicacao qualifica corretamente a checagem de sobreposicao de IDs");
+  check(/EXPLICACAO_COORTE_EXTERNA_GSE73002\.md/i.test(readme) && /metricas_coorte_externa_gse73002\.csv/i.test(readme), "README referencia os dois entregaveis finais da coorte");
+  const mentionsExcludedBenignSamples = (content) => /54[\s\S]{0,80}doen.a (?:mam.ria benigna|benigna da mama)/i.test(content);
+  check([readme, methodology, didacticGuide].every(mentionsExcludedBenignSamples), "limitacao de doenca mamaria benigna aparece nos documentos principais");
   check(portableTextArtifacts.every((content) => !/[A-Z]:\\Users\\/i.test(content)), "relatorios e instrucoes versionados nao dependem de caminho absoluto de usuario");
 
   finish();

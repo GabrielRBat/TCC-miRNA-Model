@@ -1,16 +1,46 @@
-Conferencia de proveniencia da matriz GSE73002
+Conferencia ampliada de proveniencia da matriz GSE73002
 
 Fonte oficial: NCBI GEO GSE73002
 Arquivo oficial: GSE73002_series_matrix.txt.gz
 SHA256 do arquivo oficial: 822C58065E22A5F463D6EFC50ABC05B8C8E8D977365C38744C9B6BBE0D4AD483
 SHA256 do ZIP recebido: E5E57EA6E1326FA572A4F67F8A6880BBEEFB0E7D89791CB081FD2341830EE851
 
-Conferencia pontual rastreavel:
-- amostra sintetica no ZIP: PACIENTE_0001
-- acesso original no mapa: GSM1877618
-- miRNA no ZIP: hsa-let-7a-5p
-- identificador oficial: MIMAT0000062
-- valor arredondado no ZIP: 4.626
-- valor na matriz oficial: 4.626041376
+Amostras na matriz oficial: 4113
+Amostras presentes no ZIP e conferidas: 3966/3966
+Amostras oficiais nao incluidas no ZIP: 147 (TR_PR/prostate disease=93; TS_G/benign breast disease=54)
+Campos conferidos: GSM, titulo GEO, diagnostico e tecido=serum
+Amostras distribuidas selecionadas para conferencia numerica: 12
+miRNAs distribuidos selecionados para conferencia numerica: 12
+Celulas numericas conferidas: 144/144
+Maior diferenca absoluta: 0.000049071
+Tolerancia: 0,000051, compativel com arredondamento local a quatro casas decimais
 
-Conclusao: o valor do ZIP coincide com a matriz processada oficial, apenas arredondado. O deslocamento global observado nao foi criado pela transposicao local; ele esta presente na matriz oficial e deve ser tratado como caracteristica/limitacao de coorte e processamento.
+Amostras conferidas:
+- PACIENTE_0001 -> GSM1877618
+- PACIENTE_0002 -> GSM1877619
+- PACIENTE_0074 -> GSM1877691
+- PACIENTE_0075 -> GSM1880430
+- PACIENTE_1206 -> GSM1877543
+- PACIENTE_1207 -> GSM1877544
+- PACIENTE_1280 -> GSM1877617
+- CONTROLE_0001 -> GSM1877694
+- CONTROLE_1269 -> GSM1880236
+- CONTROLE_1270 -> GSM1880237
+- CONTROLE_2685 -> GSM1880375
+- CONTROLE_2686 -> GSM1880377
+
+miRNAs conferidos:
+- hsa-let-7a-5p -> MIMAT0000062
+- hsa-let-7b-5p -> MIMAT0000063
+- hsa-miR-17-5p -> MIMAT0000070
+- hsa-miR-135a-5p -> MIMAT0000428
+- hsa-miR-497-5p -> MIMAT0002820
+- hsa-miR-192-3p -> MIMAT0004543
+- hsa-miR-1297 -> MIMAT0005886
+- hsa-miR-4300 -> MIMAT0016853
+- hsa-miR-4455 -> MIMAT0018977
+- hsa-miR-5193 -> MIMAT0021124
+- hsa-miR-6810-5p -> MIMAT0027520
+- hsa-miR-7978 -> MIMAT0031181
+
+Conclusao: os metadados completos e a amostra numerica distribuida do ZIP coincidem com a matriz processada oficial dentro da tolerancia de arredondamento. O deslocamento global observado nao foi criado pela transposicao local.
