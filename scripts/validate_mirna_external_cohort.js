@@ -178,7 +178,7 @@ function sha256File(filePath) {
 function parseArguments() {
   const args = process.argv.slice(2);
   if (!args.length || args[0].startsWith("--")) {
-    throw new Error("Uso: node scripts/validate_mirna_external_cohort.js coorte.csv --scale log2|linear [--output-stem nome] [--cohort-label rotulo]");
+    throw new Error("Uso: node scripts/validate_mirna_external_cohort.js coorte.csv --scale log2|linear [--sample-center none|mean] [--output-stem nome] [--cohort-label rotulo]");
   }
   const options = { input: path.resolve(args[0]), scale: null, sampleCenter: "none", outputStem: "mirna_external_cohort_validation", cohortLabel: "coorte_externa" };
   for (let index = 1; index < args.length; index += 1) {
@@ -195,6 +195,7 @@ function parseArguments() {
   }
   if (!options.scale || !["linear", "log2"].includes(options.scale)) throw new Error("Informe explicitamente --scale linear ou --scale log2");
   if (!["none", "mean"].includes(options.sampleCenter)) throw new Error("--sample-center aceita none ou mean");
+  if (options.scale === "linear" && options.sampleCenter !== "none") throw new Error("--sample-center mean exige --scale log2; centralize valores apenas depois de uma transformacao logaritmica apropriada");
   if (!/^[a-z0-9_-]+$/i.test(options.outputStem)) throw new Error("--output-stem aceita apenas letras, numeros, _ e -");
   return options;
 }

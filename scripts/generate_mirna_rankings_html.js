@@ -179,6 +179,24 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
   const primaryReplicated = new Set(externalRows.filter((row) => row.replicado === "sim").map((row) => row.mirna));
   const centeredReplicated = new Set(centeredRows.filter((row) => row.replicado === "sim").map((row) => row.mirna));
   const robustReplicated = [...primaryReplicated].filter((mirna) => centeredReplicated.has(mirna)).length;
+  const primaryUnambiguous = new Set(externalRows.filter((row) => row.replicado === "sim" && row.ambiguidade === "nao").map((row) => row.mirna));
+  const centeredUnambiguous = new Set(centeredRows.filter((row) => row.replicado === "sim" && row.ambiguidade === "nao").map((row) => row.mirna));
+  const robustUnambiguous = [...primaryUnambiguous].filter((mirna) => centeredUnambiguous.has(mirna)).length;
+  const robustUnambiguousPractical = externalRows.filter((row) => row.replicado === "sim" && row.ambiguidade === "nao" && row.auc_060 === "sim" && centeredRows.some((centered) => centered.mirna === row.mirna && centered.replicado === "sim" && centered.ambiguidade === "nao" && centered.auc_060 === "sim")).length;
+  const primaryByMirna = new Map(externalRows.map((row) => [row.mirna, row]));
+  const centeredByMirna = new Map(centeredRows.map((row) => [row.mirna, row]));
+  for (const row of externalRows) {
+    const centered = centeredByMirna.get(row.mirna);
+    row.robusto_duas = row.replicado === "sim" && centered?.replicado === "sim" ? "sim" : "nao";
+    row.nucleo_estrito = row.robusto_duas === "sim" && row.ambiguidade === "nao" && centered?.ambiguidade === "nao" ? "sim" : "nao";
+    row.auc_060_duas = row.auc_060 === "sim" && centered?.auc_060 === "sim" ? "sim" : "nao";
+  }
+  for (const row of centeredRows) {
+    const primary = primaryByMirna.get(row.mirna);
+    row.robusto_duas = row.replicado === "sim" && primary?.replicado === "sim" ? "sim" : "nao";
+    row.nucleo_estrito = row.robusto_duas === "sim" && row.ambiguidade === "nao" && primary?.ambiguidade === "nao" ? "sim" : "nao";
+    row.auc_060_duas = row.auc_060 === "sim" && primary?.auc_060 === "sim" ? "sim" : "nao";
+  }
 
   const dataPayload = JSON.stringify(
     {
@@ -206,6 +224,8 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
     renderMetric("Coorte externa", externalSummary.samples.total, `${externalSummary.samples.breastCancer} casos + ${externalSummary.samples.nonCancerControls} controles`),
     renderMetric("Replicados externos", externalSummary.replication.statisticallyReplicatedMatureExact, "mapeamento maduro exato; analise primaria"),
     renderMetric("Robustos nas 2 analises", robustReplicated, "replicados antes e depois da centralizacao"),
+    renderMetric("Nucleo maduro estrito", robustUnambiguous, "sem ambiguidade interna de braco"),
+    renderMetric("Nucleo estrito AUC >= 0,60", robustUnambiguousPractical, "magnitude mantida nas 2 analises"),
     renderMetric("AUC do sinal global", round(globalShift.globalSampleMean.aucCancerHigher), "alerta de deslocamento de intensidade"),
   ].join("\n");
 
@@ -252,7 +272,11 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
     ),
     renderDefinition(
       "Robustos nas 2 analises",
-      "Intersecao entre a analise primaria em escala log2 e a sensibilidade pos-hoc com centralizacao pela media de cada amostra."
+      "Intersecao entre a analise primaria e a sensibilidade pos-hoc. Inclui candidatos cujo Modelo 2 interno usou uma feature compartilhada entre bracos."
+    ),
+    renderDefinition(
+      "Nucleo maduro estrito",
+      "Subconjunto reproduzido nas duas analises com correspondencia madura externa exata e sem ambiguidade 5p/3p na evidencia interna. E a evidencia mais rigorosa para o foco em miRNA maduro."
     ),
     renderDefinition(
       "AUC do sinal global",
@@ -581,7 +605,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
       O Modelo 2 compara expressão em doentes contra saudáveis. Quando o dataset tem uma feature em nível de precursor/família, candidatos maduros 5p e 3p podem compartilhar a mesma métrica de validação. Nesses casos, a evidência é da feature disponível no dataset, não uma distinção experimental entre braços maduros.
     </section>
     <section class="note">
-      <strong>Alerta da validacao externa:</strong> a media global das 2.540 features separa casos e controles com AUC ${round(globalShift.globalSampleMean.aucCancerHigher)} e ${round(globalShift.featureMeanDirection.proportionHigherInCancer * 100, 2)}% das features aumentam em casos. Por isso, os ${externalSummary.replication.statisticallyReplicatedMatureExact} sinais primarios nao devem ser chamados isoladamente de biomarcadores especificos. A analise centrada e pos-hoc; a intersecao de ${robustReplicated} candidatos entre as duas analises e a evidencia mais conservadora. A concordancia entre o score interno e a AUC externa foi baixa (rho = ${round(externalSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}; centrada = ${round(centeredSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}).
+      <strong>Alerta da validacao externa:</strong> a media global das 2.540 features separa casos e controles com AUC ${round(globalShift.globalSampleMean.aucCancerHigher)} e ${round(globalShift.featureMeanDirection.proportionHigherInCancer * 100, 2)}% das features aumentam em casos. Por isso, os ${externalSummary.replication.statisticallyReplicatedMatureExact} sinais primarios nao devem ser chamados isoladamente de biomarcadores especificos. A analise centrada e pos-hoc. Dos ${robustReplicated} candidatos reproduzidos nas duas analises, ${robustUnambiguous} tambem nao possuem ambiguidade interna de braco e formam o nucleo maduro mais rigoroso (${robustUnambiguousPractical} com AUC >= 0,60 nas duas). A concordancia entre o score interno e a AUC externa foi baixa (rho = ${round(externalSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}; centrada = ${round(centeredSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}).
     </section>
   </main>
 
@@ -661,7 +685,8 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
           ["auc", "AUC direcional"], ["auc_ic_inf", "AUC IC95% inf."], ["auc_ic_sup", "AUC IC95% sup."],
           ["fdr", "FDR"], ["hedges_g", "Hedges g"], ["cliffs_delta", "Cliff's delta"],
           ["log2fc", "log2FC"], ["resolucao", "Mapeamento"], ["concordante", "Direcao concordante"],
-          ["replicado", "Replicado exato"], ["auc_060", "AUC >= 0,60"], ["features", "Features externas"]
+          ["replicado", "Replicado exato"], ["robusto_duas", "Robusto nas 2"], ["nucleo_estrito", "Nucleo maduro estrito"],
+          ["auc_060_duas", "AUC >= 0,60 nas 2"], ["features", "Features externas"]
         ]
       },
       centered: {
@@ -672,7 +697,8 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
           ["fdr", "FDR"], ["hedges_g", "Hedges g"], ["cliffs_delta", "Cliff's delta"],
           ["diferenca_media", "Diferenca media centrada"], ["resolucao", "Mapeamento"],
           ["concordante", "Direcao concordante"], ["replicado", "Replicado exato"],
-          ["auc_060", "AUC >= 0,60"], ["features", "Features externas"]
+          ["robusto_duas", "Robusto nas 2"], ["nucleo_estrito", "Nucleo maduro estrito"],
+          ["auc_060_duas", "AUC >= 0,60 nas 2"], ["features", "Features externas"]
         ]
       }
     };

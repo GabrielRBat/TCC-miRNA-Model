@@ -1349,7 +1349,7 @@ Top 100: 60/96
 Spearman score integrado interno vs AUC externa: 0,0852
 ```
 
-Os quatro primeiros candidatos integrados `mir-32-3p`, `let-7f-5p`, `mir-32-5p` e `mir-200b-3p` reproduziram com AUC direcional aproximada entre 0,958 e 0,965. `mir-95-5p`, quarto no ranking original, nao reproduziu a direcao esperada.
+Quatro dos cinco primeiros candidatos integrados reproduziram: `mir-32-3p`, `let-7f-5p`, `mir-32-5p` e `mir-200b-3p`, nos ranks internos 1, 2, 3 e 5, com AUC direcional aproximada entre 0,958 e 0,965. `mir-95-5p`, rank 4, nao reproduziu a direcao esperada.
 
 #### Auditoria de deslocamento global
 
@@ -1361,7 +1361,9 @@ A conferencia com a matriz processada oficial mostrou que `PACIENTE_0001 / hsa-l
 
 Como diagnostico pos-resultado, foi subtraida a media dos 2.540 miRNAs de cada amostra e o mesmo ranking foi reaplicado sem retreino. Houve 271 replicacoes maduras exatas; 211 coincidiram com as 255 do resultado principal e 203 mantiveram AUC de pelo menos 0,60 nas duas analises. Nos 20 primeiros do ranking, os mesmos 13 sinais permaneceram robustos.
 
-Essa sensibilidade nao substitui o resultado principal. A leitura defendivel e que existe um nucleo de candidatos robustos, especialmente no topo, mas a magnitude global do ranking nao se transporta bem e a coorte possui confundimento sistematico. Cinco dos 43 positivos do Modelo 1 tambem vieram da publicacao ligada a GSE73002; essa dependencia indireta esta declarada no plano.
+Como 552/611 candidatos do Modelo 2 interno usam features que nao distinguem completamente os bracos maduros, os 211 nao possuem todos o mesmo nivel de evidencia. Ao exigir simultaneamente correspondencia madura externa exata, reproducao nas duas analises e ausencia de ambiguidade interna 5p/3p, restam **22 candidatos**. Desses, **21** mantem AUC direcional de pelo menos 0,60 nas duas analises. Esse e o nucleo mais rigoroso para afirmacoes especificamente sobre miRNA maduro.
+
+Essa sensibilidade nao substitui o resultado principal. A leitura defendivel e que existe um conjunto amplo de 211 sinais concordantes e um nucleo maduro estrito de 22 candidatos, mas a magnitude global do ranking nao se transporta bem e a coorte possui confundimento sistematico. Cinco dos 43 positivos do Modelo 1 tambem vieram da publicacao ligada a GSE73002; essa dependencia indireta esta declarada no plano.
 
 Arquivos principais:
 

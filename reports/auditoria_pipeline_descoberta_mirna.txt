@@ -1,7 +1,7 @@
 Auditoria automatizada do pipeline de descoberta de miRNA
 
 Resultado: APROVADO
-Verificacoes: 67
+Verificacoes: 70
 Falhas: 0
 
 OK	arquivo obrigatorio existe: models\modelo_mirna_candidate_discovery.json
@@ -69,5 +69,8 @@ OK	replicacoes maduras exatas da analise primaria conferem	255
 OK	sensibilidade centrada por amostra confere	271
 OK	intersecao conservadora de replicacoes nas duas analises confere	211
 OK	intersecao madura exata com AUC >= 0,60 nas duas analises confere	203
+OK	replicacoes exatas sem ambiguidade interna de braco conferem	27/28
+OK	nucleo maduro estrito sem ambiguidade de braco nas duas analises confere	22
+OK	nucleo maduro estrito com AUC >= 0,60 nas duas analises confere	21
 OK	auditoria detecta e documenta forte deslocamento global	0.971274182574346/0.9566929133858267
 OK	baixa correlacao ranking interno versus efeito externo permanece explicitamente quantificada	0.08521356551036564

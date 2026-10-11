@@ -192,10 +192,12 @@ Uma sensibilidade pos-resultado subtraiu de cada valor log2 a media global da pr
 - 271 miRNAs maduros exatos atenderam ao criterio estatistico;
 - 211 coincidiram com o resultado primario;
 - 203 mantiveram AUC de pelo menos 0,60 nas duas analises;
+- 22 reproduziram nas duas analises sem ambiguidade interna de braco;
+- 21 desses 22 mantiveram AUC de pelo menos 0,60 nas duas analises;
 - 13 dos 19 candidatos avaliaveis do top 20 foram robustos nas duas escalas;
 - o Spearman score interno vs AUC centrada foi -0,0055.
 
-Assim, a coorte apoia um nucleo de candidatos, sobretudo no topo, mas nao valida a calibracao do ranking completo nem autoriza interpretar centenas de sinais como biomarcadores independentes. Cinco marcadores positivos usados no Modelo 1 vieram da publicacao associada a GSE73002; essa dependencia bibliografica indireta tambem limita a independencia total.
+Assim, a coorte apoia um conjunto amplo de sinais concordantes e um nucleo maduro estrito de 22 candidatos, mas nao valida a calibracao do ranking completo nem autoriza interpretar centenas de sinais como biomarcadores independentes. Cinco marcadores positivos usados no Modelo 1 vieram da publicacao associada a GSE73002; essa dependencia bibliografica indireta tambem limita a independencia total.
 
 ## Limitacoes obrigatorias
 

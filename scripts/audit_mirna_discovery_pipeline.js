@@ -152,6 +152,10 @@ function main() {
   const centeredExact = new Set(externalCentered.filter((row) => row.replicacao_madura_exata === "sim").map((row) => row.mirna));
   const replicatedBoth = [...primaryExact].filter((mirna) => centeredExact.has(mirna));
   const practicalBoth = externalPrimary.filter((row) => row.resolucao_mapeamento === "miRNA_maduro_exato" && row.replicacao_magnitude_auc_0_60 === "sim" && externalCentered.some((centered) => centered.mirna === row.mirna && centered.replicacao_magnitude_auc_0_60 === "sim"));
+  const primaryUnambiguous = new Set(externalPrimary.filter((row) => row.replicacao_madura_sem_ambiguidade_interna === "sim").map((row) => row.mirna));
+  const centeredUnambiguous = new Set(externalCentered.filter((row) => row.replicacao_madura_sem_ambiguidade_interna === "sim").map((row) => row.mirna));
+  const unambiguousBoth = [...primaryUnambiguous].filter((mirna) => centeredUnambiguous.has(mirna));
+  const unambiguousPracticalBoth = externalPrimary.filter((row) => row.replicacao_madura_sem_ambiguidade_interna === "sim" && row.replicacao_magnitude_auc_0_60 === "sim" && externalCentered.some((centered) => centered.mirna === row.mirna && centered.replicacao_madura_sem_ambiguidade_interna === "sim" && centered.replicacao_magnitude_auc_0_60 === "sim"));
 
   check(primarySummary.samples?.total === 2549 && primarySummary.samples?.breastCancer === 1206 && primarySummary.samples?.nonCancerControls === 1343, "coorte externa TS registra 2.549 amostras e classes esperadas");
   check(primarySummary.samples?.overlapWithInternalIds === 0, "coorte externa nao reutiliza IDs da coorte interna", primarySummary.samples?.overlapWithInternalIds);
@@ -161,6 +165,9 @@ function main() {
   check(centeredSummary.sampleCenter === "mean" && centeredExact.size === centeredSummary.replication?.statisticallyReplicatedMatureExact && centeredExact.size === 271, "sensibilidade centrada por amostra confere", centeredExact.size);
   check(replicatedBoth.length === 211, "intersecao conservadora de replicacoes nas duas analises confere", replicatedBoth.length);
   check(practicalBoth.length === 203, "intersecao madura exata com AUC >= 0,60 nas duas analises confere", practicalBoth.length);
+  check(primaryUnambiguous.size === 27 && centeredUnambiguous.size === 28, "replicacoes exatas sem ambiguidade interna de braco conferem", `${primaryUnambiguous.size}/${centeredUnambiguous.size}`);
+  check(unambiguousBoth.length === 22, "nucleo maduro estrito sem ambiguidade de braco nas duas analises confere", unambiguousBoth.length);
+  check(unambiguousPracticalBoth.length === 21, "nucleo maduro estrito com AUC >= 0,60 nas duas analises confere", unambiguousPracticalBoth.length);
   check(globalShift.globalSampleMean?.aucCancerHigher > 0.9 && globalShift.featureMeanDirection?.proportionHigherInCancer > 0.9, "auditoria detecta e documenta forte deslocamento global", `${globalShift.globalSampleMean?.aucCancerHigher}/${globalShift.featureMeanDirection?.proportionHigherInCancer}`);
   check(Math.abs(primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact) < 0.1, "baixa correlacao ranking interno versus efeito externo permanece explicitamente quantificada", primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact);
 
