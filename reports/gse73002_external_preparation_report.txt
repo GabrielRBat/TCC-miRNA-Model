@@ -1,0 +1,19 @@
+Preparacao da coorte externa GSE73002
+
+ZIP de origem: C:\Users\ACS INFO PC\Downloads\miRNA\base_mirna_mama_GSE73002.zip
+SHA256 do ZIP: E5E57EA6E1326FA572A4F67F8A6880BBEEFB0E7D89791CB081FD2341830EE851
+Entrada da matriz: base_mirna_mama_GSE73002.csv
+Entrada do mapa: mapa_amostras_GSE73002.csv
+Regra predefinida: somente amostras TS_B e TS_N do teste original
+Escala: log2 normalizada por quantis conforme metadados GEO
+Transformacao adicional: nenhuma
+Linhas na matriz completa: 3966
+Amostras TS selecionadas: 2549
+Cancer de mama (classe 1): 1206
+Controles sem cancer (classe 0): 1343
+Colunas totais: 2542
+Colunas de miRNA: 2540
+IDs de saida: acessoes GSM originais
+SHA256 do CSV preparado: 097B9C02BF73D72A6E9B17AB15DA9AD8D32C249FAEC6DD274C58DE66BA1E9537
+
+A coorte TR nao foi usada para escolher candidatos, direcoes ou limiares da validacao principal.
