@@ -1275,7 +1275,7 @@ desses candidatos, quais tambem mostram associacao computacional com pacientes d
 
 Essa segunda etapa funciona como uma validacao computacional, nao laboratorial. Se um candidato aparece no dataset e sua expressao separa doentes e saudaveis, ele ganha prioridade como hipotese biologica. Ainda assim, isso nao prova causalidade nem valida o biomarcador clinicamente.
 
-A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes podem estar confundidas com fonte/lote. Os 278 resultados com FDR interno referem-se a 325 hipoteses de expressao unicas, nao a 611 testes independentes. Valores-p no piso numerico devem ser apresentados como `p<1e-16`, sem alegar precisao adicional. Uma coorte externa continua sendo necessaria.
+A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes podem estar confundidas com fonte/lote. Os 278 resultados com FDR interno referem-se a 325 hipoteses de expressao unicas, nao a 611 testes independentes. Valores-p no piso numerico devem ser apresentados como `p<1e-16`, sem alegar precisao adicional. Por isso, o ranking foi posteriormente testado na coorte externa GSE73002 descrita abaixo.
 
 ### Versao Congelada e Proximo Passo Cientifico
 
@@ -1283,7 +1283,7 @@ Esta versao deve ser tratada como o pipeline **congelado antes da validacao exte
 
 Isso evita ajustar o metodo depois de observar os resultados externos e reduz o risco de vazamento de informacao. Se futuramente houver uma mudanca metodologica, ela deve gerar uma nova versao claramente identificada; a coorte usada para avaliar a versao anterior nao deve ser reaproveitada como se ainda fosse uma validacao independente.
 
-O repositorio pode ser publicado e apresentado neste estado como estudo computacional exploratorio. Entretanto, os resultados atuais nao devem ser descritos como validacao clinica ou confirmacao definitiva de novos biomarcadores. Para fortalecer a conclusao cientifica do TCC, o proximo passo e testar o pipeline congelado em uma coorte externa independente.
+O repositorio pode ser publicado e apresentado como estudo computacional exploratorio com validacao externa. Os resultados nao devem ser descritos como validacao clinica ou confirmacao definitiva de novos biomarcadores. O pipeline congelado foi aplicado sem retreinamento a GSE73002; o plano e o codigo imediatamente anteriores aos resultados estao na tag `pre-resultados-gse73002-v1`.
 
 A coorte externa ideal deve conter:
 
@@ -1305,7 +1305,7 @@ Na coorte externa, o pipeline deve ser executado **sem retreinamento e sem novo 
 - FDR para multiplos testes;
 - quantidade de candidatos que reproduzem o sinal segundo os criterios predefinidos.
 
-Se uma coorte externa adequada nao estiver disponivel dentro do prazo, o TCC continua viavel como estudo de descoberta e priorizacao de hipoteses, desde que a ausencia de validacao externa seja declarada como limitacao e trabalho futuro. O formato esperado da nova base e o protocolo operacional estao detalhados em [`docs/FORMATO_COORTE_EXTERNA.md`](docs/FORMATO_COORTE_EXTERNA.md).
+O formato geral de novas bases esta detalhado em [`docs/FORMATO_COORTE_EXTERNA.md`](docs/FORMATO_COORTE_EXTERNA.md). O protocolo predefinido da GSE73002, incluindo hashes e criterios anteriores aos resultados, esta em [`docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md`](docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md).
 
 ### Fluxo Principal Atual
 
@@ -1318,13 +1318,65 @@ node scripts\generate_mirna_rankings_html.js
 node scripts\audit_mirna_discovery_pipeline.js
 ```
 
-Quando a nova base estiver disponivel, seguir `docs/FORMATO_COORTE_EXTERNA.md` e executar:
+Para reproduzir a preparacao e a validacao principal da GSE73002:
 
 ```powershell
-node scripts\validate_mirna_external_cohort.js caminho\coorte_externa.csv
+powershell -ExecutionPolicy Bypass -File scripts\prepare_gse73002_external_cohort.ps1
+node --max-old-space-size=4096 scripts\validate_mirna_external_cohort.js data\processed\gse73002_external_validation_ts.csv --scale log2 --output-stem gse73002_ts_external_validation --cohort-label GSE73002_TS
+node scripts\audit_gse73002_global_shift.js data\processed\gse73002_external_validation_ts.csv
+node --max-old-space-size=4096 scripts\validate_mirna_external_cohort.js data\processed\gse73002_external_validation_ts.csv --scale log2 --sample-center mean --output-stem gse73002_ts_external_validation_centered_sensitivity --cohort-label GSE73002_TS_centered_posthoc
 ```
 
-O validador rejeita sobreposicao de `sample_id` e valores de expressao invalidos, prefere miRNAs maduros exatos, marca separadamente proxies de familia e aplica o ranking congelado sem retreinar na coorte externa. O criterio de reproducao exige no minimo 10 amostras por classe, direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR Benjamini-Hochberg abaixo de 0,05; replicacoes maduras exatas e sinais obtidos por proxy sao contabilizados separadamente. O piso de 10 e tecnico e nao substitui calculo de poder amostral.
+O validador exige que a escala seja declarada (`linear` ou `log2`), rejeita sobreposicao de `sample_id` e valores invalidos, prefere miRNAs maduros exatos, marca separadamente proxies e aplica ranking/direcoes congelados. O criterio de reproducao exige direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR abaixo de 0,05. AUC direcional de pelo menos 0,60 aparece apenas como filtro descritivo de magnitude, nao como limiar clinico.
+
+### Resultado da Validacao Externa GSE73002
+
+A analise principal usou somente a divisao de teste original (`TS`), formada por 1.206 amostras de soro de cancer de mama e 1.343 controles sem cancer. A matriz possui 2.540 miRNAs em escala log2 normalizada, e nenhuma transformacao logaritmica adicional foi aplicada.
+
+```text
+Candidatos congelados: 611
+Mapeamento maduro exato: 579
+Proxy de familia: 23
+Ausentes: 9
+Hipoteses externas distintas: 588
+Replicacoes maduras exatas: 255
+Replicacoes maduras exatas com AUC >= 0,60: 254
+Replicacoes exatas sem ambiguidade interna de braco: 27
+Top 10: 7/10 reproduzidos
+Top 20: 13/19 encontrados reproduzidos
+Top 50: 34/47
+Top 100: 60/96
+Spearman score integrado interno vs AUC externa: 0,0852
+```
+
+Os quatro primeiros candidatos integrados `mir-32-3p`, `let-7f-5p`, `mir-32-5p` e `mir-200b-3p` reproduziram com AUC direcional aproximada entre 0,958 e 0,965. `mir-95-5p`, quarto no ranking original, nao reproduziu a direcao esperada.
+
+#### Auditoria de deslocamento global
+
+A media das 2.540 medidas de cada amostra separou as classes com AUC 0,971. Alem disso, 2.430/2.540 miRNAs (95,67%) apresentaram media maior no grupo cancer. Esse padrao mostra um forte deslocamento global de coorte/processamento. Consequentemente, os 255 resultados nao devem ser chamados de 255 biomarcadores especificos confirmados.
+
+A conferencia com a matriz processada oficial mostrou que `PACIENTE_0001 / hsa-let-7a-5p = 4,626` coincide com `GSM1877618 / MIMAT0000062 = 4,626041376`. Portanto, o deslocamento nao foi criado pela transposicao local; ele ja esta presente nos dados oficiais disponibilizados.
+
+#### Sensibilidade centrada por amostra
+
+Como diagnostico pos-resultado, foi subtraida a media dos 2.540 miRNAs de cada amostra e o mesmo ranking foi reaplicado sem retreino. Houve 271 replicacoes maduras exatas; 211 coincidiram com as 255 do resultado principal e 203 mantiveram AUC de pelo menos 0,60 nas duas analises. Nos 20 primeiros do ranking, os mesmos 13 sinais permaneceram robustos.
+
+Essa sensibilidade nao substitui o resultado principal. A leitura defendivel e que existe um nucleo de candidatos robustos, especialmente no topo, mas a magnitude global do ranking nao se transporta bem e a coorte possui confundimento sistematico. Cinco dos 43 positivos do Modelo 1 tambem vieram da publicacao ligada a GSE73002; essa dependencia indireta esta declarada no plano.
+
+Arquivos principais:
+
+```text
+docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md
+docs/ANALISE_SENSIBILIDADE_GSE73002.md
+reports/gse73002_external_preparation_report.txt
+reports/gse73002_provenance_check.txt
+reports/gse73002_global_shift_audit.txt
+reports/gse73002_ts_external_validation_report.txt
+reports/gse73002_ts_external_validation_summary.json
+reports/gse73002_ts_external_validation_centered_sensitivity_report.txt
+data/processed/gse73002_ts_external_validation.csv
+data/processed/gse73002_ts_external_validation_centered_sensitivity.csv
+```
 
 Consultar:
 

@@ -16,7 +16,7 @@
     .cover::before { content:""; position:absolute; inset:0 auto 0 -14mm; width:7mm; background:linear-gradient(180deg,var(--blue),var(--cyan),var(--green)); }
     .eyebrow { color:var(--cyan); text-transform:uppercase; font-size:9pt; letter-spacing:1.6px; font-weight:700; }
     .subtitle { font-size:15pt; color:var(--muted); max-width:150mm; }
-    .cover-grid,.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
+    .cover-grid,.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0; }
     .cover-grid { margin:20mm 0 10mm; }
     .cover-card { border-radius:11px; padding:14px 12px; color:#fff; min-height:30mm; background:var(--blue); }
     .cover-card:nth-child(2) { background:var(--cyan); } .cover-card:nth-child(3) { background:var(--green); } .cover-card strong { display:block; font-size:18pt; }
@@ -36,11 +36,12 @@
   <section class="cover">
     <div class="eyebrow">Trabalho de Conclusão de Curso · Guia para apresentação</div>
     <h1>Como o pipeline de descoberta de miRNAs funciona</h1>
-    <p class="subtitle">Da sequência madura <span class="sequence">AUGC...</span> ao ranking integrado: k-mers, seed, aprendizado Positive-Unlabeled e validação em pacientes.</p>
+    <p class="subtitle">Da sequência madura <span class="sequence">AUGC...</span> ao ranking integrado e à validação externa em soro: k-mers, seed, aprendizado Positive-Unlabeled e expressão.</p>
     <div class="cover-grid">
       <div class="cover-card"><strong>43</strong>miRNAs positivos curados</div>
       <div class="cover-card"><strong>2.613</strong>candidatos no Modelo 1</div>
       <div class="cover-card"><strong>611</strong>avaliados no Modelo 2</div>
+      <div class="cover-card"><strong>2.549</strong>amostras na validação externa</div>
     </div>
     <p class="meta">Versão vigente em 10/10/2026 · Modelo centrado na sequência madura · TCC-miRNA-Model</p>
   </section>
@@ -173,22 +174,43 @@
     <div class="callout danger"><strong>Limite importante:</strong> AUCs muito altas podem refletir diferença de fonte ou lote entre doentes e saudáveis. Validação cruzada interna não corrige esse confundimento.</div>
     <h3>Top 5 integrado atual</h3>
     <ol><li><strong>mir-32-3p</strong> — 0,9965</li><li><strong>let-7f-5p</strong> — 0,9833</li><li><strong>mir-32-5p</strong> — 0,9734</li><li><strong>mir-95-5p</strong> — 0,9317</li><li><strong>mir-200b-3p</strong> — 0,9257</li></ol>
-    <h3>Como entra a futura coorte externa?</h3>
-    <p>A nova base não serve para ensinar novamente o modelo. Ela recebe o ranking e a direção esperada já congelados. O validador procura as colunas maduras exatas, marca separadamente aproximações por família/precursor, calcula AUC e intervalo de confiança externos, corrige os testes por FDR e verifica se a direção do efeito se repete. Um sinal só recebe o rótulo de reproduzido com ao menos 10 amostras por classe, direção concordante, limite inferior do IC95% acima de 0,5 e FDR abaixo de 0,05. Isso testa transportabilidade em pacientes independentes.</p>
+    <h3>Como entrou a coorte externa?</h3>
+    <p>A GSE73002 não ensinou novamente o modelo. Ela recebeu o ranking e a direção esperada congelados no commit <code>fab7197</code>. Antes de calcular AUCs, o protocolo, os hashes, a divisão TS e os critérios foram registrados na tag <code>pre-resultados-gse73002-v1</code>. O validador procurou colunas maduras exatas, separou proxies, calculou AUC, intervalo de confiança, tamanhos de efeito e FDR sem retreinar.</p>
     <div class="callout success"><strong>Formato desejado:</strong> uma linha por paciente, identificador único, classe 1 para câncer de mama e 0 para controle, e colunas de expressão de muitos miRNAs maduros — idealmente distinguindo 5p e 3p. A tecnologia, o tipo de amostra e o pré-processamento devem ser informados.</div>
   </section>
 
   <section class="page">
-    <h2>7. Roteiro para a apresentação</h2>
-    <div class="say">“Primeiro, transformamos cada sequência madura em padrões globais e posicionais: k-mers, seed, composição e motivos das extremidades. Como temos positivos confiáveis, mas não negativos biológicos confirmados, usamos um ensemble Positive-Unlabeled com balanceamento por família. Cada candidato é pontuado somente por modelos out-of-bag que não o usaram como contraste, e sua estabilidade é medida entre 20 bags. O Modelo 1 é testado escondendo famílias inteiras de seed. Depois, o Modelo 2 usa predições out-of-fold, correção FDR e tamanhos de efeito para verificar associação com doentes e saudáveis. O ranking integrado combina essas evidências e prioriza hipóteses, sem confirmar biomarcadores.”</div>
+    <h2>7. Validação externa GSE73002</h2>
+    <p>A análise principal utilizou somente a divisão de teste original da GSE73002: 1.206 amostras de soro de câncer de mama e 1.343 controles sem câncer, todas medidas na plataforma GPL18941. Os valores já estavam em log2 e foram usados sem aplicar outro logaritmo.</p>
+    <div class="flow"><div class="step"><strong>Ranking congelado</strong><br>611 candidatos</div><div class="arrow">→</div><div class="step"><strong>GSE73002 TS</strong><br>2.549 amostras</div><div class="arrow">→</div><div class="step"><strong>579 exatos</strong><br>23 proxies</div><div class="arrow">→</div><div class="step"><strong>AUC + IC + FDR</strong><br>sem retreino</div></div>
+    <table><thead><tr><th>Resultado principal</th><th>Valor</th><th>Leitura correta</th></tr></thead><tbody>
+      <tr><td>Replicações maduras exatas</td><td>255/579</td><td>Direção concordante, limite inferior do IC95% da AUC acima de 0,5 e FDR abaixo de 0,05.</td></tr>
+      <tr><td>Exatas com AUC ≥ 0,60</td><td>254</td><td>Filtro descritivo de magnitude; não é limiar de uso clínico.</td></tr>
+      <tr><td>Exatas sem ambiguidade interna de braço</td><td>27</td><td>Subconjunto em que a evidência interna também distinguia melhor o braço maduro.</td></tr>
+      <tr><td>Top 10 congelado</td><td>7/10</td><td>Sete dos dez primeiros reproduziram como miRNA maduro exato.</td></tr>
+      <tr><td>Top 20 congelado</td><td>13/19 encontrados</td><td>Um candidato estava ausente; 13 dos 19 avaliáveis reproduziram.</td></tr>
+      <tr><td>Top 50 / Top 100</td><td>34/47 e 60/96</td><td>Há concentração de sinais reproduzidos nas faixas prioritárias.</td></tr>
+      <tr><td>Spearman score interno × AUC externa</td><td>0,0852</td><td>A ordenação global do score quase não acompanha a magnitude da AUC externa.</td></tr>
+    </tbody></table>
+    <div class="callout danger"><strong>Controle negativo essencial:</strong> a média das 2.540 medidas de cada amostra separa câncer e controle com AUC 0,971; 95,67% dos miRNAs têm média maior no grupo câncer. Isso revela um deslocamento global de coorte/processamento. Portanto, não se deve afirmar que 255 miRNAs foram confirmados como biomarcadores específicos.</div>
+    <h3>Sensibilidade pós-resultado</h3>
+    <p>Para investigar esse deslocamento, foi subtraída de cada valor log2 a média dos 2.540 miRNAs da própria amostra. Essa análise foi marcada como pós-resultado e não substitui o desfecho principal. Após a centralização, 271 miRNAs exatos atenderam ao critério estatístico; 211 estavam também no resultado principal e 203 mantiveram AUC ≥ 0,60 nas duas análises. Nos 20 primeiros, os mesmos 13 sinais permaneceram robustos.</p>
+    <div class="callout success"><strong>Núcleo robusto do top 20 nas duas análises:</strong> mir-32-3p, let-7f-5p, mir-32-5p, mir-200b-3p, mir-29b-3p, mir-542-3p, mir-181b-3p, mir-582-5p, mir-182-5p, mir-141-3p, let-7a-3p, mir-142-3p e mir-106a-3p.</div>
+    <div class="callout warning"><strong>Dependência bibliográfica parcial:</strong> cinco dos 43 marcadores positivos foram extraídos do estudo de Shimomura ligado à GSE73002. Eles não fazem parte da lista de candidatos testada, mas influenciaram indiretamente o perfil sequencial aprendido. A limitação deve ser declarada.</div>
+    <p><strong>Conclusão externa:</strong> a coorte apoia um subconjunto relevante — especialmente no topo —, mas não valida toda a lista nem demonstra aplicação clínica. O núcleo que sobrevive ao resultado original e à centralização é a evidência computacional mais defensável.</p>
+  </section>
+
+  <section class="page">
+    <h2>8. Roteiro para a apresentação</h2>
+    <div class="say">“Primeiro, transformamos cada sequência madura em padrões globais e posicionais: k-mers, seed, composição e motivos das extremidades. Como temos positivos confiáveis, mas não negativos biológicos confirmados, usamos um ensemble Positive-Unlabeled com balanceamento por família. O Modelo 1 é testado escondendo famílias inteiras de seed. O Modelo 2 verifica associação interna de expressão e gera um ranking congelado. Por fim, aplicamos esse ranking sem retreino em 2.549 amostras externas de soro. Sete dos dez primeiros reproduziram, mas detectamos um deslocamento global de coorte e por isso também apresentamos uma sensibilidade centrada por amostra. O resultado prioriza hipóteses robustas; não confirma uso clínico.”</div>
     <h3>Perguntas rápidas da banca</h3>
     <div class="card"><strong>Por que k-mers?</strong><br>Representam motivos locais sem exigir alinhamento e são adequados a um conjunto pequeno de positivos.</div>
     <div class="card"><strong>Por que retirar hairpin?</strong><br>Para manter o foco na sequência madura e reduzir complexidade. A métrica principal não caiu após a retirada.</div>
     <div class="card"><strong>Por que não chamar os demais de negativos?</strong><br>Ausência da lista positiva não comprova ausência de associação.</div>
-    <div class="card"><strong>Qual é a conclusão?</strong><br>Há sinal global acima do nulo, mas o enriquecimento do top 10% ainda não é significativo. Os resultados são candidatos priorizados para investigação externa.</div>
+    <div class="card"><strong>Qual é a conclusão?</strong><br>O Modelo 1 tem sinal global acima do nulo e a coorte externa reproduziu 7/10 do topo. Como existe deslocamento global na GSE73002 e baixa correlação do ranking completo, defendemos um núcleo priorizado robusto, não centenas de biomarcadores confirmados.</div>
     <h3>Limitações que devem ser declaradas</h3>
-    <ul><li>43 positivos e 32 famílias são uma amostra pequena.</li><li>O conjunto não rotulado pode conter positivos desconhecidos.</li><li>Recall@10% não foi significativo.</li><li>O ganho de motivos terminais na ablação é exploratório e não foi usado para escolher o modelo olhando o teste externo.</li><li>O Modelo 2 pode capturar lote ou origem.</li><li>552/611 candidatos do Modelo 2 não têm expressão específica de braço.</li><li>Confirmação exige coorte externa e validação laboratorial.</li></ul>
-    <p class="mini">Documento gerado a partir da implementação vigente em 10/10/2026. Consulte <code>docs/METODOLOGIA_MODELOS_MIRNA.md</code> e <code>reports/auditoria_pipeline_descoberta_mirna.txt</code>.</p>
+    <ul><li>43 positivos e 32 famílias são uma amostra pequena.</li><li>O conjunto não rotulado pode conter positivos desconhecidos.</li><li>Recall@10% do Modelo 1 não foi significativo.</li><li>O Modelo 2 interno pode capturar lote ou origem.</li><li>552/611 candidatos internos não têm expressão específica de braço.</li><li>A GSE73002 tem forte deslocamento global entre classes e origem bibliográfica parcial de cinco marcadores.</li><li>A correlação global entre score interno e AUC externa é baixa.</li><li>Uma segunda coorte independente e validação laboratorial ainda são desejáveis.</li></ul>
+    <p class="mini">Documento atualizado em 11/10/2026. Consulte <code>docs/METODOLOGIA_MODELOS_MIRNA.md</code>, <code>docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md</code> e os relatórios GSE73002 em <code>reports/</code>.</p>
   </section>
 </body>
 </html>

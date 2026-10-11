@@ -11,7 +11,7 @@ Atualizado em 10/10/2026. O pipeline ativo trabalha exclusivamente com sequencia
   -> 611 candidatos com expressao disponivel
   -> Modelo 2: avalia associacao com doente vs saudavel
   -> ranking integrado e analise de sensibilidade
-  -> futura coorte externa independente, sem retreinamento
+  -> coorte externa GSE73002 TS, sem retreinamento
 ```
 
 O Modelo 1 usa aprendizado Positive-Unlabeled (PU): os demais miRNAs sao nao rotulados e servem somente como contraste temporario. O Modelo 2 e uma avaliacao interna da expressao. Nenhum score e probabilidade clinica ou confirmacao de biomarcador.
@@ -28,7 +28,7 @@ node scripts\audit_mirna_discovery_pipeline.js
 Quando a coorte independente estiver disponivel:
 
 ```powershell
-node scripts\validate_mirna_external_cohort.js caminho\coorte_externa.csv
+node scripts\validate_mirna_external_cohort.js caminho\coorte_externa.csv --scale linear|log2
 ```
 
 O formato esperado esta em `docs/FORMATO_COORTE_EXTERNA.md`.
@@ -141,7 +141,7 @@ Tambem sao reportados cenarios 75/25, 25/75 e a fronteira de Pareto. Quatro cand
 
 Top 5 integrado: `mir-32-3p`, `let-7f-5p`, `mir-32-5p`, `mir-95-5p` e `mir-200b-3p`.
 
-O grande limite permanece: classe e fonte/lote podem estar confundidas. Estatistica adicional nao corrige esse problema; a coorte externa e necessaria.
+O grande limite interno permanece: classe e fonte/lote podem estar confundidas. Estatistica adicional nao corrige esse problema. A GSE73002 foi usada depois como teste externo, com as limitacoes especificas descritas a seguir.
 
 ## Coorte externa
 
@@ -157,6 +157,46 @@ O validador externo:
 - classifica o sinal como reproduzido apenas quando existem ao menos 10 amostras por classe, a direcao concorda, o limite inferior do IC95% da AUC direcional supera 0,5 e o FDR fica abaixo de 0,05; esse piso e tecnico e nao substitui calculo de poder;
 - contabiliza separadamente a replicacao com miRNA maduro exato e a evidencia obtida por proxy de familia/precursor.
 
+### Protocolo e coorte GSE73002
+
+O modelo e o ranking foram congelados no commit `fab7197` e na tag `pre-validacao-externa-v1`. Antes de calcular os resultados da GSE73002, o protocolo, os hashes, a divisao de amostras e o codigo de compatibilidade log2 foram registrados no commit `e1910ac` e na tag `pre-resultados-gse73002-v1`.
+
+A analise primaria utilizou exclusivamente `TS_B` e `TS_N` do teste original:
+
+- 1.206 amostras de soro de cancer de mama;
+- 1.343 controles sem cancer;
+- 2.549 amostras no total;
+- 2.540 medidas de miRNA;
+- escala log2 normalizada por quantis;
+- IDs GSM originais na entrada preparada;
+- nenhum paciente sobreposto por `sample_id` com TCGA/GTEx.
+
+Os valores log2 foram usados diretamente. Valores negativos foram preservados porque representam a escala transformada, nao expressao biologica negativa. Para cada hipotese foram calculados AUC direcional, IC95%, p unilateral, FDR, Cliff's delta, Hedges g e diferenca media na escala log2.
+
+Resultado primario:
+
+- 579/611 candidatos com correspondencia madura exata, 23 por proxy e 9 ausentes;
+- 588 hipoteses externas distintas;
+- 255 replicacoes maduras exatas pelo criterio predefinido;
+- 254 replicacoes maduras exatas com AUC direcional de pelo menos 0,60;
+- 27 replicacoes exatas sem ambiguidade de braco herdada da base interna;
+- 7/10, 13/19, 34/47 e 60/96 reproduzidos nos top 10, 20, 50 e 100 avaliaveis;
+- Spearman descritivo entre score integrado e AUC externa igual a 0,0852.
+
+### Controle de deslocamento global e sensibilidade
+
+A media global dos 2.540 miRNAs por amostra apresentou AUC 0,971 para separar as classes. 2.430/2.540 miRNAs (95,67%) tinham media maior no cancer, indicando forte deslocamento global de intensidade/coorte. Uma verificacao pontual confirmou correspondencia numerica com a matriz oficial do GEO, portanto o padrao nao foi introduzido pela transposicao local.
+
+Uma sensibilidade pos-resultado subtraiu de cada valor log2 a media global da propria amostra. Ela nao retreinou modelos e nao substitui o desfecho principal. Nessa analise:
+
+- 271 miRNAs maduros exatos atenderam ao criterio estatistico;
+- 211 coincidiram com o resultado primario;
+- 203 mantiveram AUC de pelo menos 0,60 nas duas analises;
+- 13 dos 19 candidatos avaliaveis do top 20 foram robustos nas duas escalas;
+- o Spearman score interno vs AUC centrada foi -0,0055.
+
+Assim, a coorte apoia um nucleo de candidatos, sobretudo no topo, mas nao valida a calibracao do ranking completo nem autoriza interpretar centenas de sinais como biomarcadores independentes. Cinco marcadores positivos usados no Modelo 1 vieram da publicacao associada a GSE73002; essa dependencia bibliografica indireta tambem limita a independencia total.
+
 ## Limitacoes obrigatorias
 
 1. Ha 43 positivos e 32 familias de seed.
@@ -166,4 +206,5 @@ O validador externo:
 5. A base de expressao atual raramente distingue 5p de 3p.
 6. O Modelo 2 pode capturar lote ou origem.
 7. FDR pequeno na base atual nao elimina confundimento sistematico.
-8. Confirmacao exige coorte externa independente e, idealmente, validacao laboratorial.
+8. A GSE73002 possui deslocamento global de intensidade e dependencia bibliografica parcial; os resultados robustos devem ser definidos pela concordancia entre analise primaria e sensibilidade.
+9. Uma segunda coorte independente e validacao laboratorial continuam desejaveis.

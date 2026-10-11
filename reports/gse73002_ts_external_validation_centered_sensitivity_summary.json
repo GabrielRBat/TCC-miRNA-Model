@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "cohort": "GSE73002_TS_centered_posthoc",
+  "input": "data/processed/gse73002_external_validation_ts.csv",
+  "inputScale": "log2",
+  "analysisTransformation": "valores log2 usados diretamente; centralizacao por media da amostra=mean",
+  "sampleCenter": "mean",
+  "frozenCommit": "fab7197625a1841c56ca54d7fc038f37cb1491c3",
+  "provenanceSha256": {
+    "inputCsv": "097B9C02BF73D72A6E9B17AB15DA9AD8D32C249FAEC6DD274C58DE66BA1E9537",
+    "integratedRanking": "9AE938FF394D845568F582A45505D1209017112FEFB9975B1E61096D565EDB71",
+    "sequenceModel": "B0FA10AC216CB65FAC3A0FB94D6EDFDA2B80637B70F2E7B25E684DAA2179DA42",
+    "patientModel": "C580909D3B8F61FB408B0D266D4B07A4D090A39E9BF3613875C900A446578F5E"
+  },
+  "samples": {
+    "total": 2549,
+    "breastCancer": 1206,
+    "nonCancerControls": 1343,
+    "overlapWithInternalIds": 0
+  },
+  "inputAudit": {
+    "mirnaColumns": 2540,
+    "numericValues": 6474460,
+    "negativeValuesAllowedOnLog2Scale": 51699,
+    "minimum": -1.8375,
+    "maximum": 16.5214
+  },
+  "coverage": {
+    "frozenCandidates": 611,
+    "matureExact": 579,
+    "familyProxy": 23,
+    "absent": 9,
+    "distinctExternalHypotheses": 588
+  },
+  "replication": {
+    "directionConcordant": 291,
+    "statisticallyReplicatedAllMappings": 286,
+    "statisticallyReplicatedMatureExact": 271,
+    "statisticallyReplicatedMatureExactWithoutInternalArmAmbiguity": 28,
+    "practicalAucAtLeast060AllMappings": 271,
+    "practicalAucAtLeast060MatureExact": 258
+  },
+  "rankingEvaluation": {
+    "spearmanInternalScoreVsExternalDirectionalAucMatureExact": -0.005528264509233027,
+    "topK": [
+      {
+        "limit": 10,
+        "exactCandidatesFound": 10,
+        "statisticallyReplicated": 7,
+        "practicalAucAtLeast060": 7
+      },
+      {
+        "limit": 20,
+        "exactCandidatesFound": 19,
+        "statisticallyReplicated": 13,
+        "practicalAucAtLeast060": 13
+      },
+      {
+        "limit": 50,
+        "exactCandidatesFound": 47,
+        "statisticallyReplicated": 34,
+        "practicalAucAtLeast060": 34
+      },
+      {
+        "limit": 100,
+        "exactCandidatesFound": 96,
+        "statisticallyReplicated": 59,
+        "practicalAucAtLeast060": 58
+      }
+    ]
+  },
+  "criteria": {
+    "minimumSamplesPerClass": 10,
+    "directionalAucCiLowerGreaterThan": 0.5,
+    "fdrBhLessThan": 0.05,
+    "practicalDirectionalAucAtLeast": 0.6
+  },
+  "outputs": {
+    "csv": "data/processed/gse73002_ts_external_validation_centered_sensitivity.csv",
+    "report": "reports/gse73002_ts_external_validation_centered_sensitivity_report.txt",
+    "summary": "reports/gse73002_ts_external_validation_centered_sensitivity_summary.json"
+  }
+}

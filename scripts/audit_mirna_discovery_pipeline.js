@@ -13,6 +13,11 @@ const FILES = {
   report: fromRoot("reports", "auditoria_pipeline_descoberta_mirna.txt"),
   externalValidator: fromRoot("scripts", "validate_mirna_external_cohort.js"),
   externalFormat: fromRoot("docs", "FORMATO_COORTE_EXTERNA.md"),
+  externalPrimary: fromRoot("data", "processed", "gse73002_ts_external_validation.csv"),
+  externalCentered: fromRoot("data", "processed", "gse73002_ts_external_validation_centered_sensitivity.csv"),
+  externalPrimarySummary: fromRoot("reports", "gse73002_ts_external_validation_summary.json"),
+  externalCenteredSummary: fromRoot("reports", "gse73002_ts_external_validation_centered_sensitivity_summary.json"),
+  globalShift: fromRoot("reports", "gse73002_global_shift_audit.json"),
 };
 
 function parseCsvLine(line) {
@@ -137,6 +142,27 @@ function main() {
   check(ranking2.every((row) => Number(row.cv_oof_auc) >= 0.5 || Number(row.cv_oof_auc_fdr_bh_aprox) >= 0.05), "teste unilateral nao declara AUC abaixo do acaso significativa");
   check(integrated.every((row) => Number(row.rank_75_modelo1_25_modelo2) >= 1 && Number(row.rank_25_modelo1_75_modelo2) >= 1), "ranking integrado inclui analise de sensibilidade 75/25 e 25/75");
   check(integrated.some((row) => row.fronteira_pareto === "sim"), "ranking integrado identifica fronteira de Pareto");
+
+  const externalPrimary = readCsv(FILES.externalPrimary);
+  const externalCentered = readCsv(FILES.externalCentered);
+  const primarySummary = JSON.parse(fs.readFileSync(FILES.externalPrimarySummary, "utf8"));
+  const centeredSummary = JSON.parse(fs.readFileSync(FILES.externalCenteredSummary, "utf8"));
+  const globalShift = JSON.parse(fs.readFileSync(FILES.globalShift, "utf8"));
+  const primaryExact = new Set(externalPrimary.filter((row) => row.replicacao_madura_exata === "sim").map((row) => row.mirna));
+  const centeredExact = new Set(externalCentered.filter((row) => row.replicacao_madura_exata === "sim").map((row) => row.mirna));
+  const replicatedBoth = [...primaryExact].filter((mirna) => centeredExact.has(mirna));
+  const practicalBoth = externalPrimary.filter((row) => row.resolucao_mapeamento === "miRNA_maduro_exato" && row.replicacao_magnitude_auc_0_60 === "sim" && externalCentered.some((centered) => centered.mirna === row.mirna && centered.replicacao_magnitude_auc_0_60 === "sim"));
+
+  check(primarySummary.samples?.total === 2549 && primarySummary.samples?.breastCancer === 1206 && primarySummary.samples?.nonCancerControls === 1343, "coorte externa TS registra 2.549 amostras e classes esperadas");
+  check(primarySummary.samples?.overlapWithInternalIds === 0, "coorte externa nao reutiliza IDs da coorte interna", primarySummary.samples?.overlapWithInternalIds);
+  check(primarySummary.coverage?.frozenCandidates === 611 && primarySummary.coverage?.matureExact === 579 && primarySummary.coverage?.familyProxy === 23 && primarySummary.coverage?.absent === 9, "cobertura externa do ranking congelado confere");
+  check(externalPrimary.length === 602 && externalCentered.length === 602 && externalPrimary.length + primarySummary.coverage.absent === primarySummary.coverage.frozenCandidates, "analises externas preservam todos os 602 candidatos mapeados e registram os 9 ausentes no resumo", `${externalPrimary.length}/${externalCentered.length}+${primarySummary.coverage.absent}`);
+  check(primaryExact.size === primarySummary.replication?.statisticallyReplicatedMatureExact && primaryExact.size === 255, "replicacoes maduras exatas da analise primaria conferem", primaryExact.size);
+  check(centeredSummary.sampleCenter === "mean" && centeredExact.size === centeredSummary.replication?.statisticallyReplicatedMatureExact && centeredExact.size === 271, "sensibilidade centrada por amostra confere", centeredExact.size);
+  check(replicatedBoth.length === 211, "intersecao conservadora de replicacoes nas duas analises confere", replicatedBoth.length);
+  check(practicalBoth.length === 203, "intersecao madura exata com AUC >= 0,60 nas duas analises confere", practicalBoth.length);
+  check(globalShift.globalSampleMean?.aucCancerHigher > 0.9 && globalShift.featureMeanDirection?.proportionHigherInCancer > 0.9, "auditoria detecta e documenta forte deslocamento global", `${globalShift.globalSampleMean?.aucCancerHigher}/${globalShift.featureMeanDirection?.proportionHigherInCancer}`);
+  check(Math.abs(primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact) < 0.1, "baixa correlacao ranking interno versus efeito externo permanece explicitamente quantificada", primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact);
 
   finish();
 }

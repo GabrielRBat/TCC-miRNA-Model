@@ -7,7 +7,12 @@ const fromRoot = (...parts) => path.join(ROOT, ...parts);
 const SEQUENCE_RANKING_CSV = fromRoot("data", "processed", "mirna_candidate_discovery_model_ranking.csv");
 const VALIDATION_RANKING_CSV = fromRoot("data", "processed", "mirna_patient_candidate_validation.csv");
 const INTEGRATED_RANKING_CSV = fromRoot("data", "processed", "mirna_patient_candidate_integrated_ranking.csv");
+const EXTERNAL_RANKING_CSV = fromRoot("data", "processed", "gse73002_ts_external_validation.csv");
+const EXTERNAL_CENTERED_RANKING_CSV = fromRoot("data", "processed", "gse73002_ts_external_validation_centered_sensitivity.csv");
 const PATIENT_MODEL_JSON = fromRoot("models", "modelo_mirna_patient_candidate_validation.json");
+const EXTERNAL_SUMMARY_JSON = fromRoot("reports", "gse73002_ts_external_validation_summary.json");
+const EXTERNAL_CENTERED_SUMMARY_JSON = fromRoot("reports", "gse73002_ts_external_validation_centered_sensitivity_summary.json");
+const GLOBAL_SHIFT_JSON = fromRoot("reports", "gse73002_global_shift_audit.json");
 const SEQUENCE_REPORT = fromRoot("reports", "modelo_mirna_candidate_discovery_report.txt");
 const VALIDATION_REPORT = fromRoot("reports", "modelo_mirna_patient_candidate_validation_report.txt");
 
@@ -135,11 +140,34 @@ function renderMetric(label, value, hint) {
   return `<article class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(hint)}</small></article>`;
 }
 
+function compactExternalRows(rows) {
+  return rows.map((row) => ({
+    rank_externo: toNumber(row.rank_externo),
+    rank_integrado: toNumber(row.rank_integrado_interno),
+    mirna: row.mirna,
+    score_integrado: toNumber(row.score_integrado_interno),
+    auc: toNumber(row.auc_externa_direcional),
+    auc_ic_inf: toNumber(row.auc_externa_ic95_inferior),
+    auc_ic_sup: toNumber(row.auc_externa_ic95_superior),
+    fdr: toNumber(row.auc_externa_fdr_bh_aprox),
+    hedges_g: toNumber(row.hedges_g_direcional),
+    cliffs_delta: toNumber(row.cliffs_delta_direcional),
+    diferenca_media: toNumber(row.diferenca_media_escala_analise),
+    log2fc: toNumber(row.log2_fc_externo),
+    resolucao: row.resolucao_mapeamento,
+    ambiguidade: row.ambiguidade_interna_braco,
+    concordante: row.direcao_concordante,
+    replicado: row.replicacao_madura_exata,
+    auc_060: row.replicacao_magnitude_auc_0_60,
+    features: row.features_externas,
+  }));
+}
+
 function renderDefinition(term, description) {
   return `<article class="definition"><strong>${escapeHtml(term)}</strong><span>${escapeHtml(description)}</span></article>`;
 }
 
-function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel }) {
+function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel, externalRows, centeredRows, externalSummary, centeredSummary, globalShift }) {
   const validationScores = validationRows.map((row) => row.validacao);
   const precisions = validationRows.map((row) => row.precision);
   const aucs = validationRows.map((row) => row.auc);
@@ -148,12 +176,17 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
   const uniqueHypothesisCount = patientModel.statistical_inference?.unique_expression_hypothesis_count ?? validationRows.length;
   const fdrSignificant = patientModel.statistical_inference?.significant_unique_expression_hypothesis_count_fdr_0_05 ?? validationRows.filter((row) => Number.isFinite(row.fdr) && row.fdr < 0.05).length;
   const paretoCount = integratedRows.filter((row) => row.pareto === "sim").length;
+  const primaryReplicated = new Set(externalRows.filter((row) => row.replicado === "sim").map((row) => row.mirna));
+  const centeredReplicated = new Set(centeredRows.filter((row) => row.replicado === "sim").map((row) => row.mirna));
+  const robustReplicated = [...primaryReplicated].filter((mirna) => centeredReplicated.has(mirna)).length;
 
   const dataPayload = JSON.stringify(
     {
       sequenceRows,
       validationRows,
       integratedRows,
+      externalRows,
+      centeredRows,
     },
     null,
     0
@@ -170,6 +203,10 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
     renderMetric("AUC >= 0.90", countWhere(aucs, (value) => value >= 0.9), "candidatos"),
     renderMetric("Hipoteses FDR < 0.05", fdrSignificant, `de ${uniqueHypothesisCount} expressoes unicas`),
     renderMetric("Fronteira de Pareto", paretoCount, "fortes sem peso 50/50"),
+    renderMetric("Coorte externa", externalSummary.samples.total, `${externalSummary.samples.breastCancer} casos + ${externalSummary.samples.nonCancerControls} controles`),
+    renderMetric("Replicados externos", externalSummary.replication.statisticallyReplicatedMatureExact, "mapeamento maduro exato; analise primaria"),
+    renderMetric("Robustos nas 2 analises", robustReplicated, "replicados antes e depois da centralizacao"),
+    renderMetric("AUC do sinal global", round(globalShift.globalSampleMean.aucCancerHigher), "alerta de deslocamento de intensidade"),
   ].join("\n");
 
   const metricDefinitions = [
@@ -208,6 +245,18 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
     renderDefinition(
       "Fronteira de Pareto",
       "Candidatos para os quais nenhum outro possui simultaneamente score maior nos Modelos 1 e 2. Nao depende de escolher o peso 50/50."
+    ),
+    renderDefinition(
+      "Replicados externos",
+      "miRNAs com mapeamento maduro exato, direcao concordante com a base interna, IC95% direcional acima de 0,5 e FDR < 0,05 na coorte GSE73002 TS."
+    ),
+    renderDefinition(
+      "Robustos nas 2 analises",
+      "Intersecao entre a analise primaria em escala log2 e a sensibilidade pos-hoc com centralizacao pela media de cada amostra."
+    ),
+    renderDefinition(
+      "AUC do sinal global",
+      "Quanto a media de todos os 2.540 miRNAs separa casos e controles. Um valor muito alto alerta que parte do desempenho pode refletir intensidade global, lote ou composicao da coorte."
     ),
   ].join("\n");
 
@@ -508,6 +557,8 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
         <button type="button" class="tab" data-view="validation">Validação em pacientes</button>
         <button type="button" class="tab" data-view="sequence">Modelo 1 PU/sequência madura</button>
+        <button type="button" class="tab" data-view="external">GSE73002 primaria</button>
+        <button type="button" class="tab" data-view="centered">GSE73002 sensibilidade</button>
       </div>
       <div class="toolbar">
         <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direção, referência ou k-mer">
@@ -528,6 +579,9 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
 
     <section class="note">
       O Modelo 2 compara expressão em doentes contra saudáveis. Quando o dataset tem uma feature em nível de precursor/família, candidatos maduros 5p e 3p podem compartilhar a mesma métrica de validação. Nesses casos, a evidência é da feature disponível no dataset, não uma distinção experimental entre braços maduros.
+    </section>
+    <section class="note">
+      <strong>Alerta da validacao externa:</strong> a media global das 2.540 features separa casos e controles com AUC ${round(globalShift.globalSampleMean.aucCancerHigher)} e ${round(globalShift.featureMeanDirection.proportionHigherInCancer * 100, 2)}% das features aumentam em casos. Por isso, os ${externalSummary.replication.statisticallyReplicatedMatureExact} sinais primarios nao devem ser chamados isoladamente de biomarcadores especificos. A analise centrada e pos-hoc; a intersecao de ${robustReplicated} candidatos entre as duas analises e a evidencia mais conservadora. A concordancia entre o score interno e a AUC externa foi baixa (rho = ${round(externalSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}; centrada = ${round(centeredSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}).
     </section>
   </main>
 
@@ -599,6 +653,27 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
           ["referencias", "Referências próximas"],
           ["kmers", "Features influentes"]
         ]
+      },
+      external: {
+        rows: DATA.externalRows,
+        columns: [
+          ["rank_externo", "Rank externo"], ["rank_integrado", "Rank interno"], ["mirna", "miRNA"],
+          ["auc", "AUC direcional"], ["auc_ic_inf", "AUC IC95% inf."], ["auc_ic_sup", "AUC IC95% sup."],
+          ["fdr", "FDR"], ["hedges_g", "Hedges g"], ["cliffs_delta", "Cliff's delta"],
+          ["log2fc", "log2FC"], ["resolucao", "Mapeamento"], ["concordante", "Direcao concordante"],
+          ["replicado", "Replicado exato"], ["auc_060", "AUC >= 0,60"], ["features", "Features externas"]
+        ]
+      },
+      centered: {
+        rows: DATA.centeredRows,
+        columns: [
+          ["rank_externo", "Rank externo"], ["rank_integrado", "Rank interno"], ["mirna", "miRNA"],
+          ["auc", "AUC direcional"], ["auc_ic_inf", "AUC IC95% inf."], ["auc_ic_sup", "AUC IC95% sup."],
+          ["fdr", "FDR"], ["hedges_g", "Hedges g"], ["cliffs_delta", "Cliff's delta"],
+          ["diferenca_media", "Diferenca media centrada"], ["resolucao", "Mapeamento"],
+          ["concordante", "Direcao concordante"], ["replicado", "Replicado exato"],
+          ["auc_060", "AUC >= 0,60"], ["features", "Features externas"]
+        ]
       }
     };
 
@@ -662,7 +737,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
 
     function setView(view) {
       activeView = view;
-      sortKey = view === "sequence" ? "rank" : view === "validation" ? "rank_validacao" : "rank_integrado";
+      sortKey = view === "sequence" ? "rank" : view === "validation" ? "rank_validacao" : (view === "external" || view === "centered") ? "rank_externo" : "rank_integrado";
       sortDirection = 1;
       page = 0;
       document.querySelectorAll(".tab").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
@@ -724,7 +799,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel 
 }
 
 function main() {
-  for (const requiredPath of [SEQUENCE_RANKING_CSV, VALIDATION_RANKING_CSV, INTEGRATED_RANKING_CSV, PATIENT_MODEL_JSON]) {
+  for (const requiredPath of [SEQUENCE_RANKING_CSV, VALIDATION_RANKING_CSV, INTEGRATED_RANKING_CSV, EXTERNAL_RANKING_CSV, EXTERNAL_CENTERED_RANKING_CSV, PATIENT_MODEL_JSON, EXTERNAL_SUMMARY_JSON, EXTERNAL_CENTERED_SUMMARY_JSON, GLOBAL_SHIFT_JSON]) {
     if (!fs.existsSync(requiredPath)) throw new Error(`Arquivo obrigatório não encontrado: ${requiredPath}`);
   }
 
@@ -732,8 +807,13 @@ function main() {
   const validationRows = compactPatientRows(readCsv(VALIDATION_RANKING_CSV));
   const integratedRows = compactPatientRows(readCsv(INTEGRATED_RANKING_CSV));
   const patientModel = JSON.parse(fs.readFileSync(PATIENT_MODEL_JSON, "utf8"));
+  const externalRows = compactExternalRows(readCsv(EXTERNAL_RANKING_CSV));
+  const centeredRows = compactExternalRows(readCsv(EXTERNAL_CENTERED_RANKING_CSV));
+  const externalSummary = JSON.parse(fs.readFileSync(EXTERNAL_SUMMARY_JSON, "utf8"));
+  const centeredSummary = JSON.parse(fs.readFileSync(EXTERNAL_CENTERED_SUMMARY_JSON, "utf8"));
+  const globalShift = JSON.parse(fs.readFileSync(GLOBAL_SHIFT_JSON, "utf8"));
   fs.mkdirSync(path.dirname(OUTPUT_HTML), { recursive: true });
-  fs.writeFileSync(OUTPUT_HTML, buildHtml({ sequenceRows, validationRows, integratedRows, patientModel }), "utf8");
+  fs.writeFileSync(OUTPUT_HTML, buildHtml({ sequenceRows, validationRows, integratedRows, patientModel, externalRows, centeredRows, externalSummary, centeredSummary, globalShift }), "utf8");
 
   console.log(`Dashboard HTML gerado: ${OUTPUT_HTML}`);
   if (fs.existsSync(SEQUENCE_REPORT)) console.log(`Relatório Modelo 1: ${SEQUENCE_REPORT}`);

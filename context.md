@@ -2016,3 +2016,26 @@ docs/FORMATO_COORTE_EXTERNA.md
 ```
 
 Ele exige `sample_id` e `classe`, rejeita IDs presentes na base interna e valores de expressao invalidos, prefere correspondencia madura exata, identifica proxy de familia e aplica ranking/direcao congelados sem retreinar. As hipoteses externas distintas recebem FDR Benjamini-Hochberg. O rotulo de sinal reproduzido exige ao menos 10 amostras por classe, direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR abaixo de 0,05; o piso tecnico nao substitui calculo de poder. Replicacoes maduras exatas e proxies sao contabilizados separadamente. Um teste sintetico de ponta a ponta foi executado e os arquivos sinteticos foram removidos em seguida.
+
+### Validacao externa real GSE73002 (11/10/2026)
+
+Foi recebida a base GSE73002 com uma matriz de 3.966 amostras por 2.540 miRNAs e um mapa separado de rastreabilidade GSM. A auditoria encontrou 1.280 casos de cancer de mama, 2.686 controles sem cancer, nenhuma linha ou ID duplicado, nenhuma celula vazia e correspondencia integral entre matriz e mapa. A matriz esta em escala log2 e contem valores negativos legitimos.
+
+O desfecho principal foi predefinido antes do calculo no documento `docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md`. O estado anterior ao resultado foi registrado no commit `e1910ac` e na tag `pre-resultados-gse73002-v1`. A analise principal usou somente a divisao TS original: 1.206 casos e 1.343 controles, totalizando 2.549 amostras de soro. Os IDs sinteticos foram substituidos pelos acessos GSM e nenhuma amostra sobrepos a base interna TCGA/GTEx.
+
+Cobertura e resultado principal:
+
+- 611 candidatos congelados;
+- 579 correspondencias maduras exatas, 23 proxies e 9 ausentes;
+- 588 hipoteses externas distintas;
+- 255 replicacoes maduras exatas;
+- 254 exatas com AUC direcional >= 0,60;
+- 27 exatas sem ambiguidade interna de braco;
+- top 10: 7/10; top 20: 13/19 encontrados; top 50: 34/47; top 100: 60/96;
+- Spearman score integrado vs AUC externa: 0,0852.
+
+Uma auditoria obrigatoria revelou deslocamento global: a media dos 2.540 miRNAs por amostra separa cancer e controle com AUC 0,971 e 95,67% das features tem media maior no cancer. A proveniencia foi conferida contra a matriz oficial `GSE73002_series_matrix.txt.gz`: `PACIENTE_0001 / hsa-let-7a-5p = 4,626` coincide com `GSM1877618 / MIMAT0000062 = 4,626041376`. O deslocamento nao foi criado pela transposicao local.
+
+Foi executada uma sensibilidade pos-resultado, claramente separada, subtraindo a media global de cada amostra. Ela encontrou 271 replicacoes exatas; 211 coincidiram com o resultado principal e 203 mantiveram AUC >= 0,60 nas duas analises. Nos 20 primeiros, 13 sinais permaneceram robustos. A correlacao global do score com AUC centrada foi -0,0055.
+
+Interpretacao vigente: a pesquisa possui uma validacao computacional externa real e um nucleo robusto de candidatos, especialmente no topo. Nao se deve afirmar que 255 ou 271 miRNAs foram confirmados como biomarcadores. A forte componente global, a baixa correlacao de magnitude do ranking inteiro, a ambiguidade interna de braco e o fato de cinco positivos terem origem bibliografica no proprio estudo GSE73002 devem ser declarados. Uma segunda coorte e validacao laboratorial permanecem desejaveis.

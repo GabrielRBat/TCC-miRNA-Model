@@ -1,0 +1,68 @@
+Validacao externa predefinida - GSE73002_TS_centered_posthoc
+
+Entrada: data/processed/gse73002_external_validation_ts.csv
+Escala declarada: log2
+Centralizacao por amostra: mean
+Transformacao analitica: valores log2 usados diretamente; centralizacao por media da amostra=mean
+Amostras: 2549 (cancer=1206; controles sem cancer=1343)
+Sobreposicao de sample_id com a coorte interna: 0
+Colunas de miRNA auditadas: 2540
+Valores numericos auditados: 6474460; negativos legitimos em log2: 51699; faixa=-1.8375 a 16.5214
+
+Candidatos congelados: 611
+Mapeamento maduro exato: 579
+Mapeamento por proxy de familia: 23
+Ausentes: 9
+Hipoteses externas distintas submetidas a FDR BH: 588
+Direcao concordante: 291
+Sinais reproduzidos em todos os mapeamentos: 286
+Replicacoes maduras exatas: 271
+Replicacoes maduras exatas sem ambiguidade interna de braco: 28
+Replicacoes com AUC direcional >= 0.60: 271 (maduras exatas=258)
+Spearman descritivo entre score integrado interno e AUC externa (mapeamentos exatos): -0.0055
+
+Reproducao por faixa do ranking congelado (somente mapeamento maduro exato):
+Top 10: encontrados=10; reproduzidos=7; AUC>=0.60=7
+Top 20: encontrados=19; reproduzidos=13; AUC>=0.60=13
+Top 50: encontrados=47; reproduzidos=34; AUC>=0.60=34
+Top 100: encontrados=96; reproduzidos=59; AUC>=0.60=58
+
+Top resultados externos:
+1. mir-92a-2-5p	auc=0.998	IC95%=0.996 a 1.000	FDR=2.19e-16	g_dir=4.560	concordante=sim	resolucao=miRNA_maduro_exato
+2. mir-1908-5p	auc=0.994	IC95%=0.991 a 0.997	FDR=2.19e-16	g_dir=3.693	concordante=sim	resolucao=miRNA_maduro_exato
+3. mir-128-1-5p	auc=0.992	IC95%=0.988 a 0.995	FDR=2.19e-16	g_dir=3.601	concordante=sim	resolucao=miRNA_maduro_exato
+4. mir-1343-5p	auc=0.991	IC95%=0.987 a 0.995	FDR=2.19e-16	g_dir=3.528	concordante=sim	resolucao=miRNA_maduro_exato
+5. mir-125a-3p	auc=0.988	IC95%=0.984 a 0.993	FDR=2.19e-16	g_dir=3.373	concordante=sim	resolucao=miRNA_maduro_exato
+6. mir-135a-3p	auc=0.987	IC95%=0.983 a 0.992	FDR=2.19e-16	g_dir=3.531	concordante=sim	resolucao=miRNA_maduro_exato
+7. mir-3180-3p	auc=0.986	IC95%=0.981 a 0.991	FDR=2.19e-16	g_dir=3.194	concordante=sim	resolucao=miRNA_maduro_exato
+8. mir-3180	auc=0.985	IC95%=0.980 a 0.990	FDR=2.19e-16	g_dir=3.192	concordante=sim	resolucao=miRNA_maduro_exato
+9. mir-3194-5p	auc=0.977	IC95%=0.971 a 0.983	FDR=2.19e-16	g_dir=2.962	concordante=sim	resolucao=miRNA_maduro_exato
+10. mir-204-3p	auc=0.975	IC95%=0.969 a 0.981	FDR=2.19e-16	g_dir=2.828	concordante=sim	resolucao=miRNA_maduro_exato
+11. mir-423-5p	auc=0.956	IC95%=0.948 a 0.965	FDR=2.19e-16	g_dir=2.449	concordante=sim	resolucao=miRNA_maduro_exato
+12. mir-1908-3p	auc=0.941	IC95%=0.931 a 0.950	FDR=2.19e-16	g_dir=2.273	concordante=sim	resolucao=miRNA_maduro_exato
+13. mir-149-3p	auc=0.938	IC95%=0.928 a 0.948	FDR=2.19e-16	g_dir=2.178	concordante=sim	resolucao=miRNA_maduro_exato
+14. mir-4731-5p	auc=0.926	IC95%=0.915 a 0.937	FDR=2.19e-16	g_dir=1.982	concordante=sim	resolucao=miRNA_maduro_exato
+15. mir-3180-5p	auc=0.922	IC95%=0.911 a 0.933	FDR=2.19e-16	g_dir=2.204	concordante=sim	resolucao=miRNA_maduro_exato
+16. mir-296-5p	auc=0.921	IC95%=0.910 a 0.933	FDR=2.19e-16	g_dir=1.913	concordante=sim	resolucao=miRNA_maduro_exato
+17. mir-652-5p	auc=0.921	IC95%=0.910 a 0.933	FDR=2.19e-16	g_dir=2.073	concordante=sim	resolucao=miRNA_maduro_exato
+18. mir-766-3p	auc=0.913	IC95%=0.902 a 0.925	FDR=2.19e-16	g_dir=2.008	concordante=sim	resolucao=miRNA_maduro_exato
+19. mir-3663-3p	auc=0.913	IC95%=0.901 a 0.925	FDR=2.19e-16	g_dir=1.893	concordante=sim	resolucao=miRNA_maduro_exato
+20. mir-346	auc=0.912	IC95%=0.900 a 0.924	FDR=2.19e-16	g_dir=2.010	concordante=sim	resolucao=miRNA_maduro_exato
+21. mir-103a-3p	auc=0.912	IC95%=0.900 a 0.924	FDR=2.19e-16	g_dir=1.545	concordante=sim	resolucao=miRNA_maduro_exato
+22. mir-1913	auc=0.911	IC95%=0.899 a 0.923	FDR=2.19e-16	g_dir=1.854	concordante=sim	resolucao=miRNA_maduro_exato
+23. mir-328-3p	auc=0.905	IC95%=0.893 a 0.917	FDR=2.19e-16	g_dir=1.918	concordante=sim	resolucao=miRNA_maduro_exato
+24. mir-628-5p	auc=0.903	IC95%=0.891 a 0.916	FDR=2.19e-16	g_dir=1.567	concordante=sim	resolucao=miRNA_maduro_exato
+25. mir-15a-5p	auc=0.902	IC95%=0.889 a 0.914	FDR=2.19e-16	g_dir=1.414	concordante=sim	resolucao=miRNA_maduro_exato
+26. mir-215-5p	auc=0.901	IC95%=0.889 a 0.914	FDR=2.19e-16	g_dir=1.597	concordante=sim	resolucao=miRNA_maduro_exato
+27. mir-4731-3p	auc=0.900	IC95%=0.888 a 0.913	FDR=2.19e-16	g_dir=1.893	concordante=sim	resolucao=miRNA_maduro_exato
+28. mir-5586-3p	auc=0.898	IC95%=0.885 a 0.911	FDR=2.19e-16	g_dir=1.516	concordante=sim	resolucao=miRNA_maduro_exato
+29. mir-328-5p	auc=0.895	IC95%=0.882 a 0.908	FDR=2.19e-16	g_dir=1.716	concordante=sim	resolucao=miRNA_maduro_exato
+30. mir-142-3p	auc=0.894	IC95%=0.881 a 0.907	FDR=2.19e-16	g_dir=1.500	concordante=sim	resolucao=miRNA_maduro_exato
+
+Interpretacao obrigatoria:
+O script nao retreina, nao muda o ranking e nao escolhe direcoes usando a coorte externa.
+Correspondencia madura exata e primaria; proxy de familia e resultado secundario.
+Reproducao estatistica exige direcao concordante, limite inferior do IC95% da AUC > 0.5 e FDR BH < 0.05. A faixa AUC >= 0.60 e um filtro descritivo de magnitude, nao um limiar clinico.
+IC e p sao aproximacoes assintoticas; valores no piso devem ser apresentados como p<1e-16.
+A GSE73002 compartilha a origem bibliografica de cinco marcadores positivos do Modelo 1; isso deve permanecer declarado como dependencia indireta.
+Replicacao computacional externa fortalece a evidencia, mas nao substitui validacao laboratorial ou clinica.

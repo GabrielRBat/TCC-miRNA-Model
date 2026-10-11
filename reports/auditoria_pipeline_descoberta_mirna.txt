@@ -1,7 +1,7 @@
 Auditoria automatizada do pipeline de descoberta de miRNA
 
 Resultado: APROVADO
-Verificacoes: 52
+Verificacoes: 67
 Falhas: 0
 
 OK	arquivo obrigatorio existe: models\modelo_mirna_candidate_discovery.json
@@ -11,6 +11,11 @@ OK	arquivo obrigatorio existe: data\processed\mirna_patient_candidate_validation
 OK	arquivo obrigatorio existe: data\processed\mirna_patient_candidate_integrated_ranking.csv
 OK	arquivo obrigatorio existe: scripts\validate_mirna_external_cohort.js
 OK	arquivo obrigatorio existe: docs\FORMATO_COORTE_EXTERNA.md
+OK	arquivo obrigatorio existe: data\processed\gse73002_ts_external_validation.csv
+OK	arquivo obrigatorio existe: data\processed\gse73002_ts_external_validation_centered_sensitivity.csv
+OK	arquivo obrigatorio existe: reports\gse73002_ts_external_validation_summary.json
+OK	arquivo obrigatorio existe: reports\gse73002_ts_external_validation_centered_sensitivity_summary.json
+OK	arquivo obrigatorio existe: reports\gse73002_global_shift_audit.json
 OK	Modelo 1 declara ensemble PU da sequencia madura	bagged_positive_unlabeled_mature_sequence_model
 OK	desenho do Modelo 1 explicita aprendizado Positive-Unlabeled	Ensemble PU por bagging deterministico. Cada bag usa todos os positivos e uma amostra diferente do universo nao rotulado como contraste temporario; candidatos do conjunto nao rotulado sao ranqueados e explicados apenas pelos modelos out-of-bag.
 OK	hairpin e estrutura estao explicitamente fora do escopo ativo	precursor hairpin, estrutura secundaria, MFE
@@ -56,3 +61,13 @@ OK	candidatos que compartilham features recebem o mesmo FDR
 OK	teste unilateral nao declara AUC abaixo do acaso significativa
 OK	ranking integrado inclui analise de sensibilidade 75/25 e 25/75
 OK	ranking integrado identifica fronteira de Pareto
+OK	coorte externa TS registra 2.549 amostras e classes esperadas
+OK	coorte externa nao reutiliza IDs da coorte interna	0
+OK	cobertura externa do ranking congelado confere
+OK	analises externas preservam todos os 602 candidatos mapeados e registram os 9 ausentes no resumo	602/602+9
+OK	replicacoes maduras exatas da analise primaria conferem	255
+OK	sensibilidade centrada por amostra confere	271
+OK	intersecao conservadora de replicacoes nas duas analises confere	211
+OK	intersecao madura exata com AUC >= 0,60 nas duas analises confere	203
+OK	auditoria detecta e documenta forte deslocamento global	0.971274182574346/0.9566929133858267
+OK	baixa correlacao ranking interno versus efeito externo permanece explicitamente quantificada	0.08521356551036564

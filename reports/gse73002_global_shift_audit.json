@@ -1,0 +1,31 @@
+{
+  "input": "data/processed/gse73002_external_validation_ts.csv",
+  "samples": {
+    "total": 2549,
+    "breastCancer": 1206,
+    "nonCancerControls": 1343
+  },
+  "mirnaColumns": 2540,
+  "globalSampleMean": {
+    "breastCancer": 5.1739996303913545,
+    "nonCancerControls": 3.200219280697224,
+    "difference": 1.9737803496941306,
+    "aucCancerHigher": 0.971274182574346
+  },
+  "featureMeanDirection": {
+    "higherInCancer": 2430,
+    "lowerInCancer": 110,
+    "equal": 0,
+    "proportionHigherInCancer": 0.9566929133858267,
+    "differenceQuantiles": {
+      "minimum": -2.56315804429083,
+      "p05": 0.12375818466615057,
+      "p25": 1.3696981774084438,
+      "median": 2.496012967212832,
+      "p75": 2.600635801647634,
+      "p95": 2.708266022468947,
+      "maximum": 5.176907407921928
+    }
+  },
+  "interpretation": "AUC global alta ou predominio quase universal da mesma direcao indica deslocamento de intensidade/coorte e exige sensibilidade centrada por amostra; nao prova que todos os miRNAs sejam biomarcadores."
+}

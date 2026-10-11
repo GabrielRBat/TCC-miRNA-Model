@@ -180,24 +180,26 @@ function parseArguments() {
   if (!args.length || args[0].startsWith("--")) {
     throw new Error("Uso: node scripts/validate_mirna_external_cohort.js coorte.csv --scale log2|linear [--output-stem nome] [--cohort-label rotulo]");
   }
-  const options = { input: path.resolve(args[0]), scale: null, outputStem: "mirna_external_cohort_validation", cohortLabel: "coorte_externa" };
+  const options = { input: path.resolve(args[0]), scale: null, sampleCenter: "none", outputStem: "mirna_external_cohort_validation", cohortLabel: "coorte_externa" };
   for (let index = 1; index < args.length; index += 1) {
     const option = args[index];
     const value = args[index + 1];
-    if (["--scale", "--output-stem", "--cohort-label"].includes(option)) {
+    if (["--scale", "--sample-center", "--output-stem", "--cohort-label"].includes(option)) {
       if (!value || value.startsWith("--")) throw new Error(`Valor ausente para ${option}`);
       if (option === "--scale") options.scale = value;
+      if (option === "--sample-center") options.sampleCenter = value;
       if (option === "--output-stem") options.outputStem = value;
       if (option === "--cohort-label") options.cohortLabel = value;
       index += 1;
     } else throw new Error(`Opcao desconhecida: ${option}`);
   }
   if (!options.scale || !["linear", "log2"].includes(options.scale)) throw new Error("Informe explicitamente --scale linear ou --scale log2");
+  if (!["none", "mean"].includes(options.sampleCenter)) throw new Error("--sample-center aceita none ou mean");
   if (!/^[a-z0-9_-]+$/i.test(options.outputStem)) throw new Error("--output-stem aceita apenas letras, numeros, _ e -");
   return options;
 }
 
-function readExternalForRanking(filePath, scale, ranking) {
+function readExternalForRanking(filePath, scale, sampleCenter, ranking) {
   const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/).filter((line) => line.trim());
   if (!lines.length) throw new Error(`CSV vazio: ${filePath}`);
   const header = parseCsvLine(lines[0]).map((item) => item.trim());
@@ -244,6 +246,7 @@ function readExternalForRanking(filePath, scale, ranking) {
     if (![0, 1].includes(label)) throw new Error(`classe invalida em sample_id=${sampleId}`);
     sampleIds.push(sampleId);
     labels.push(label);
+    let rowSum = 0;
     for (const entry of expressionEntries) {
       const raw = cells[entry.index];
       const value = Number(raw);
@@ -253,8 +256,10 @@ function readExternalForRanking(filePath, scale, ranking) {
       minimum = Math.min(minimum, value);
       maximum = Math.max(maximum, value);
       numericCount += 1;
+      rowSum += value;
     }
-    for (const entry of selectedEntries) featureValues.get(entry.name).push(Number(cells[entry.index]));
+    const center = sampleCenter === "mean" ? rowSum / expressionEntries.length : 0;
+    for (const entry of selectedEntries) featureValues.get(entry.name).push(Number(cells[entry.index]) - center);
   }
   if (new Set(sampleIds.map((value) => value.toLowerCase())).size !== sampleIds.length) throw new Error("A coorte externa possui sample_id duplicado");
   if (!labels.includes(0) || !labels.includes(1)) throw new Error("A coluna classe deve conter 0 e 1");
@@ -268,7 +273,7 @@ function main() {
   }
   const internal = readCsv(INTERNAL_DATASET);
   const ranking = readCsv(INTEGRATED_RANKING);
-  const external = readExternalForRanking(options.input, options.scale, ranking);
+  const external = readExternalForRanking(options.input, options.scale, options.sampleCenter, ranking);
   const diseaseCount = external.labels.filter((value) => value === 1).length;
   const controlCount = external.labels.filter((value) => value === 0).length;
   if (diseaseCount < 2 || controlCount < 2) throw new Error("A coorte externa precisa de pelo menos duas amostras por classe");
@@ -372,7 +377,8 @@ function main() {
     cohort: options.cohortLabel,
     input: path.relative(ROOT, options.input).split(path.sep).join("/"),
     inputScale: options.scale,
-    analysisTransformation: options.scale === "log2" ? "nenhuma; valores log2 usados diretamente" : "log1p para AUC e tamanhos de efeito",
+    analysisTransformation: `${options.scale === "log2" ? "valores log2 usados diretamente" : "log1p para AUC e tamanhos de efeito"}; centralizacao por media da amostra=${options.sampleCenter}`,
+    sampleCenter: options.sampleCenter,
     frozenCommit: "fab7197625a1841c56ca54d7fc038f37cb1491c3",
     provenanceSha256: {
       inputCsv: sha256File(options.input),
@@ -408,6 +414,7 @@ function main() {
     `Validacao externa predefinida - ${options.cohortLabel}`, "",
     `Entrada: ${summary.input}`,
     `Escala declarada: ${options.scale}`,
+    `Centralizacao por amostra: ${options.sampleCenter}`,
     `Transformacao analitica: ${summary.analysisTransformation}`,
     `Amostras: ${external.sampleIds.length} (cancer=${diseaseCount}; controles sem cancer=${controlCount})`,
     `Sobreposicao de sample_id com a coorte interna: ${overlappingIds.length}`,
