@@ -1,7 +1,7 @@
 Auditoria automatizada do pipeline de descoberta de miRNA
 
 Resultado: APROVADO
-Verificacoes: 113
+Verificacoes: 120
 Falhas: 0
 
 OK	arquivo obrigatorio existe: models\modelo_mirna_candidate_discovery.json
@@ -11,6 +11,7 @@ OK	arquivo obrigatorio existe: data\processed\mirna_patient_candidate_validation
 OK	arquivo obrigatorio existe: data\processed\mirna_patient_candidate_integrated_ranking.csv
 OK	arquivo obrigatorio existe: scripts\validate_mirna_external_cohort.js
 OK	arquivo obrigatorio existe: docs\FORMATO_COORTE_EXTERNA.md
+OK	arquivo obrigatorio existe: docs\PLANO_VALIDACAO_EXTERNA_GSE73002.md
 OK	arquivo obrigatorio existe: data\processed\gse73002_ts_external_validation.csv
 OK	arquivo obrigatorio existe: data\processed\gse73002_ts_external_validation_centered_sensitivity.csv
 OK	arquivo obrigatorio existe: reports\gse73002_ts_external_validation_summary.json
@@ -23,6 +24,7 @@ OK	arquivo obrigatorio existe: data\external\mirbase_mature.fa
 OK	arquivo obrigatorio existe: data\processed\gse73002_external_validation_ts_map.csv
 OK	arquivo obrigatorio existe: README.md
 OK	arquivo obrigatorio existe: context.md
+OK	arquivo obrigatorio existe: docs\LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md
 OK	arquivo obrigatorio existe: docs\METODOLOGIA_MODELOS_MIRNA.md
 OK	arquivo obrigatorio existe: docs\GUIA_DIDATICO_PIPELINE_MIRNA.html
 OK	arquivo obrigatorio existe: reports\mirna_rankings_dashboard.html
@@ -66,6 +68,7 @@ OK	base interna comum possui 371 features de miRNA	371
 OK	IDs da base interna sao unicos sem diferenciar maiusculas
 OK	todas as expressoes da base interna sao numericas, finitas e nao negativas
 OK	formatos de ID confirmam alinhamento estrutural entre classe e fonte na base interna
+OK	todos os IDs de classe 1 sao UUIDs de arquivos de quantificacao
 OK	lista positiva possui 43 miRNAs maduros unicos
 OK	politica de treino cobre exatamente os 43 positivos
 OK	todas as politicas ativas possuem peso positivo
@@ -113,6 +116,10 @@ OK	README separa explicitamente fluxo vigente de artefatos historicos
 OK	contexto nao recomenda mais o painel historico como modelo principal
 OK	contexto marca inequivocamente a versao com hairpin como historica
 OK	documentacao declara confundimento estrutural da base interna
+OK	documento de confundimento registra a evidencia observada nas duas classes
+OK	documento explica por que validacao cruzada nao resolve o confundimento
+OK	documentacao nao presume proveniencia TCGA-BRCA sem manifesto local
+OK	documentacao nao apresenta TCGA/GTEx como proveniencia interna comprovada
 OK	guia e metodologia destacam o nucleo maduro estrito de 22
 OK	dashboard marca os 22 candidatos estritos nas duas abas	44
 OK	documentacao exibe o alerta quantitativo de deslocamento global

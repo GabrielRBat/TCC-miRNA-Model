@@ -14,6 +14,7 @@ const FILES = {
   report: fromRoot("reports", "auditoria_pipeline_descoberta_mirna.txt"),
   externalValidator: fromRoot("scripts", "validate_mirna_external_cohort.js"),
   externalFormat: fromRoot("docs", "FORMATO_COORTE_EXTERNA.md"),
+  externalPlan: fromRoot("docs", "PLANO_VALIDACAO_EXTERNA_GSE73002.md"),
   externalPrimary: fromRoot("data", "processed", "gse73002_ts_external_validation.csv"),
   externalCentered: fromRoot("data", "processed", "gse73002_ts_external_validation_centered_sensitivity.csv"),
   externalPrimarySummary: fromRoot("reports", "gse73002_ts_external_validation_summary.json"),
@@ -26,6 +27,7 @@ const FILES = {
   externalMap: fromRoot("data", "processed", "gse73002_external_validation_ts_map.csv"),
   readme: fromRoot("README.md"),
   projectContext: fromRoot("context.md"),
+  internalConfoundingDoc: fromRoot("docs", "LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md"),
   methodology: fromRoot("docs", "METODOLOGIA_MODELOS_MIRNA.md"),
   didacticGuide: fromRoot("docs", "GUIA_DIDATICO_PIPELINE_MIRNA.html"),
   dashboard: fromRoot("reports", "mirna_rankings_dashboard.html"),
@@ -149,11 +151,13 @@ function main() {
   const internalFeatures = Object.keys(internalDataset[0] ?? {}).filter((column) => !["sample_id", "classe"].includes(column));
   const internalValuesValid = internalDataset.every((row) => internalFeatures.every((column) => Number.isFinite(Number(row[column])) && Number(row[column]) >= 0));
   const classSourceAligned = internalClass0.every((row) => /^GTEX-/i.test(row.sample_id)) && internalClass1.every((row) => !/^GTEX-/i.test(row.sample_id));
+  const diseaseIdsAreQuantificationUuids = internalClass1.every((row) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:mirbase21|mirnaseq)\.mirnas\.quantification$/i.test(row.sample_id));
   check(internalDataset.length === 2678 && internalClass0.length === 1339 && internalClass1.length === 1339, "base interna possui 2.678 amostras balanceadas 1.339/1.339", `${internalDataset.length}/${internalClass0.length}/${internalClass1.length}`);
   check(internalFeatures.length === 371, "base interna comum possui 371 features de miRNA", internalFeatures.length);
   check(new Set(internalSampleIds.map((value) => value.toLowerCase())).size === internalSampleIds.length, "IDs da base interna sao unicos sem diferenciar maiusculas");
   check(internalValuesValid, "todas as expressoes da base interna sao numericas, finitas e nao negativas");
   check(classSourceAligned, "formatos de ID confirmam alinhamento estrutural entre classe e fonte na base interna");
+  check(diseaseIdsAreQuantificationUuids, "todos os IDs de classe 1 sao UUIDs de arquivos de quantificacao");
 
   const positiveMarkers = readCsv(FILES.positiveMarkers);
   const trainingPolicy = readCsv(FILES.trainingPolicy);
@@ -239,11 +243,14 @@ function main() {
   const readme = fs.readFileSync(FILES.readme, "utf8");
   const methodology = fs.readFileSync(FILES.methodology, "utf8");
   const projectContext = fs.readFileSync(FILES.projectContext, "utf8");
+  const internalConfoundingDoc = fs.readFileSync(FILES.internalConfoundingDoc, "utf8");
+  const externalPlan = fs.readFileSync(FILES.externalPlan, "utf8");
   const didacticGuide = fs.readFileSync(FILES.didacticGuide, "utf8");
   const dashboard = fs.readFileSync(FILES.dashboard, "utf8");
   const portableTextArtifacts = [
     readme,
     projectContext,
+    internalConfoundingDoc,
     fs.readFileSync(FILES.externalPreparationReport, "utf8"),
     fs.readFileSync(FILES.legacyBaselineReport, "utf8"),
     fs.readFileSync(FILES.legacyPanelReport, "utf8"),
@@ -254,6 +261,10 @@ function main() {
   check(!/Modelo principal recomendado:\s*```text\s*models\/modelo_mirna_painel\.json/i.test(projectContext), "contexto nao recomenda mais o painel historico como modelo principal");
   check(/Historico: Dois Modelos com Hairpin/i.test(projectContext) && /substituído em 10\/10\/2026/i.test(projectContext), "contexto marca inequivocamente a versao com hairpin como historica");
   check(/classe e (?:fonte|origem) est[aã]o estruturalmente confundidas/i.test(`${readme}\n${methodology}`), "documentacao declara confundimento estrutural da base interna");
+  check(/1\.339\/1\.339[\s\S]*GTEX-[\s\S]*1\.339\/1\.339[\s\S]*UUID/i.test(internalConfoundingDoc), "documento de confundimento registra a evidencia observada nas duas classes");
+  check(/validacao cruzada[\s\S]*nao removem? o confundimento|validacao cruzada[\s\S]*nao resolve/i.test(internalConfoundingDoc), "documento explica por que validacao cruzada nao resolve o confundimento");
+  check(/nao (?:possui|contem).*manifesto clinico|manifesto clinico versionado/i.test(`${readme}\n${methodology}\n${internalConfoundingDoc}`), "documentacao nao presume proveniencia TCGA-BRCA sem manifesto local");
+  check(!/base interna usa TCGA\/GTEx|sobrepost[^\n.]*TCGA\/GTEx/i.test(`${readme}\n${methodology}\n${externalPlan}\n${projectContext}`), "documentacao nao apresenta TCGA/GTEx como proveniencia interna comprovada");
   check(/núcleo maduro estrito possui 22|nucleo maduro estrito de 22/i.test(`${didacticGuide}\n${methodology}`), "guia e metodologia destacam o nucleo maduro estrito de 22");
   check((dashboard.match(/\"nucleo_estrito\":\"sim\"/g) ?? []).length === 44, "dashboard marca os 22 candidatos estritos nas duas abas", (dashboard.match(/\"nucleo_estrito\":\"sim\"/g) ?? []).length);
   check(/AUC 0[,.]971[\s\S]*95[,.]67%/i.test(`${readme}\n${didacticGuide}`), "documentacao exibe o alerta quantitativo de deslocamento global");

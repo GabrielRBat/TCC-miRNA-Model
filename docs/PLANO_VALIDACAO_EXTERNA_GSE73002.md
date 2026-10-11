@@ -56,7 +56,8 @@ Serao apresentados:
 
 - cinco dos 43 marcadores positivos do Modelo 1 foram curados a partir do estudo de Shimomura associado a GSE73002 (`miR-1246`, `miR-1307-3p`, `miR-4634`, `miR-6861-5p` e `miR-6875-5p`);
 - esses cinco marcadores nao sao candidatos do ranking externo, mas influenciaram indiretamente o perfil sequencial aprendido;
-- a base interna usa TCGA/GTEx e a externa usa soro e microarray; isso reduz sobreposicao de pacientes, mas introduz diferenca de compartimento e tecnologia;
+- a base interna combina controles GTEx com um CSV de doentes de IDs UUID; o repositorio nao contem manifesto clinico local que comprove amostra por amostra a procedencia TCGA-BRCA desses UUIDs;
+- a coorte externa usa soro e microarray, enquanto material, plataforma e processamento da montagem interna nao sao integralmente comparaveis ou rastreaveis; isso reduz a chance de sobreposicao, mas introduz diferencas de compartimento e tecnologia;
 - validacao computacional externa nao equivale a validacao laboratorial ou clinica;
 - a elevada amostra pode tornar efeitos pequenos estatisticamente significativos, por isso AUC e tamanhos de efeito devem acompanhar o FDR.
 

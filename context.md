@@ -2022,7 +2022,7 @@ Ele exige `sample_id` e `classe`, rejeita IDs presentes na base interna e valore
 
 Foi recebida a base GSE73002 com uma matriz de 3.966 amostras por 2.540 miRNAs e um mapa separado de rastreabilidade GSM. A auditoria encontrou 1.280 casos de cancer de mama, 2.686 controles sem cancer, nenhuma linha ou ID duplicado, nenhuma celula vazia e correspondencia integral entre matriz e mapa. A matriz esta em escala log2 e contem valores negativos legitimos.
 
-O desfecho principal foi predefinido antes do calculo no documento `docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md`. O estado anterior ao resultado foi registrado no commit `e1910ac` e na tag `pre-resultados-gse73002-v1`. A analise principal usou somente a divisao TS original: 1.206 casos e 1.343 controles, totalizando 2.549 amostras de soro. Os IDs sinteticos foram substituidos pelos acessos GSM e nenhuma amostra sobrepos a base interna TCGA/GTEx.
+O desfecho principal foi predefinido antes do calculo no documento `docs/PLANO_VALIDACAO_EXTERNA_GSE73002.md`. O estado anterior ao resultado foi registrado no commit `e1910ac` e na tag `pre-resultados-gse73002-v1`. A analise principal usou somente a divisao TS original: 1.206 casos e 1.343 controles, totalizando 2.549 amostras de soro. Os IDs sinteticos foram substituidos pelos acessos GSM e nenhuma amostra sobrepos os IDs da base interna.
 
 Cobertura e resultado principal:
 
@@ -2043,16 +2043,18 @@ Interpretacao vigente: a pesquisa possui uma validacao computacional externa rea
 
 ## Revisao Global de Consistencia e Reprodutibilidade (11/10/2026)
 
-Duas passagens adicionais por todo o repositorio corrigiram descricoes historicas que ainda pareciam vigentes e tornaram explicito que, na base interna, os IDs de classe 0 sao GTEx e os de classe 1 pertencem a outra fonte. Portanto, classe e origem estao estruturalmente confundidas; o Modelo 2 e associacao interna, e a evidencia externa deve prevalecer.
+Duas passagens adicionais por todo o repositorio corrigiram descricoes historicas que ainda pareciam vigentes e tornaram explicito que, na base interna, os IDs de classe 0 sao GTEx e os de classe 1 pertencem a outra fonte. Portanto, classe e origem estao estruturalmente confundidas; o Modelo 2 e associacao interna, e a evidencia externa recebe maior peso sem ser tratada como confirmacao definitiva.
 
-A auditoria automatizada foi ampliada para 113 verificacoes e esta aprovada sem falhas. Ela agora confere tambem dimensoes e classes das bases, IDs, valores de expressao, lista de 43 positivos, universo FASTA, dependencia bibliografica parcial da GSE73002, mapa TS, hashes congelados, nucleo estrito, documentacao e ausencia de caminhos absolutos de usuario.
+A explicacao completa foi consolidada em `docs/LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md`. A verificacao mostrou 1.339/1.339 controles com IDs `GTEX-*` e 1.339/1.339 doentes com UUIDs terminados em `.mirbase21.mirnas.quantification` ou `.mirnaseq.mirnas.quantification`. Nao ha manifesto clinico versionado que permita afirmar, amostra por amostra, que esses UUIDs pertencem ao projeto TCGA-BRCA. A descricao rigorosa usa `CSV original de doentes com IDs UUID de quantificacao`.
+
+A auditoria automatizada foi ampliada para 120 verificacoes e esta aprovada sem falhas. Ela agora confere tambem dimensoes e classes das bases, IDs, valores de expressao, lista de 43 positivos, universo FASTA, dependencia bibliografica parcial da GSE73002, mapa TS, hashes congelados, nucleo estrito, documentacao e ausencia de caminhos absolutos de usuario.
 
 Reprodutibilidade confirmada:
 
 ```text
 Modelos 1 e 2: 7/7 artefatos reconstruidos byte a byte identicos
 Geradores historicos: 6/6 artefatos cientificos preservados
-Auditoria final: 113/113 verificacoes aprovadas
+Auditoria final: 120/120 verificacoes aprovadas
 ```
 
 Os relatorios passaram a registrar caminhos relativos ao projeto. Essa melhoria de portabilidade e o determinismo dos artefatos nao removem as limitacoes biologicas ou de coorte descritas acima.

@@ -16,6 +16,14 @@ Atualizado em 11/10/2026. O pipeline ativo trabalha exclusivamente com sequencia
 
 O Modelo 1 usa aprendizado Positive-Unlabeled (PU): os demais miRNAs sao nao rotulados e servem somente como contraste temporario. O Modelo 2 e uma avaliacao interna da expressao. Nenhum score e probabilidade clinica ou confirmacao de biomarcador.
 
+## Confundimento estrutural da base interna
+
+Os 1.339 controles da base interna possuem IDs `GTEX-*`; os 1.339 doentes possuem UUIDs de arquivos de quantificacao vindos do CSV original de doentes. Nao ha controles e doentes representados nas duas origens. Assim, classe e origem sao perfeitamente associadas, e o efeito da doenca nao pode ser estimado separadamente do efeito de fonte, tecido, coleta, plataforma ou processamento.
+
+A validacao cruzada do Modelo 2 separa individuos, mas preserva essa associacao em todos os folds. Ela reduz sobreajuste a amostras, nao confundimento de desenho. Correcao de lote tambem nao pode identificar com seguranca qual efeito remover quando lote/origem e classe coincidem. Consequentemente, AUC, FDR e tamanhos de efeito do Modelo 2 descrevem associacao interna e nao desempenho biologico independente.
+
+O repositorio nao contem um manifesto clinico versionado que confirme amostra por amostra a procedencia `TCGA-BRCA` dos UUIDs de classe 1. A origem comprovada localmente e o CSV original de doentes; a classe 0 e comprovadamente GTEx pelos identificadores. A documentacao completa dessa limitacao esta em `docs/LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md`.
+
 ## Reproducao
 
 ```powershell
@@ -33,7 +41,7 @@ node scripts\validate_mirna_external_cohort.js caminho\coorte_externa.csv --scal
 
 O formato esperado esta em `docs/FORMATO_COORTE_EXTERNA.md`.
 
-A auditoria automatizada atual cobre 113 invariantes do projeto e esta aprovada sem falhas. Em revisao de reprodutibilidade, os sete artefatos ativos dos Modelos 1 e 2 foram reconstruidos de forma byte a byte identica; seis artefatos cientificos historicos tambem permaneceram identicos ao serem regenerados. Isso demonstra determinismo computacional, nao validade clinica.
+A auditoria automatizada atual cobre 120 invariantes do projeto e esta aprovada sem falhas. Em revisao de reprodutibilidade, os sete artefatos ativos dos Modelos 1 e 2 foram reconstruidos de forma byte a byte identica; seis artefatos cientificos historicos tambem permaneceram identicos ao serem regenerados. Isso demonstra determinismo computacional, nao validade clinica.
 
 ## Modelo 1: sequencia madura
 
@@ -171,7 +179,7 @@ A analise primaria utilizou exclusivamente `TS_B` e `TS_N` do teste original:
 - 2.540 medidas de miRNA;
 - escala log2 normalizada por quantis;
 - IDs GSM originais na entrada preparada;
-- nenhum paciente sobreposto por `sample_id` com TCGA/GTEx.
+- nenhum `sample_id` da coorte externa sobreposto aos IDs presentes na base interna.
 
 Os valores log2 foram usados diretamente. Valores negativos foram preservados porque representam a escala transformada, nao expressao biologica negativa. Para cada hipotese foram calculados AUC direcional, IC95%, p unilateral, FDR, Cliff's delta, Hedges g e diferenca media na escala log2.
 

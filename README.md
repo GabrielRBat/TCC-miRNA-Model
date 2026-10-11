@@ -20,6 +20,14 @@ Isso vale para novos scripts, datasets, modelos, métricas, comandos, fluxos de 
 
 O projeto comecou transformando uma matriz TXT de saudaveis para a estrutura do CSV de doentes, balanceando as classes em `1339 x 1339` e treinando classificadores de pacientes. O objetivo principal atual e descobrir e priorizar novos miRNAs candidatos ao cancer de mama: o Modelo 1 usa ensemble PU com k-mers, seed e composicao da sequencia madura; o Modelo 2 usa validacao cruzada de expressao nos pacientes. Hairpin e estrutura secundaria nao participam do fluxo vigente. Consulte [`docs/METODOLOGIA_MODELOS_MIRNA.md`](docs/METODOLOGIA_MODELOS_MIRNA.md).
 
+## Limitacao central da base interna
+
+Na base interna, os 1.339 controles possuem IDs `GTEX-*` e os 1.339 doentes possuem UUIDs de arquivos de quantificacao vindos de outro CSV. Nao existem controles e doentes cruzados entre essas duas origens. Portanto, `classe` e `origem` coincidem perfeitamente: quando a expressao muda, o Modelo 2 nao consegue separar quanto e doenca e quanto e fonte, tecido, coleta, plataforma ou processamento.
+
+Validacao cruzada, AUC, FDR e mais amostras da mesma montagem nao resolvem esse problema, porque treino e teste continuam obedecendo a regra `saudavel = GTEx` e `doente = CSV de doentes`. Por isso, o Modelo 2 e descrito como **associacao interna/triagem**, nunca como validacao biologica independente. O Modelo 1 nao usa essas classes no treinamento; o ranking congelado foi testado depois na GSE73002.
+
+O repositorio nao possui um manifesto clinico versionado que comprove amostra por amostra a origem `TCGA-BRCA` dos UUIDs do CSV de doentes. Ate esse manifesto existir, a procedencia deve ser descrita como `CSV original de doentes com IDs UUID de quantificacao`. A explicacao completa, incluindo o que pode e nao pode ser afirmado, esta em [`docs/LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md`](docs/LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md).
+
 ## Estrutura do Projeto
 
 ```text
@@ -1324,7 +1332,7 @@ node scripts\generate_mirna_rankings_html.js
 node scripts\audit_mirna_discovery_pipeline.js
 ```
 
-A auditoria automatizada vigente executa 113 verificacoes sobre arquivos, dimensoes e classes das bases, separacao de positivos/candidatos, integridade dos rankings, metricas, mapeamento externo, hashes dos artefatos congelados, documentacao e portabilidade. O resultado atual e `113/113`, sem falhas. Alem disso, uma reconstrucao integral confirmou `7/7` artefatos ativos byte a byte identicos, e a repeticao dos geradores historicos preservou `6/6` artefatos cientificos historicos.
+A auditoria automatizada vigente executa 120 verificacoes sobre arquivos, dimensoes e classes das bases, separacao de positivos/candidatos, integridade dos rankings, metricas, mapeamento externo, hashes dos artefatos congelados, documentacao e portabilidade. O resultado atual e `120/120`, sem falhas. Alem disso, uma reconstrucao integral confirmou `7/7` artefatos ativos byte a byte identicos, e a repeticao dos geradores historicos preservou `6/6` artefatos cientificos historicos.
 
 Para reproduzir a preparacao e a validacao principal da GSE73002:
 
