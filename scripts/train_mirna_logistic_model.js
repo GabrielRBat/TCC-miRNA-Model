@@ -4,6 +4,7 @@ const readline = require("readline");
 
 const ROOT = path.resolve(__dirname, "..");
 const fromRoot = (...parts) => path.join(ROOT, ...parts);
+const projectPath = (filePath) => path.relative(ROOT, filePath).split(path.sep).join("/");
 
 const DATASET_CSV = fromRoot("data", "processed", "dataset_mirna_balanceado_colunas_comuns.csv");
 const MODEL_JSON = fromRoot("models", "modelo_mirna_logistic.json");
@@ -289,7 +290,7 @@ async function main() {
   await fs.promises.writeFile(MODEL_JSON, JSON.stringify(modelArtifact, null, 2), "utf8");
 
   const report = [
-    `Dataset: ${DATASET_CSV}`,
+    `Dataset: ${projectPath(DATASET_CSV)}`,
     `Amostras totais: ${rows.length}`,
     `Features usadas: ${features.length}`,
     `Treino: ${train.length}`,
@@ -327,7 +328,7 @@ async function main() {
       .slice(0, 20)
       .map((item) => `${item.feature}\t${item.weight.toFixed(6)}`),
     "",
-    "Nota: este e um baseline. Como doentes e saudaveis vieram de fontes diferentes, metricas altas podem refletir diferenca de lote/fonte, nao necessariamente sinal biologico da doenca.",
+    "Nota: este e um artefato historico. Doentes e saudaveis vieram de fontes distintas, deixando classe e origem estruturalmente confundidas; portanto, as metricas nao estimam desempenho clinico independente.",
     "",
   ].join("\n");
 

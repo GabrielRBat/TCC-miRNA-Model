@@ -1,6 +1,6 @@
 # Metodologia vigente: descoberta e validacao de candidatos miRNA
 
-Atualizado em 10/10/2026. O pipeline ativo trabalha exclusivamente com sequencias maduras; precursor hairpin, estrutura secundaria e MFE nao participam dos modelos.
+Atualizado em 11/10/2026. O pipeline ativo trabalha exclusivamente com sequencias maduras; precursor hairpin, estrutura secundaria e MFE nao participam dos modelos.
 
 ## Desenho
 
@@ -25,13 +25,15 @@ node scripts\generate_mirna_rankings_html.js
 node scripts\audit_mirna_discovery_pipeline.js
 ```
 
-Quando a coorte independente estiver disponivel:
+Para aplicar o pipeline congelado a uma nova coorte independente:
 
 ```powershell
 node scripts\validate_mirna_external_cohort.js caminho\coorte_externa.csv --scale linear|log2
 ```
 
 O formato esperado esta em `docs/FORMATO_COORTE_EXTERNA.md`.
+
+A auditoria automatizada atual cobre 113 invariantes do projeto e esta aprovada sem falhas. Em revisao de reprodutibilidade, os sete artefatos ativos dos Modelos 1 e 2 foram reconstruidos de forma byte a byte identica; seis artefatos cientificos historicos tambem permaneceram identicos ao serem regenerados. Isso demonstra determinismo computacional, nao validade clinica.
 
 ## Modelo 1: sequencia madura
 
@@ -141,7 +143,7 @@ Tambem sao reportados cenarios 75/25, 25/75 e a fronteira de Pareto. Quatro cand
 
 Top 5 integrado: `mir-32-3p`, `let-7f-5p`, `mir-32-5p`, `mir-95-5p` e `mir-200b-3p`.
 
-O grande limite interno permanece: classe e fonte/lote podem estar confundidas. Estatistica adicional nao corrige esse problema. A GSE73002 foi usada depois como teste externo, com as limitacoes especificas descritas a seguir.
+O grande limite interno permanece: doentes e saudaveis foram montados a partir de fontes de entrada distintas, de modo que classe e origem estao estruturalmente confundidas. Validacao cruzada, FDR ou mais metricas no mesmo conjunto nao conseguem separar doenca de fonte/processamento. Por isso, o Modelo 2 deve ser chamado de associacao interna ou triagem computacional, e nao de validacao biologica independente. A GSE73002 foi usada depois como teste externo, com as limitacoes especificas descritas a seguir.
 
 ## Coorte externa
 
@@ -206,7 +208,7 @@ Assim, a coorte apoia um conjunto amplo de sinais concordantes e um nucleo madur
 3. O Recall@10% externo ainda nao e significativo.
 4. A ablação terminal e exploratoria e precisa de repeticao ou mais positivos.
 5. A base de expressao atual raramente distingue 5p de 3p.
-6. O Modelo 2 pode capturar lote ou origem.
+6. No Modelo 2 interno, classe e fonte de entrada estao estruturalmente confundidas; ele pode capturar origem/processamento em vez de doenca.
 7. FDR pequeno na base atual nao elimina confundimento sistematico.
 8. A GSE73002 possui deslocamento global de intensidade e dependencia bibliografica parcial; os resultados robustos devem ser definidos pela concordancia entre analise primaria e sensibilidade.
 9. Uma segunda coorte independente e validacao laboratorial continuam desejaveis.

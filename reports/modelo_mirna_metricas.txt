@@ -1,4 +1,4 @@
-Dataset: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+Dataset: data/processed/dataset_mirna_balanceado_colunas_comuns.csv
 Amostras totais: 2678
 Features usadas: 371
 Treino: 2142
@@ -68,4 +68,4 @@ hsa-mir-339	-0.065139
 hsa-mir-378a	-0.064787
 hsa-mir-27a	-0.064370
 
-Nota: este e um baseline. Como doentes e saudaveis vieram de fontes diferentes, metricas altas podem refletir diferenca de lote/fonte, nao necessariamente sinal biologico da doenca.
+Nota: este e um artefato historico. Doentes e saudaveis vieram de fontes distintas, deixando classe e origem estruturalmente confundidas; portanto, as metricas nao estimam desempenho clinico independente.

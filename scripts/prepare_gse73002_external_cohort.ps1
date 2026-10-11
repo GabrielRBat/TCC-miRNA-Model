@@ -114,7 +114,7 @@ $outputHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $resolvedOutput).Hash
 $report = @(
   'Preparacao da coorte externa GSE73002',
   '',
-  "ZIP de origem: $resolvedZip",
+  "ZIP de origem (nome do arquivo): $([System.IO.Path]::GetFileName($resolvedZip))",
   "SHA256 do ZIP: $zipHash",
   'Entrada da matriz: base_mirna_mama_GSE73002.csv',
   'Entrada do mapa: mapa_amostras_GSE73002.csv',

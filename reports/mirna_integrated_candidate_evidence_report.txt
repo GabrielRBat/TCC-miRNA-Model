@@ -1,8 +1,8 @@
 Evidencia integrada de candidatos miRNA
 
-Ranking sequencial usado: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\mirna_sequence_candidate_ranking.csv
-Dataset de expressao usado: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
-Modelo/perfil sequencial usado: C:\Users\ACS INFO PC\Downloads\miRNA\models\modelo_mirna_sequence_patterns.json
+Ranking sequencial usado: data/processed/mirna_sequence_candidate_ranking.csv
+Dataset de expressao usado: data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+Modelo/perfil sequencial usado: models/modelo_mirna_sequence_patterns.json
 Candidatos avaliados: 221
 
 Formula do score integrado:

@@ -4,6 +4,7 @@ const readline = require("readline");
 
 const ROOT = path.resolve(__dirname, "..");
 const fromRoot = (...parts) => path.join(ROOT, ...parts);
+const projectPath = (filePath) => path.relative(ROOT, filePath).split(path.sep).join("/");
 
 const INPUT_CSV = fromRoot("data", "processed", "dataset_mirna_balanceado_colunas_comuns.csv");
 const PANEL_CSV = fromRoot("data", "processed", "dataset_mirna_painel_12_disponiveis.csv");
@@ -332,8 +333,8 @@ async function main() {
     .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
 
   const report = [
-    `Dataset base: ${INPUT_CSV}`,
-    `Dataset do painel gerado: ${PANEL_CSV}`,
+    `Dataset base: ${projectPath(INPUT_CSV)}`,
+    `Dataset do painel gerado: ${projectPath(PANEL_CSV)}`,
     `Amostras totais: ${rows.length}`,
     `Marcadores solicitados: ${PANEL.length}`,
     `Marcadores usados: ${available.length}`,
@@ -370,7 +371,7 @@ async function main() {
     "Pesos aprendidos, positivo puxa para doente e negativo puxa para saudavel:",
     ...markerWeights.map((item) => `${item.marker}\t${item.weight.toFixed(6)}\t${item.expected}`),
     "",
-    "Nota: usar apenas os marcadores disponiveis e biologicamente relevantes reduz ruido, mas ainda existe risco de vies de lote/fonte entre doentes e saudaveis.",
+    "Nota: este e um artefato historico. Mesmo com marcadores biologicamente guiados, doentes e saudaveis vieram de fontes distintas, deixando classe e origem estruturalmente confundidas; as metricas nao estimam desempenho clinico independente.",
     "",
   ].join("\n");
 

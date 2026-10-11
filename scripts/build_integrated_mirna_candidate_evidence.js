@@ -3,6 +3,7 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const fromRoot = (...parts) => path.join(ROOT, ...parts);
+const projectPath = (filePath) => path.relative(ROOT, filePath).split(path.sep).join("/");
 
 const DATASET_CSV = fromRoot("data", "processed", "dataset_mirna_balanceado_colunas_comuns.csv");
 const SEQUENCE_RANKING_CSV = fromRoot("data", "processed", "mirna_sequence_candidate_ranking.csv");
@@ -278,9 +279,9 @@ function main() {
   const report = [
     "Evidencia integrada de candidatos miRNA",
     "",
-    `Ranking sequencial usado: ${SEQUENCE_RANKING_CSV}`,
-    `Dataset de expressao usado: ${DATASET_CSV}`,
-    `Modelo/perfil sequencial usado: ${SEQUENCE_MODEL_JSON}`,
+    `Ranking sequencial usado: ${projectPath(SEQUENCE_RANKING_CSV)}`,
+    `Dataset de expressao usado: ${projectPath(DATASET_CSV)}`,
+    `Modelo/perfil sequencial usado: ${projectPath(SEQUENCE_MODEL_JSON)}`,
     `Candidatos avaliados: ${integrated.length}`,
     "",
     "Formula do score integrado:",

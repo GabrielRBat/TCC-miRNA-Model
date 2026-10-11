@@ -1,5 +1,5 @@
-Dataset base: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
-Dataset do painel gerado: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_painel_12_disponiveis.csv
+Dataset base: data/processed/dataset_mirna_balanceado_colunas_comuns.csv
+Dataset do painel gerado: data/processed/dataset_mirna_painel_12_disponiveis.csv
 Amostras totais: 2678
 Marcadores solicitados: 12
 Marcadores usados: 8
@@ -51,4 +51,4 @@ let-7b-5p	0.337285	downregulated em doente
 miR-20a-5p	0.288542	excecao no compartimento extracelular
 miR-19a-3p	-0.284706	upregulated em doente
 
-Nota: usar apenas os marcadores disponiveis e biologicamente relevantes reduz ruido, mas ainda existe risco de vies de lote/fonte entre doentes e saudaveis.
+Nota: este e um artefato historico. Mesmo com marcadores biologicamente guiados, doentes e saudaveis vieram de fontes distintas, deixando classe e origem estruturalmente confundidas; as metricas nao estimam desempenho clinico independente.

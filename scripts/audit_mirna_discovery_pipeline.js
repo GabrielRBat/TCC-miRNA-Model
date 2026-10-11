@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -18,6 +19,21 @@ const FILES = {
   externalPrimarySummary: fromRoot("reports", "gse73002_ts_external_validation_summary.json"),
   externalCenteredSummary: fromRoot("reports", "gse73002_ts_external_validation_centered_sensitivity_summary.json"),
   globalShift: fromRoot("reports", "gse73002_global_shift_audit.json"),
+  internalDataset: fromRoot("data", "processed", "dataset_mirna_balanceado_colunas_comuns.csv"),
+  positiveMarkers: fromRoot("data", "external", "breast_cancer_mirna_positive_markers.csv"),
+  trainingPolicy: fromRoot("data", "external", "breast_cancer_mirna_training_policy.csv"),
+  matureFasta: fromRoot("data", "external", "mirbase_mature.fa"),
+  externalMap: fromRoot("data", "processed", "gse73002_external_validation_ts_map.csv"),
+  readme: fromRoot("README.md"),
+  projectContext: fromRoot("context.md"),
+  methodology: fromRoot("docs", "METODOLOGIA_MODELOS_MIRNA.md"),
+  didacticGuide: fromRoot("docs", "GUIA_DIDATICO_PIPELINE_MIRNA.html"),
+  dashboard: fromRoot("reports", "mirna_rankings_dashboard.html"),
+  externalPreparationReport: fromRoot("reports", "gse73002_external_preparation_report.txt"),
+  legacyBaselineReport: fromRoot("reports", "modelo_mirna_metricas.txt"),
+  legacyPanelReport: fromRoot("reports", "modelo_mirna_painel_metricas.txt"),
+  legacySequenceReport: fromRoot("reports", "mirna_sequence_candidate_discovery_report.txt"),
+  legacyIntegratedReport: fromRoot("reports", "mirna_integrated_candidate_evidence_report.txt"),
 };
 
 function parseCsvLine(line) {
@@ -69,6 +85,15 @@ function scoresAreDescending(rows, column) {
   return rows.every((row, index) => index === 0 || Number(rows[index - 1][column]) + 1e-12 >= Number(row[column]));
 }
 
+function sha256File(filePath) {
+  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex").toUpperCase();
+}
+
+function normalizeMirnaName(value) {
+  const lower = String(value ?? "").trim().toLowerCase();
+  return lower.startsWith("hsa-") ? lower : /^(mir|let)-/.test(lower) ? `hsa-${lower}` : lower;
+}
+
 function main() {
   for (const [name, filePath] of Object.entries(FILES)) {
     if (name !== "report") check(fs.existsSync(filePath), `arquivo obrigatorio existe: ${path.relative(ROOT, filePath)}`);
@@ -116,6 +141,33 @@ function main() {
   check(!Object.hasOwn(ranking1[0] ?? {}, "numero_hairpins_associados") && !Object.hasOwn(ranking1[0] ?? {}, "metodo_estrutura_hairpin"), "ranking ativo nao expoe colunas de hairpin ou estrutura");
   check(ranking1.every((row) => ["percentil_mediano_bags_oob", "percentil_q25_bags_oob", "percentil_q75_bags_oob", "frequencia_top_10_bags_oob"].every((column) => finiteUnit(row[column]))), "ranking do Modelo 1 registra estabilidade out-of-bag em [0,1]");
   check(ranking1.every((row) => row.features_modelo_mais_influentes === row.features_kmer_mais_influentes), "alias legado de features influentes preserva o mesmo valor");
+
+  const internalDataset = readCsv(FILES.internalDataset);
+  const internalSampleIds = internalDataset.map((row) => row.sample_id);
+  const internalClass0 = internalDataset.filter((row) => Number(row.classe) === 0);
+  const internalClass1 = internalDataset.filter((row) => Number(row.classe) === 1);
+  const internalFeatures = Object.keys(internalDataset[0] ?? {}).filter((column) => !["sample_id", "classe"].includes(column));
+  const internalValuesValid = internalDataset.every((row) => internalFeatures.every((column) => Number.isFinite(Number(row[column])) && Number(row[column]) >= 0));
+  const classSourceAligned = internalClass0.every((row) => /^GTEX-/i.test(row.sample_id)) && internalClass1.every((row) => !/^GTEX-/i.test(row.sample_id));
+  check(internalDataset.length === 2678 && internalClass0.length === 1339 && internalClass1.length === 1339, "base interna possui 2.678 amostras balanceadas 1.339/1.339", `${internalDataset.length}/${internalClass0.length}/${internalClass1.length}`);
+  check(internalFeatures.length === 371, "base interna comum possui 371 features de miRNA", internalFeatures.length);
+  check(new Set(internalSampleIds.map((value) => value.toLowerCase())).size === internalSampleIds.length, "IDs da base interna sao unicos sem diferenciar maiusculas");
+  check(internalValuesValid, "todas as expressoes da base interna sao numericas, finitas e nao negativas");
+  check(classSourceAligned, "formatos de ID confirmam alinhamento estrutural entre classe e fonte na base interna");
+
+  const positiveMarkers = readCsv(FILES.positiveMarkers);
+  const trainingPolicy = readCsv(FILES.trainingPolicy);
+  const positiveNames = positiveMarkers.map((row) => normalizeMirnaName(row.resolved_mature_mirna));
+  const policyNames = trainingPolicy.map((row) => normalizeMirnaName(row.resolved_mature_mirna));
+  const fastaNames = fs.readFileSync(FILES.matureFasta, "utf8").split(/\r?\n/).filter((line) => line.startsWith(">hsa-")).map((line) => normalizeMirnaName(line.slice(1).split(/\s+/, 1)[0]));
+  const fastaSet = new Set(fastaNames);
+  check(positiveMarkers.length === 43 && new Set(positiveNames).size === 43, "lista positiva possui 43 miRNAs maduros unicos");
+  check(trainingPolicy.length === 43 && new Set(policyNames).size === 43 && policyNames.every((name) => positiveNames.includes(name)), "politica de treino cobre exatamente os 43 positivos");
+  check(trainingPolicy.every((row) => row.use_in_training === "sim" && Number(row.training_weight) > 0), "todas as politicas ativas possuem peso positivo");
+  check(fastaNames.length === 2656 && fastaSet.size === 2656, "FASTA contem 2.656 miRNAs humanos maduros unicos", fastaNames.length);
+  check(positiveNames.every((name) => fastaSet.has(name)), "todos os 43 positivos resolvidos existem exatamente no FASTA maduro");
+  check(model1.candidate_count + positiveMarkers.length === fastaNames.length, "universo do Modelo 1 particiona FASTA em positivos e 2.613 candidatos", `${model1.candidate_count}+${positiveMarkers.length}/${fastaNames.length}`);
+  check(positiveMarkers.filter((row) => /shimomura/i.test(row.fonte)).length === 5, "dependencia bibliografica GSE73002 esta limitada e quantificada em cinco positivos");
 
   const model2 = JSON.parse(fs.readFileSync(FILES.model2, "utf8"));
   const ranking2 = readCsv(FILES.ranking2);
@@ -170,6 +222,42 @@ function main() {
   check(unambiguousPracticalBoth.length === 21, "nucleo maduro estrito com AUC >= 0,60 nas duas analises confere", unambiguousPracticalBoth.length);
   check(globalShift.globalSampleMean?.aucCancerHigher > 0.9 && globalShift.featureMeanDirection?.proportionHigherInCancer > 0.9, "auditoria detecta e documenta forte deslocamento global", `${globalShift.globalSampleMean?.aucCancerHigher}/${globalShift.featureMeanDirection?.proportionHigherInCancer}`);
   check(Math.abs(primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact) < 0.1, "baixa correlacao ranking interno versus efeito externo permanece explicitamente quantificada", primarySummary.rankingEvaluation?.spearmanInternalScoreVsExternalDirectionalAucMatureExact);
+
+  const externalMap = readCsv(FILES.externalMap);
+  const externalMapCancer = externalMap.filter((row) => Number(row.classe) === 1 && row.diagnostico_geo === "breast cancer");
+  const externalMapControls = externalMap.filter((row) => Number(row.classe) === 0 && row.diagnostico_geo === "non-cancer");
+  check(externalMap.length === 2549 && externalMapCancer.length === 1206 && externalMapControls.length === 1343, "mapa externo rastreia exatamente casos e controles TS", `${externalMap.length}/${externalMapCancer.length}/${externalMapControls.length}`);
+  check(externalMap.every((row) => row.coorte_original === "TS"), "mapa externo contem somente a divisao TS predefinida");
+  check(new Set(externalMap.map((row) => row.sample_id)).size === externalMap.length && new Set(externalMap.map((row) => row.source_sample_id)).size === externalMap.length, "IDs GSM e IDs sinteticos do mapa externo sao unicos");
+  check(primarySummary.provenanceSha256?.integratedRanking === sha256File(FILES.integrated), "hash do ranking congelado confere no resumo externo");
+  check(primarySummary.provenanceSha256?.sequenceModel === sha256File(FILES.model1), "hash do Modelo 1 congelado confere no resumo externo");
+  check(primarySummary.provenanceSha256?.patientModel === sha256File(FILES.model2), "hash do Modelo 2 congelado confere no resumo externo");
+  check(JSON.stringify(primarySummary.provenanceSha256) === JSON.stringify(centeredSummary.provenanceSha256), "analises primaria e centrada usam os mesmos artefatos congelados");
+  const optionalPreparedInput = fromRoot(...primarySummary.input.split("/"));
+  if (fs.existsSync(optionalPreparedInput)) check(primarySummary.provenanceSha256?.inputCsv === sha256File(optionalPreparedInput), "hash da matriz externa local confere no resumo");
+
+  const readme = fs.readFileSync(FILES.readme, "utf8");
+  const methodology = fs.readFileSync(FILES.methodology, "utf8");
+  const projectContext = fs.readFileSync(FILES.projectContext, "utf8");
+  const didacticGuide = fs.readFileSync(FILES.didacticGuide, "utf8");
+  const dashboard = fs.readFileSync(FILES.dashboard, "utf8");
+  const portableTextArtifacts = [
+    readme,
+    projectContext,
+    fs.readFileSync(FILES.externalPreparationReport, "utf8"),
+    fs.readFileSync(FILES.legacyBaselineReport, "utf8"),
+    fs.readFileSync(FILES.legacyPanelReport, "utf8"),
+    fs.readFileSync(FILES.legacySequenceReport, "utf8"),
+    fs.readFileSync(FILES.legacyIntegratedReport, "utf8"),
+  ];
+  check(/Fluxo científico vigente:[\s\S]*rastreabilidade histórica/i.test(readme), "README separa explicitamente fluxo vigente de artefatos historicos");
+  check(!/Modelo principal recomendado:\s*```text\s*models\/modelo_mirna_painel\.json/i.test(projectContext), "contexto nao recomenda mais o painel historico como modelo principal");
+  check(/Historico: Dois Modelos com Hairpin/i.test(projectContext) && /substituído em 10\/10\/2026/i.test(projectContext), "contexto marca inequivocamente a versao com hairpin como historica");
+  check(/classe e (?:fonte|origem) est[aã]o estruturalmente confundidas/i.test(`${readme}\n${methodology}`), "documentacao declara confundimento estrutural da base interna");
+  check(/núcleo maduro estrito possui 22|nucleo maduro estrito de 22/i.test(`${didacticGuide}\n${methodology}`), "guia e metodologia destacam o nucleo maduro estrito de 22");
+  check((dashboard.match(/\"nucleo_estrito\":\"sim\"/g) ?? []).length === 44, "dashboard marca os 22 candidatos estritos nas duas abas", (dashboard.match(/\"nucleo_estrito\":\"sim\"/g) ?? []).length);
+  check(/AUC 0[,.]971[\s\S]*95[,.]67%/i.test(`${readme}\n${didacticGuide}`), "documentacao exibe o alerta quantitativo de deslocamento global");
+  check(portableTextArtifacts.every((content) => !/[A-Z]:\\Users\\/i.test(content)), "relatorios e instrucoes versionados nao dependem de caminho absoluto de usuario");
 
   finish();
 }

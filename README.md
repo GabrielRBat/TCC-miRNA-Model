@@ -5,6 +5,8 @@ Este projeto organiza dados de sequencia e expressao de miRNAs. O fluxo principa
 - `classe = 0`: paciente saudável
 - `classe = 1`: paciente doente
 
+> **Fluxo científico vigente:** Modelo 1 PU de sequência madura → Modelo 2 de associação interna → validação externa congelada GSE73002. Os classificadores com 99–100% de desempenho, o ranking sequencial antigo e o integrador antigo permanecem apenas para rastreabilidade histórica. Suas métricas podem estar fortemente infladas por fonte/lote e não devem ser usadas como resultado principal, comparação clínica ou evidência de diagnóstico.
+
 ## Regra de Manutenção
 
 Sempre que uma mudança alterar o contexto do projeto, atualize também:
@@ -302,7 +304,7 @@ Esse script:
 - pula as primeiras 1339 amostras saudáveis já usadas no dataset balanceado;
 - seleciona as 1500 amostras seguintes.
 
-### Treinar modelo baseline com 371 miRNAs
+### Modelo histórico: baseline com 371 miRNAs
 
 ```powershell
 node scripts\train_mirna_logistic_model.js
@@ -332,13 +334,15 @@ recall = 100.00%
 AUC = 1.0000
 ```
 
-### Treinar modelo com painel biológico
+> Resultado histórico e potencialmente confundido por fonte/lote. Não representa o desempenho do pipeline vigente nem deve ser apresentado como acurácia clínica.
+
+### Modelo histórico: painel biológico
 
 ```powershell
 node scripts\train_mirna_panel_model.js
 ```
 
-Esse é o modelo recomendado como principal, porque usa marcadores biologicamente guiados.
+Este modelo já foi recomendado em uma etapa anterior do projeto, mas foi substituído como fluxo principal pelo pipeline de descoberta de miRNAs maduros e pela validação externa.
 
 Saídas:
 
@@ -356,6 +360,8 @@ precision = 100.00%
 recall = 98.88%
 AUC = 1.0000
 ```
+
+> Resultado histórico e potencialmente confundido por fonte/lote. Não representa validação clínica nem o desfecho principal atual.
 
 ## Predição
 
@@ -497,7 +503,7 @@ As métricas ficaram extremamente altas. Isso precisa ser interpretado com cuida
 Possíveis causas:
 
 - o modelo pode estar aprendendo sinal real da doença
-- o modelo pode estar aprendendo diferenças de fonte/lote entre os dados de doentes e saudáveis
+- as classes foram montadas a partir de fontes de entrada distintas; classe e fonte estão estruturalmente confundidas, então o modelo pode aprender origem/processamento em vez de doença
 - o TXT saudável e o CSV de doentes podem ter sido processados por pipelines diferentes
 - parte do painel original não está disponível nos saudáveis
 
@@ -587,7 +593,7 @@ Essa etapa nao apresenta os candidatos como diagnostico. Ela gera hipoteses comp
 O projeto usa Node.js e nao depende de pacotes externos de npm.
 
 ```powershell
-cd "C:\Users\ACS INFO PC\Downloads\miRNA"
+cd "<caminho-do-repositorio>\miRNA"
 node --version
 ```
 
@@ -1042,7 +1048,7 @@ mir-486-5p     score_integrado=0.7645
 
 Importante: esse ranking integrado e diferente do ranking sequencial puro. O ranking sequencial prioriza semelhanca de padroes. O ranking integrado sobe candidatos que tambem mostram forte separacao entre `classe=1` doente e `classe=0` saudavel no dataset atual.
 
-Essa separacao pode refletir sinal biologico, mas tambem pode refletir efeito de lote/fonte. Portanto, os resultados continuam sendo candidatos, marcadores suspeitos e hipoteses computacionais que precisam de validacao experimental/laboratorial.
+Essa separacao pode conter sinal biologico, mas a base interna foi montada com doentes e saudaveis provenientes de fontes de entrada distintas. Portanto, classe e fonte estao estruturalmente confundidas: a validacao cruzada interna nao consegue atribuir a separacao exclusivamente a doenca. Os resultados continuam sendo candidatos e hipoteses computacionais, e a evidencia externa deve ter prioridade na interpretacao.
 
 Quando essa lista existir, o ranking mais robusto devera combinar:
 
@@ -1275,7 +1281,7 @@ desses candidatos, quais tambem mostram associacao computacional com pacientes d
 
 Essa segunda etapa funciona como uma validacao computacional, nao laboratorial. Se um candidato aparece no dataset e sua expressao separa doentes e saudaveis, ele ganha prioridade como hipotese biologica. Ainda assim, isso nao prova causalidade nem valida o biomarcador clinicamente.
 
-A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes podem estar confundidas com fonte/lote. Os 278 resultados com FDR interno referem-se a 325 hipoteses de expressao unicas, nao a 611 testes independentes. Valores-p no piso numerico devem ser apresentados como `p<1e-16`, sem alegar precisao adicional. Por isso, o ranking foi posteriormente testado na coorte externa GSE73002 descrita abaixo.
+A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes foram montadas a partir de fontes distintas, deixando classe e origem estruturalmente confundidas. Logo, as metricas internas do Modelo 2 medem associacao dentro dessa base, nao desempenho biologico independente. Os 278 resultados com FDR interno referem-se a 325 hipoteses de expressao unicas, nao a 611 testes independentes. Valores-p no piso numerico devem ser apresentados como `p<1e-16`, sem alegar precisao adicional. Por isso, o ranking foi posteriormente testado na coorte externa GSE73002 descrita abaixo.
 
 ### Versao Congelada e Proximo Passo Cientifico
 
@@ -1317,6 +1323,8 @@ node scripts\validate_mirna_candidates_in_patients_model.js
 node scripts\generate_mirna_rankings_html.js
 node scripts\audit_mirna_discovery_pipeline.js
 ```
+
+A auditoria automatizada vigente executa 113 verificacoes sobre arquivos, dimensoes e classes das bases, separacao de positivos/candidatos, integridade dos rankings, metricas, mapeamento externo, hashes dos artefatos congelados, documentacao e portabilidade. O resultado atual e `113/113`, sem falhas. Alem disso, uma reconstrucao integral confirmou `7/7` artefatos ativos byte a byte identicos, e a repeticao dos geradores historicos preservou `6/6` artefatos cientificos historicos.
 
 Para reproduzir a preparacao e a validacao principal da GSE73002:
 

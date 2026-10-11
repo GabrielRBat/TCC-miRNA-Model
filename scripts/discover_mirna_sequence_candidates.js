@@ -3,6 +3,7 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const fromRoot = (...parts) => path.join(ROOT, ...parts);
+const projectPath = (filePath) => path.relative(ROOT, filePath).split(path.sep).join("/");
 
 const FASTA_PATH = fromRoot("data", "external", "mirbase_mature.fa");
 const COMMON_DATASET = fromRoot("data", "processed", "dataset_mirna_balanceado_colunas_comuns.csv");
@@ -544,9 +545,9 @@ async function main() {
   const report = [
     "Descoberta computacional de candidatos por padroes sequenciais de miRNA",
     "",
-    `FASTA de referencia: ${FASTA_PATH}`,
-    `CSV de biomarcadores positivos: ${POSITIVE_MARKERS_CSV}`,
-    `Dataset usado para limitar candidatos aos miRNAs presentes na base: ${COMMON_DATASET}`,
+    `FASTA de referencia: ${projectPath(FASTA_PATH)}`,
+    `CSV de biomarcadores positivos: ${projectPath(POSITIVE_MARKERS_CSV)}`,
+    `Dataset usado para limitar candidatos aos miRNAs presentes na base: ${projectPath(COMMON_DATASET)}`,
     `Biomarcadores positivos solicitados: ${positiveMarkers.length}`,
     `Biomarcadores positivos com sequencia encontrada: ${markerEntries.length}`,
     `Candidatos humanos avaliados: ${ranked.length}`,

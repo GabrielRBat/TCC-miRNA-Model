@@ -1,6 +1,6 @@
 Preparacao da coorte externa GSE73002
 
-ZIP de origem: C:\Users\ACS INFO PC\Downloads\miRNA\base_mirna_mama_GSE73002.zip
+ZIP de origem (nome do arquivo): base_mirna_mama_GSE73002.zip
 SHA256 do ZIP: E5E57EA6E1326FA572A4F67F8A6880BBEEFB0E7D89791CB081FD2341830EE851
 Entrada da matriz: base_mirna_mama_GSE73002.csv
 Entrada do mapa: mapa_amostras_GSE73002.csv

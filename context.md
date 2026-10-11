@@ -56,10 +56,10 @@ O objetivo principal atual evoluiu para descoberta de candidatos ao cancer de ma
 
 ## Ambiente
 
-Diretório de trabalho:
+Diretório de trabalho (exemplo; ajuste para o local do clone):
 
 ```text
-C:\Users\ACS INFO PC\Downloads\miRNA
+<caminho-do-repositorio>\miRNA
 ```
 
 Shell:
@@ -85,7 +85,7 @@ v22.13.0
 Todos os scripts devem ser executados a partir da raiz do projeto:
 
 ```powershell
-cd "C:\Users\ACS INFO PC\Downloads\miRNA"
+cd "<caminho-do-repositorio>\miRNA"
 ```
 
 ## Estrutura Atual
@@ -463,7 +463,7 @@ Motivo da ausência:
 
 Foram criados dois modelos porque eles têm finalidades diferentes.
 
-### Modelo Baseline
+### Modelo Baseline (historico; nao e o fluxo principal vigente)
 
 Arquivo:
 
@@ -518,9 +518,9 @@ Uso:
 Limitação:
 
 - Menos interpretável.
-- Maior risco de capturar diferença de lote/fonte, não só doença.
+- Classe e fonte estão estruturalmente confundidas; o desempenho não pode ser atribuído exclusivamente à doença.
 
-### Modelo do Painel
+### Modelo do Painel (historico; nao e o fluxo principal vigente)
 
 Arquivo:
 
@@ -580,34 +580,35 @@ miR-19a-3p    negativo, puxa para saudável
 Observação:
 
 - Alguns pesos ficaram contra a direção biológica esperada, especialmente `miR-19b-3p` e `miR-92a-3p`.
-- Isso reforça o risco de efeito de lote/fonte ou diferença de processamento.
+- Isso é compatível com confundimento por fonte/processamento e não deve ser interpretado como evidência clínica independente.
 
-Uso recomendado:
+Uso histórico:
 
-- Este é o modelo principal no estado atual, porque é biologicamente guiado.
-- O baseline fica como comparação exploratória.
+- Este painel já foi recomendado como principal em uma etapa antiga do projeto.
+- Foi substituído pelo fluxo vigente Modelo 1 → Modelo 2 → validação externa GSE73002.
+- Permanece somente para rastreabilidade e comparação exploratória.
 
-## Diferença entre Baseline e Painel
+## Diferença entre Baseline e Painel (artefatos históricos)
 
 Baseline:
 
 - Usa 371 miRNAs.
 - Melhor para exploração ampla.
 - Menos interpretável.
-- Maior risco de aprender ruído ou lote.
+- Classe e fonte são estruturalmente confundidas nesta base.
 
 Painel:
 
 - Usa marcadores definidos biologicamente pelo usuário.
 - Mais interpretável.
-- Mais próximo de um teste diagnóstico.
+- Biologicamente guiado, mas não validado como teste diagnóstico.
 - Atualmente usa 8 dos 12 marcadores porque 4 não têm dados saudáveis válidos.
 
-Recomendação atual:
+Status atual:
 
 ```text
-Usar o modelo do painel como principal.
-Usar o baseline apenas como comparação.
+Não usar baseline ou painel histórico como resultado principal ou acurácia clínica.
+Usar o fluxo vigente de descoberta madura, associação interna e validação externa.
 ```
 
 ## Scripts de Predição
@@ -887,9 +888,9 @@ README.md
 context.md
 ```
 
-## Estado Atual Final
+## Estado Historico Antes do Pipeline de Descoberta
 
-O projeto está organizado, documentado e funcional.
+Esta seção registra o estado antigo dos classificadores de pacientes. Ela não descreve o fluxo científico vigente.
 
 Dataset mais seguro para modelagem ampla:
 
@@ -903,19 +904,19 @@ Dataset mais alinhado ao painel biológico:
 data/processed/dataset_mirna_painel_12_disponiveis.csv
 ```
 
-Modelo principal recomendado:
+Modelo recomendado naquele estágio histórico:
 
 ```text
 models/modelo_mirna_painel.json
 ```
 
-Script principal de treino:
+Script de treino daquele estágio:
 
 ```text
 scripts/train_mirna_panel_model.js
 ```
 
-Script principal de predição:
+Script de predição daquele estágio:
 
 ```text
 scripts/predict_mirna_panel_model.js
@@ -930,7 +931,7 @@ context.md
 
 ## Historico: Primeira Descoberta de Candidatos por Padroes Sequenciais
 
-Esta secao registra a primeira abordagem exploratoria, anterior ao fluxo vigente de dois modelos. Ela usava apenas sequencias maduras e permanece documentada para rastreabilidade. A implementacao principal atual esta em "Atualizacao Operacional: Dois Modelos para Descoberta de Candidatos".
+Esta secao registra a primeira abordagem exploratoria e permanece documentada para rastreabilidade. O pipeline vigente — Modelo 1 somente maduro, Modelo 2 de associacao interna e validacao externa GSE73002 — esta descrito nas atualizacoes vigentes ao final deste documento.
 
 ### Contexto do Problema
 
@@ -1191,7 +1192,7 @@ Comando principal da nova camada:
 node scripts\discover_mirna_sequence_candidates.js
 ```
 
-### Atualizacao Consolidada: Universo miRBase e Lista Curada Serum/Soro
+### Atualizacao Historica: Universo miRBase e Lista Curada Serum/Soro
 
 Foi baixado tambem:
 
@@ -1206,10 +1207,10 @@ data/external/mirbase_mature.fa   -> universo de miRNAs maduros
 data/external/mirbase_hairpin.fa  -> universo de precursores/stem-loop
 ```
 
-Uso atual:
+Uso naquela etapa histórica:
 
 - `scripts/discover_mirna_sequence_candidates.js` usa `mirbase_mature.fa`.
-- `mirbase_hairpin.fa` foi incorporado ao Modelo 1 principal para representar padroes de precursor.
+- `mirbase_hairpin.fa` foi incorporado à versão histórica do Modelo 1 para representar padrões de precursor; não participa do fluxo vigente.
 
 Arquivo curado atual de biomarcadores positivos/candidatos:
 
@@ -1491,11 +1492,11 @@ Interpretacao:
 
 Limite importante:
 
-Como os dados saudaveis e doentes podem vir de fontes/pipelines diferentes, a separacao por expressao pode estar inflada por efeito de lote/fonte. Portanto, o ranking integrado nao deve ser tratado como diagnostico, validacao clinica ou biomarcador confirmado. Ele e apenas uma priorizacao computacional de candidatos para investigacao.
+Os dados saudaveis e doentes foram montados a partir de fontes de entrada distintas; classe e origem estao estruturalmente confundidas. Assim, a separacao por expressao pode refletir fonte/processamento e nao pode ser atribuida exclusivamente a doenca. O ranking integrado nao deve ser tratado como diagnostico, validacao clinica ou biomarcador confirmado; ele e uma priorizacao computacional para investigacao, cuja evidencia externa deve ter prioridade.
 
-## Atualizacao Operacional: Dois Modelos para Descoberta de Candidatos
+## Historico: Dois Modelos com Hairpin para Descoberta de Candidatos
 
-> Estado vigente em 09/10/2026. A especificacao metodologica completa e os resultados finais estao em `docs/METODOLOGIA_MODELOS_MIRNA.md`.
+> Estado de 09/10/2026, substituído em 10/10/2026 pela versão somente madura descrita ao final deste documento. Os comandos e resultados desta seção são preservados apenas para rastreabilidade e não formam o fluxo vigente.
 
 ### Mudanca de Direcao do Projeto
 
@@ -1513,14 +1514,14 @@ continuam existindo como historico, comparacao e apoio exploratorio, mas nao sao
 Nova pergunta principal:
 
 ```text
-Quais miRNAs ainda nao usados como positivos no projeto compartilham padroes maduros, seeds e padroes de precursor/hairpin com miRNAs associados ao cancer de mama e, entre eles, quais tambem mostram evidencia computacional nos pacientes do dataset?
+Naquele experimento, perguntou-se quais miRNAs ainda nao usados como positivos compartilhavam padroes maduros, seeds e padroes de precursor/hairpin com miRNAs associados ao cancer de mama e quais mostravam evidencia computacional nos pacientes do dataset.
 ```
 
 Ponto cientifico importante:
 
 Nao foi criado um classificador supervisionado "cancerigeno vs nao cancerigeno", porque isso exigiria negativos biologicos confiaveis. Ausencia de evidencia na literatura nao prova que um miRNA e nao cancerigeno. Por isso o projeto usa uma abordagem de candidatos hipoteticos.
 
-### Modelo 1: Descoberta por Padroes Maduros e Hairpin
+### Modelo 1 Historico: Descoberta por Padroes Maduros e Hairpin
 
 Scripts:
 
@@ -1561,7 +1562,7 @@ Tipo:
 bagged_positive_unlabeled_mature_hairpin_structure_model
 ```
 
-Esse e agora o modelo principal de descoberta sequencial.
+Esse foi o modelo principal de descoberta sequencial naquela versão histórica.
 
 Funcionamento:
 
@@ -1795,7 +1796,7 @@ O Modelo 2 funciona como uma "prova" computacional, nao laboratorial. Se um cand
 
 A validacao cruzada reduz o otimismo causado por uma unica divisao treino/teste, mas o ranking ainda e escolhido no mesmo dataset. Ela tambem nao corrige o confundimento entre classe e origem/lote. Sem metadados de lote e uma coorte comparavel, esse limite nao pode ser corrigido de forma estatisticamente valida apenas por codigo.
 
-### Novo Fluxo Principal
+### Fluxo Principal Naquela Versao (historico; nao executar como pipeline vigente)
 
 Quando a tarefa for continuar a descoberta de candidatos, usar:
 
@@ -1857,7 +1858,7 @@ grafico score_modelo_sequencial vs score_validacao_pacientes
 grafico top 20 do ranking integrado
 aba do ranking integrado
 aba do ranking puro de validacao em pacientes
-aba do ranking PU/estrutura do Modelo 1
+aba do ranking PU maduro do Modelo 1
 busca textual
 paginacao
 ordenacao por coluna
@@ -1886,7 +1887,7 @@ node scripts\generate_mirna_didactic_guide.js
 
 O PDF atual foi impresso localmente em A4 a partir do HTML e deve ser atualizado junto com os resultados do pipeline.
 
-### Recomendacao Atual
+### Recomendacao da Versao de Dois Modelos (historica)
 
 Para o TCC, descrever o pipeline principal assim:
 
@@ -2039,3 +2040,19 @@ Uma auditoria obrigatoria revelou deslocamento global: a media dos 2.540 miRNAs 
 Foi executada uma sensibilidade pos-resultado, claramente separada, subtraindo a media global de cada amostra. Ela encontrou 271 replicacoes exatas; 211 coincidiram com o resultado principal e 203 mantiveram AUC >= 0,60 nas duas analises. Como muitos candidatos internos compartilham features entre bracos, o nucleo maduro estrito e de 22 candidatos sem ambiguidade interna 5p/3p nas duas analises; 21 mantiveram AUC >= 0,60 em ambas. Nos 20 primeiros, 13 sinais permaneceram robustos. A correlacao global do score com AUC centrada foi -0,0055.
 
 Interpretacao vigente: a pesquisa possui uma validacao computacional externa real, um conjunto amplo de 211 sinais concordantes e um nucleo maduro estrito de 22 candidatos. Nao se deve afirmar que 255 ou 271 miRNAs foram confirmados como biomarcadores. A forte componente global, a baixa correlacao de magnitude do ranking inteiro, a ambiguidade interna de braco e o fato de cinco positivos terem origem bibliografica no proprio estudo GSE73002 devem ser declarados. Uma segunda coorte e validacao laboratorial permanecem desejaveis.
+
+## Revisao Global de Consistencia e Reprodutibilidade (11/10/2026)
+
+Duas passagens adicionais por todo o repositorio corrigiram descricoes historicas que ainda pareciam vigentes e tornaram explicito que, na base interna, os IDs de classe 0 sao GTEx e os de classe 1 pertencem a outra fonte. Portanto, classe e origem estao estruturalmente confundidas; o Modelo 2 e associacao interna, e a evidencia externa deve prevalecer.
+
+A auditoria automatizada foi ampliada para 113 verificacoes e esta aprovada sem falhas. Ela agora confere tambem dimensoes e classes das bases, IDs, valores de expressao, lista de 43 positivos, universo FASTA, dependencia bibliografica parcial da GSE73002, mapa TS, hashes congelados, nucleo estrito, documentacao e ausencia de caminhos absolutos de usuario.
+
+Reprodutibilidade confirmada:
+
+```text
+Modelos 1 e 2: 7/7 artefatos reconstruidos byte a byte identicos
+Geradores historicos: 6/6 artefatos cientificos preservados
+Auditoria final: 113/113 verificacoes aprovadas
+```
+
+Os relatorios passaram a registrar caminhos relativos ao projeto. Essa melhoria de portabilidade e o determinismo dos artefatos nao removem as limitacoes biologicas ou de coorte descritas acima.

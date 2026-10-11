@@ -1,8 +1,8 @@
 Descoberta computacional de candidatos por padroes sequenciais de miRNA
 
-FASTA de referencia: C:\Users\ACS INFO PC\Downloads\miRNA\data\external\mirbase_mature.fa
-CSV de biomarcadores positivos: C:\Users\ACS INFO PC\Downloads\miRNA\data\external\breast_cancer_mirna_positive_markers.csv
-Dataset usado para limitar candidatos aos miRNAs presentes na base: C:\Users\ACS INFO PC\Downloads\miRNA\data\processed\dataset_mirna_balanceado_colunas_comuns.csv
+FASTA de referencia: data/external/mirbase_mature.fa
+CSV de biomarcadores positivos: data/external/breast_cancer_mirna_positive_markers.csv
+Dataset usado para limitar candidatos aos miRNAs presentes na base: data/processed/dataset_mirna_balanceado_colunas_comuns.csv
 Biomarcadores positivos solicitados: 43
 Biomarcadores positivos com sequencia encontrada: 43
 Candidatos humanos avaliados: 221
