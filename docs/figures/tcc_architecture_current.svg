@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1640" viewBox="0 0 1800 1640">
+  <defs>
+    <style>
+      .title{font:700 38px Arial,sans-serif;fill:#111827}.layer{font:700 29px Arial,sans-serif}.head{font:700 27px Arial,sans-serif}.body{font:400 23px Arial,sans-serif}.small{font:400 21px Arial,sans-serif}.box{stroke-width:2.5}.arrow{stroke:#6b7280;stroke-width:3;fill:none;marker-end:url(#end)}
+    </style>
+    <marker id="end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker>
+  </defs>
+  <rect width="1800" height="1640" fill="#f8fafc"/>
+  <text x="900" y="62" text-anchor="middle" class="title">Arquitetura do pipeline de descoberta de miRNAs</text>
+
+  <rect x="55" y="95" width="1690" height="300" rx="30" fill="#e8f1ff" stroke="#60a5fa" class="box"/>
+  <text x="900" y="140" text-anchor="middle" class="layer" fill="#1d4ed8">Dados e referências</text>
+  <rect x="90" y="175" width="380" height="175" rx="22" fill="#bfdbfe" stroke="#3b82f6" class="box"/>
+  <text x="280" y="220" text-anchor="middle" class="head" fill="#1e3a8a">miRBase maduro</text><text x="280" y="262" text-anchor="middle" class="body" fill="#1e40af">2.656 miRNAs humanos</text><text x="280" y="300" text-anchor="middle" class="body" fill="#1e40af">sequências maduras</text>
+  <rect x="500" y="175" width="380" height="175" rx="22" fill="#bfdbfe" stroke="#3b82f6" class="box"/>
+  <text x="690" y="220" text-anchor="middle" class="head" fill="#1e3a8a">Referência científica</text><text x="690" y="262" text-anchor="middle" class="body" fill="#1e40af">43 positivos conhecidos</text><text x="690" y="300" text-anchor="middle" class="body" fill="#1e40af">32 famílias de seed</text>
+  <rect x="910" y="175" width="380" height="175" rx="22" fill="#bfdbfe" stroke="#3b82f6" class="box"/>
+  <text x="1100" y="220" text-anchor="middle" class="head" fill="#1e3a8a">Expressão interna</text><text x="1100" y="262" text-anchor="middle" class="body" fill="#1e40af">2.678 amostras</text><text x="1100" y="300" text-anchor="middle" class="body" fill="#1e40af">371 features comuns</text>
+  <rect x="1320" y="175" width="390" height="175" rx="22" fill="#bfdbfe" stroke="#3b82f6" class="box"/>
+  <text x="1515" y="220" text-anchor="middle" class="head" fill="#1e3a8a">Coorte externa</text><text x="1515" y="262" text-anchor="middle" class="body" fill="#1e40af">GEO GSE73002 TS</text><text x="1515" y="300" text-anchor="middle" class="body" fill="#1e40af">2.549 soros · 2.540 miRNAs</text>
+
+  <path d="M485 395v50" class="arrow"/><path d="M1080 395v50" class="arrow"/><path d="M1515 395v730" class="arrow"/>
+  <rect x="55" y="450" width="1690" height="430" rx="30" fill="#f1ecff" stroke="#a78bfa" class="box"/>
+  <text x="900" y="500" text-anchor="middle" class="layer" fill="#6d28d9">Aprendizado e associação interna</text>
+  <rect x="105" y="545" width="720" height="270" rx="24" fill="#ddd6fe" stroke="#8b5cf6" class="box"/>
+  <text x="465" y="595" text-anchor="middle" class="head" fill="#4c1d95">Modelo 1 — sequência madura</text>
+  <text x="465" y="640" text-anchor="middle" class="body" fill="#5b21b6">Ensemble Positive-Unlabeled por bagging</text>
+  <text x="465" y="680" text-anchor="middle" class="body" fill="#5b21b6">k-mers, seed, composição e posição</text>
+  <text x="465" y="720" text-anchor="middle" class="body" fill="#5b21b6">validação aninhada por família de seed</text>
+  <text x="465" y="760" text-anchor="middle" class="small" fill="#6d28d9">2.613 candidatos · pontuação out-of-bag</text>
+  <rect x="975" y="545" width="720" height="270" rx="24" fill="#ddd6fe" stroke="#8b5cf6" class="box"/>
+  <text x="1335" y="595" text-anchor="middle" class="head" fill="#4c1d95">Modelo 2 — associação interna</text>
+  <text x="1335" y="640" text-anchor="middle" class="body" fill="#5b21b6">611 candidatos com expressão disponível</text>
+  <text x="1335" y="680" text-anchor="middle" class="body" fill="#5b21b6">regressão logística univariada · 5 folds OOF</text>
+  <text x="1335" y="720" text-anchor="middle" class="body" fill="#5b21b6">AUC, efeitos, IC95% e FDR por hipótese</text>
+  <text x="1335" y="760" text-anchor="middle" class="small" fill="#6d28d9">triagem; classe e fonte estão confundidas</text>
+  <path d="M825 680h140" class="arrow"/>
+
+  <path d="M900 880v55" class="arrow"/>
+  <rect x="55" y="940" width="1690" height="310" rx="30" fill="#fff1e6" stroke="#fb923c" class="box"/>
+  <text x="900" y="990" text-anchor="middle" class="layer" fill="#c2410c">Ranking congelado e avaliação externa</text>
+  <rect x="135" y="1035" width="660" height="160" rx="22" fill="#fed7aa" stroke="#f97316" class="box"/>
+  <text x="465" y="1080" text-anchor="middle" class="head" fill="#9a3412">Ranking integrado</text><text x="465" y="1122" text-anchor="middle" class="body" fill="#9a3412">50% Modelo 1 + 50% Modelo 2</text><text x="465" y="1162" text-anchor="middle" class="small" fill="#c2410c">sensibilidades 75/25, 25/75 e Pareto</text>
+  <rect x="1005" y="1035" width="660" height="160" rx="22" fill="#fed7aa" stroke="#f97316" class="box"/>
+  <text x="1335" y="1080" text-anchor="middle" class="head" fill="#9a3412">Avaliação externa sem retreino</text><text x="1335" y="1122" text-anchor="middle" class="body" fill="#9a3412">579 mapeamentos maduros exatos</text><text x="1335" y="1162" text-anchor="middle" class="small" fill="#c2410c">AUC direcional, IC95%, FDR e efeitos</text>
+  <path d="M795 1115h200" class="arrow"/>
+
+  <path d="M900 1250v55" class="arrow"/>
+  <rect x="55" y="1310" width="1690" height="270" rx="30" fill="#e5f8ef" stroke="#34d399" class="box"/>
+  <text x="900" y="1360" text-anchor="middle" class="layer" fill="#047857">Saídas científicas</text>
+  <rect x="110" y="1400" width="490" height="125" rx="20" fill="#a7f3d0" stroke="#10b981" class="box"/><text x="355" y="1444" text-anchor="middle" class="head" fill="#065f46">Ranking reprodutível</text><text x="355" y="1487" text-anchor="middle" class="body" fill="#047857">modelos, CSVs e dashboard</text>
+  <rect x="655" y="1400" width="490" height="125" rx="20" fill="#a7f3d0" stroke="#10b981" class="box"/><text x="900" y="1444" text-anchor="middle" class="head" fill="#065f46">Evidência convergente</text><text x="900" y="1487" text-anchor="middle" class="body" fill="#047857">211 sinais nas duas análises</text>
+  <rect x="1200" y="1400" width="490" height="125" rx="20" fill="#a7f3d0" stroke="#10b981" class="box"/><text x="1445" y="1444" text-anchor="middle" class="head" fill="#065f46">Núcleo conservador</text><text x="1445" y="1487" text-anchor="middle" class="body" fill="#047857">22 candidatos maduros estritos</text>
+</svg>

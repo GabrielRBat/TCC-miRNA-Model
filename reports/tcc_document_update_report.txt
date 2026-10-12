@@ -1,0 +1,22 @@
+Atualizacao da documentacao do TCC
+
+Entrada preservada: TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx
+DOCX atualizado: TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx
+PDF atualizado: TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf
+Paragrafos substituidos: 108
+Figuras substituidas: 2/2
+Estrutura de paragrafos preservada: 297
+Paginas apos atualizacao: 27
+
+Conteudo atualizado:
+- titulo, resumo, abstract e palavras-chave;
+- introducao, justificativa e objetivos;
+- revisao bibliografica e trabalhos relacionados;
+- tipo de pesquisa, amostra, inclusao e exclusao;
+- coleta, metodologia, resultados e estatistica;
+- algoritmos, contribuicoes e trabalhos futuros;
+- referencias metodologicas e duas figuras;
+- Modelo 1, Modelo 2 e coorte externa GSE73002;
+- limitacoes de confundimento, deslocamento global e doenca benigna.
+
+O arquivo original nao foi modificado.

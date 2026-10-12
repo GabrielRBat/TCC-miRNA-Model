@@ -66,8 +66,15 @@ miRNA/
 │   ├── metricas_coorte_externa_gse73002.csv
 │   ├── gse73002_provenance_check.txt
 │   ├── gse73002_statistics_test.txt
+│   ├── tcc_document_update_report.txt
+│   ├── tcc_document_review_report.txt
 │   └── mirna_rankings_dashboard.html
 ├── docs/
+│   ├── figures/
+│   │   ├── tcc_architecture_current.svg
+│   │   ├── tcc_architecture_current.png
+│   │   ├── tcc_pipeline_current.svg
+│   │   └── tcc_pipeline_current.png
 │   ├── METODOLOGIA_MODELOS_MIRNA.md
 │   ├── FORMATO_COORTE_EXTERNA.md
 │   ├── PLANO_VALIDACAO_EXTERNA_GSE73002.md
@@ -90,10 +97,33 @@ miRNA/
 │   ├── test_gse73002_statistics.js
 │   ├── generate_gse73002_cohort_deliverables.js
 │   ├── generate_mirna_rankings_html.js
+│   ├── update_tcc_document.ps1
+│   ├── audit_tcc_document.ps1
 │   └── audit_mirna_discovery_pipeline.js
+├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx
+├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx
+├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf
 ├── README.md
 └── context.md
 ```
+
+## Documento Acadêmico do TCC
+
+O arquivo `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` é a versão original recebida e foi preservado sem alterações. A versão alinhada ao pipeline científico vigente está disponível nos formatos:
+
+- `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx` — versão editável com a formatação original preservada;
+- `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf` — versão pronta para leitura e apresentação.
+
+A atualização substitui o pipeline histórico pelo fluxo vigente Modelo 1 → Modelo 2 → avaliação externa GSE73002, corrige a interpretação das métricas, documenta confundimento e deslocamento global, inclui o núcleo conservador de 22 candidatos e atualiza as duas figuras do apêndice. Foram preservados estilos, tipografia, alinhamentos, recuos, margens, seções, sumário e dimensões das figuras.
+
+Para reproduzir e auditar o documento:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\update_tcc_document.ps1
+powershell -ExecutionPolicy Bypass -File scripts\audit_tcc_document.ps1
+```
+
+A revisão dupla vigente contém `55/55` verificações aprovadas: `38/38` de consistência científica e `17/17` de formatação e integridade. O relatório completo está em `reports/tcc_document_review_report.txt`.
 
 ## Estado de Versionamento
 

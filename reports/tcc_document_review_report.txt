@@ -1,0 +1,65 @@
+Revisao dupla da documentacao atualizada do TCC
+
+Resultado geral: APROVADO
+Verificacoes totais: 55
+Falhas: 0
+
+Revisao 1 - consistencia cientifica: 38/38
+Revisao 2 - formatacao e integridade: 17/17
+
+Detalhes:
+OK	1-cientifica	conteudo vigente presente: DESCOBERTA E PRIORIZAÇÃO COMPUTACIONAL DE BIOMARCADORES DE MICRORNA
+OK	1-cientifica	conteudo vigente presente: Positive-Unlabeled
+OK	1-cientifica	conteudo vigente presente: 2.613 candidatos
+OK	1-cientifica	conteudo vigente presente: 611 candidatos
+OK	1-cientifica	conteudo vigente presente: 64,60%
+OK	1-cientifica	conteudo vigente presente: p=0,0008
+OK	1-cientifica	conteudo vigente presente: Recall@10%
+OK	1-cientifica	conteudo vigente presente: GSE73002
+OK	1-cientifica	conteudo vigente presente: 1.206 amostras
+OK	1-cientifica	conteudo vigente presente: 1.343 controles
+OK	1-cientifica	conteudo vigente presente: 255
+OK	1-cientifica	conteudo vigente presente: 211 sinais
+OK	1-cientifica	conteudo vigente presente: 22 candidatos
+OK	1-cientifica	conteudo vigente presente: deslocamento global
+OK	1-cientifica	conteudo vigente presente: doença mamária benigna
+OK	1-cientifica	conteudo vigente presente: classe e fonte
+OK	1-cientifica	conteudo vigente presente: pós-hoc
+OK	1-cientifica	conteudo vigente presente: não confirmam biomarcadores
+OK	1-cientifica	artefato antigo ausente: 99,44%
+OK	1-cientifica	artefato antigo ausente: 221 miRNAs
+OK	1-cientifica	artefato antigo ausente: 0,7947
+OK	1-cientifica	artefato antigo ausente: discover_mirna_sequence_candidates.js
+OK	1-cientifica	artefato antigo ausente: build_integrated_mirna_candidate_evidence.js
+OK	1-cientifica	artefato antigo ausente: mirbase_hairpin.fa
+OK	1-cientifica	artefato antigo ausente: modelo_mirna_painel.json
+OK	1-cientifica	artefato antigo ausente: modelo_mirna_logistic.json
+OK	1-cientifica	artefato antigo ausente: TCGA/GDC Data Portal
+OK	1-cientifica	artefato antigo ausente: TCGA-CESC
+OK	1-cientifica	artefato antigo ausente: Scoreseq = 0,50
+OK	1-cientifica	artefato antigo ausente: Scoreintegrado = 0,45
+OK	1-cientifica	dependencia bibliografica parcial declarada
+OK	1-cientifica	independencia individual corretamente qualificada
+OK	1-cientifica	avaliacao externa declarada sem retreino
+OK	1-cientifica	uso clinico explicitamente negado
+OK	1-cientifica	referencias estatisticas adicionadas
+OK	1-cientifica	referencia do miRBase adicionada
+OK	1-cientifica	estrutura possui 297 paragrafos	297
+OK	1-cientifica	documento possui duas figuras incorporadas	2
+OK	2-formatacao	PDF possui assinatura valida	%PDF-
+OK	2-formatacao	PDF possui marcador de encerramento
+OK	2-formatacao	DOCX atualizado possui tamanho plausivel	469886
+OK	2-formatacao	PDF atualizado possui tamanho plausivel	691926
+OK	2-formatacao	original e atualizado sao arquivos distintos
+OK	2-formatacao	mapa de atualizacao contem 108 paragrafos	108
+OK	2-formatacao	quantidade de paragrafos preservada	297/297
+OK	2-formatacao	quantidade de secoes preservada	2/2
+OK	2-formatacao	quantidade de figuras preservada
+OK	2-formatacao	sumario automatico preservado
+OK	2-formatacao	documento sem revisoes pendentes	0
+OK	2-formatacao	estilos de paragrafo preservados fora das novas referencias	0
+OK	2-formatacao	tipografia, alinhamentos e recuos dos paragrafos atualizados preservados	0
+OK	2-formatacao	tamanho de pagina e margens preservados
+OK	2-formatacao	dimensoes das duas figuras preservadas
+OK	2-formatacao	paginacao final plausivel	27
+OK	2-formatacao	sumario atualizado contem secoes principais

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2100" viewBox="0 0 1600 2100">
+  <defs>
+    <style>.title{font:700 38px Arial,sans-serif;fill:#111827}.head{font:700 27px Arial,sans-serif}.body{font:400 22px Arial,sans-serif}.small{font:400 20px Arial,sans-serif}.box{stroke-width:2.5}.arrow{stroke:#6b7280;stroke-width:3;fill:none;marker-end:url(#end)}</style>
+    <marker id="end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker>
+  </defs>
+  <rect width="1600" height="2100" fill="#f8fafc"/>
+  <text x="800" y="58" text-anchor="middle" class="title">Fluxograma de treinamento e avaliação</text>
+
+  <rect x="90" y="100" width="590" height="145" rx="22" fill="#bfdbfe" stroke="#3b82f6" class="box"/>
+  <text x="385" y="148" text-anchor="middle" class="head" fill="#1e3a8a">43 miRNAs positivos</text><text x="385" y="188" text-anchor="middle" class="body" fill="#1e40af">32 famílias de seed</text><text x="385" y="222" text-anchor="middle" class="small" fill="#1e40af">curadoria bibliográfica</text>
+  <rect x="920" y="100" width="590" height="145" rx="22" fill="#a7f3d0" stroke="#10b981" class="box"/>
+  <text x="1215" y="148" text-anchor="middle" class="head" fill="#065f46">miRBase maduro</text><text x="1215" y="188" text-anchor="middle" class="body" fill="#047857">2.656 sequências humanas</text><text x="1215" y="222" text-anchor="middle" class="small" fill="#047857">hairpin e estrutura fora do escopo</text>
+  <path d="M385 245v80h415" class="arrow"/><path d="M1215 245v80H800" class="arrow"/>
+
+  <rect x="340" y="335" width="920" height="155" rx="24" fill="#ddd6fe" stroke="#8b5cf6" class="box"/>
+  <text x="800" y="382" text-anchor="middle" class="head" fill="#4c1d95">Representação da sequência madura</text><text x="800" y="425" text-anchor="middle" class="body" fill="#5b21b6">k-mers 2–4, seed, comprimento, GC e posição</text><text x="800" y="462" text-anchor="middle" class="small" fill="#6d28d9">configurações comparadas sem usar a coorte externa</text>
+  <path d="M800 490v65" class="arrow"/>
+  <rect x="340" y="565" width="920" height="165" rx="24" fill="#ddd6fe" stroke="#8b5cf6" class="box"/>
+  <text x="800" y="612" text-anchor="middle" class="head" fill="#4c1d95">Validação aninhada por família de seed</text><text x="800" y="655" text-anchor="middle" class="body" fill="#5b21b6">5 folds externos + 3 folds internos</text><text x="800" y="694" text-anchor="middle" class="small" fill="#6d28d9">famílias ocultas não escolhem hiperparâmetros</text>
+  <path d="M800 730v65" class="arrow"/>
+  <rect x="340" y="805" width="920" height="175" rx="24" fill="#ddd6fe" stroke="#8b5cf6" class="box"/>
+  <text x="800" y="852" text-anchor="middle" class="head" fill="#4c1d95">Modelo 1 — ensemble PU</text><text x="800" y="895" text-anchor="middle" class="body" fill="#5b21b6">20 bags · 800 não rotulados por bag</text><text x="800" y="934" text-anchor="middle" class="small" fill="#6d28d9">pontuação somente por modelos out-of-bag</text>
+  <path d="M800 980v65" class="arrow"/>
+  <rect x="340" y="1055" width="920" height="150" rx="24" fill="#e0e7ff" stroke="#6366f1" class="box"/>
+  <text x="800" y="1102" text-anchor="middle" class="head" fill="#3730a3">Ranking sequencial</text><text x="800" y="1145" text-anchor="middle" class="body" fill="#4338ca">2.613 candidatos · 611 com expressão interna</text><text x="800" y="1180" text-anchor="middle" class="small" fill="#4f46e5">percentil médio por família: 64,60%</text>
+  <path d="M800 1205v65" class="arrow"/>
+  <rect x="340" y="1280" width="920" height="175" rx="24" fill="#fee2e2" stroke="#ef4444" class="box"/>
+  <text x="800" y="1327" text-anchor="middle" class="head" fill="#991b1b">Modelo 2 — associação interna</text><text x="800" y="1370" text-anchor="middle" class="body" fill="#b91c1c">regressão logística univariada · 5 folds OOF</text><text x="800" y="1409" text-anchor="middle" class="small" fill="#dc2626">AUC, efeitos e FDR; classe e fonte confundidas</text>
+  <path d="M800 1455v65" class="arrow"/>
+  <rect x="340" y="1530" width="920" height="145" rx="24" fill="#fed7aa" stroke="#f97316" class="box"/>
+  <text x="800" y="1577" text-anchor="middle" class="head" fill="#9a3412">Ranking integrado congelado</text><text x="800" y="1620" text-anchor="middle" class="body" fill="#c2410c">50% sequência + 50% associação interna</text><text x="800" y="1654" text-anchor="middle" class="small" fill="#c2410c">nenhum ajuste posterior na coorte externa</text>
+  <path d="M800 1675v60" class="arrow"/>
+  <rect x="85" y="1745" width="660" height="155" rx="24" fill="#fef3c7" stroke="#f59e0b" class="box"/>
+  <text x="415" y="1792" text-anchor="middle" class="head" fill="#92400e">Análise principal GSE73002</text><text x="415" y="1835" text-anchor="middle" class="body" fill="#b45309">1.206 câncer · 1.343 controles</text><text x="415" y="1872" text-anchor="middle" class="small" fill="#b45309">255 replicações maduras exatas</text>
+  <rect x="855" y="1745" width="660" height="155" rx="24" fill="#fef3c7" stroke="#f59e0b" class="box"/>
+  <text x="1185" y="1792" text-anchor="middle" class="head" fill="#92400e">Auditoria e sensibilidade</text><text x="1185" y="1835" text-anchor="middle" class="body" fill="#b45309">deslocamento global + centralização</text><text x="1185" y="1872" text-anchor="middle" class="small" fill="#b45309">análise centrada explicitamente pós-hoc</text>
+  <path d="M800 1735h-385v10" class="arrow"/><path d="M800 1735h385v10" class="arrow"/>
+  <path d="M415 1900v60h385" class="arrow"/><path d="M1185 1900v60H800" class="arrow"/>
+  <rect x="260" y="1970" width="1080" height="95" rx="24" fill="#a7f3d0" stroke="#10b981" class="box"/>
+  <text x="800" y="2012" text-anchor="middle" class="head" fill="#065f46">211 sinais concordantes · núcleo maduro estrito de 22</text><text x="800" y="2048" text-anchor="middle" class="small" fill="#047857">priorização científica; não representa validação clínica</text>
+</svg>

@@ -2068,3 +2068,11 @@ A proveniencia foi ampliada para a matriz oficial completa. Ela possui 4.113 amo
 A preparacao foi repetida e preservou byte a byte a matriz TS e o mapa GSM. As analises primaria, de deslocamento global e centrada foram executadas novamente; os oito artefatos resultantes mantiveram exatamente os mesmos hashes. Quinze testes unitarios independentes cobriram o parser CSV, normalizacao de nomes, mapeamento, AUC com empates e direcoes, IC, p unilateral, FDR BH, Hedges g, IC da diferenca media e Spearman.
 
 Foram adicionados os entregaveis `reports/metricas_coorte_externa_gse73002.csv` e `docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`, ambos gerados por `scripts/generate_gse73002_cohort_deliverables.js`. O primeiro consolida valores, unidade, tipo de analise e interpretacao; o segundo explica fluxo, proveniencia, criterios, resultados, hierarquia de evidencia, limitacoes e afirmacoes permitidas.
+
+## Documento Academico Atualizado (12/10/2026)
+
+O documento original `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` foi preservado. A versao cientificamente alinhada ao pipeline vigente foi gerada como `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx` e `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf`.
+
+Foram substituidos 108 paragrafos de conteudo, mantendo os 297 paragrafos estruturais, duas secoes, sumario automatico, estilos, tipografia, alinhamentos, recuos, margens e dimensoes das duas figuras. O titulo, resumo, abstract, objetivos, metodologia, resultados, algoritmos, contribuicoes, trabalhos futuros, referencias e diagramas foram atualizados para o fluxo Modelo 1 -> Modelo 2 -> avaliacao externa GSE73002.
+
+Os scripts `scripts/update_tcc_document.ps1` e `scripts/audit_tcc_document.ps1` tornam a geracao reproduzivel. A revisao dupla foi aprovada em 55/55 verificacoes: 38/38 de consistencia cientifica e 17/17 de formatacao e integridade. Os relatorios estao em `reports/tcc_document_update_report.txt` e `reports/tcc_document_review_report.txt`.
