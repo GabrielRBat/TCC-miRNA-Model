@@ -134,6 +134,7 @@ $updates = [ordered]@{
   226 = "A coorte externa é preparada por prepare_gse73002_external_cohort.ps1 e avaliada por validate_mirna_external_cohort.js. audit_gse73002_global_shift.js identifica componentes globais, enquanto audit_gse73002_official_provenance.ps1 compara o ZIP com a matriz oficial. Os resultados principal e centrado são mantidos separadamente, sendo o segundo rotulado como pós-hoc."
   227 = "generate_gse73002_cohort_deliverables.js consolida métricas e explicações, generate_mirna_rankings_html.js produz o dashboard e audit_mirna_discovery_pipeline.js executa 141 invariantes. O estado ativo depende somente de sequências maduras; arquivos e algoritmos relacionados a hairpin foram removidos do fluxo vigente e permanecem recuperáveis apenas no histórico do Git."
 
+  228 = "CONSIDERAÇÕES FINAIS E CONTRIBUIÇÕES"
   229 = "O produto obtido é um pipeline acadêmico de descoberta e priorização de hipóteses sobre miRNAs maduros associados ao câncer de mama. Ele recebe sequências de referência e dados de expressão, produz rankings auditáveis e testa o ranking congelado em uma coorte externa. Não retorna diagnóstico individual, não substitui exames e não está calibrado para decisão clínica."
   230 = "As principais contribuições são: adoção de aprendizado Positive-Unlabeled em lugar de negativos presumidos; validação agrupada por família de seed; pontuação out-of-bag; integração transparente entre sequência e expressão; separação entre associação interna e avaliação externa; auditoria de deslocamento global; e definição de um núcleo conservador de 22 candidatos maduros."
   231 = "Para pesquisadores e estudantes, os artefatos permitem inspecionar cada etapa, reproduzir resultados, comparar pesos e acessar métricas por candidato. O dashboard e os relatórios facilitam a defesa dos resultados sem ocultar falhas de reprodução ou proxies. O valor imediato é metodológico e científico: organizar evidência e reduzir o conjunto de hipóteses para estudos posteriores."
@@ -204,8 +205,19 @@ try {
 
   foreach ($entry in $updates.GetEnumerator()) { Set-ParagraphText $document ([int]$entry.Key) ([string]$entry.Value) }
 
+  # Evita títulos órfãos no final da página sem alterar tipografia, recuos ou espaçamentos.
+  for ($index = 1; $index -le $document.Paragraphs.Count; $index += 1) {
+    $paragraph = $document.Paragraphs.Item($index)
+    try {
+      $styleName = [string]$paragraph.Range.Style.NameLocal
+      if ($styleName -match '(?i)título|titulo|heading') { $paragraph.Format.KeepWithNext = -1 }
+    }
+    finally { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($paragraph) }
+  }
+
   $referenceStyle = $document.Paragraphs.Item(262).Style
   for ($index = 263; $index -le 267; $index += 1) { $document.Paragraphs.Item($index).Style = $referenceStyle }
+  for ($index = 236; $index -le 267; $index += 1) { $document.Paragraphs.Item($index).Format.KeepTogether = -1 }
 
   Replace-InlinePicture $document 1 $architectureFigure
   Replace-InlinePicture $document 2 $pipelineFigure

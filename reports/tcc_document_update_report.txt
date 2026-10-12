@@ -3,7 +3,7 @@ Atualizacao da documentacao do TCC
 Entrada preservada: TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx
 DOCX atualizado: TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx
 PDF atualizado: TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf
-Paragrafos substituidos: 108
+Paragrafos substituidos: 109
 Figuras substituidas: 2/2
 Estrutura de paragrafos preservada: 297
 Paginas apos atualizacao: 27

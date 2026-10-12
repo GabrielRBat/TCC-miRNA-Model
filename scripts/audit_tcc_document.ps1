@@ -102,7 +102,7 @@ Add-Check '2-formatacao' ((Get-FileHash -Algorithm SHA256 -LiteralPath $original
 $indices = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'update_tcc_document.ps1') -Encoding UTF8 | ForEach-Object {
   if ($_ -match '^\s+(\d+)\s*=') { [int]$Matches[1] }
 } | Sort-Object -Unique
-Add-Check '2-formatacao' ($indices.Count -eq 108) 'mapa de atualizacao contem 108 paragrafos' $indices.Count
+Add-Check '2-formatacao' ($indices.Count -eq 109) 'mapa de atualizacao contem 109 paragrafos' $indices.Count
 
 $word = New-Object -ComObject Word.Application
 $word.Visible = $false

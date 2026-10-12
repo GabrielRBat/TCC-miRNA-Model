@@ -68,6 +68,7 @@ miRNA/
 │   ├── gse73002_statistics_test.txt
 │   ├── tcc_document_update_report.txt
 │   ├── tcc_document_review_report.txt
+│   ├── tcc_document_final_integrity_report.txt
 │   └── mirna_rankings_dashboard.html
 ├── docs/
 │   ├── figures/
@@ -99,6 +100,7 @@ miRNA/
 │   ├── generate_mirna_rankings_html.js
 │   ├── update_tcc_document.ps1
 │   ├── audit_tcc_document.ps1
+│   ├── audit_tcc_final_integrity.ps1
 │   └── audit_mirna_discovery_pipeline.js
 ├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx
 ├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx
@@ -114,16 +116,17 @@ O arquivo `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` é a versão orig
 - `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx` — versão editável com a formatação original preservada;
 - `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf` — versão pronta para leitura e apresentação.
 
-A atualização substitui o pipeline histórico pelo fluxo vigente Modelo 1 → Modelo 2 → avaliação externa GSE73002, corrige a interpretação das métricas, documenta confundimento e deslocamento global, inclui o núcleo conservador de 22 candidatos e atualiza as duas figuras do apêndice. Foram preservados estilos, tipografia, alinhamentos, recuos, margens, seções, sumário e dimensões das figuras.
+A atualização substitui o pipeline histórico pelo fluxo vigente Modelo 1 → Modelo 2 → avaliação externa GSE73002, corrige a interpretação das métricas, documenta confundimento e deslocamento global, inclui o núcleo conservador de 22 candidatos e atualiza as duas figuras do apêndice. Foram preservados estilos, tipografia, alinhamentos, recuos, margens, seções, sumário e dimensões das figuras. A seção final foi explicitada como `CONSIDERAÇÕES FINAIS E CONTRIBUIÇÕES`; os títulos permanecem com o primeiro parágrafo subsequente e cada referência bibliográfica permanece inteira na mesma página.
 
 Para reproduzir e auditar o documento:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\update_tcc_document.ps1
 powershell -ExecutionPolicy Bypass -File scripts\audit_tcc_document.ps1
+powershell -ExecutionPolicy Bypass -File scripts\audit_tcc_final_integrity.ps1
 ```
 
-A revisão dupla vigente contém `55/55` verificações aprovadas: `38/38` de consistência científica e `17/17` de formatação e integridade. O relatório completo está em `reports/tcc_document_review_report.txt`.
+A revisão científica e de formatação contém `55/55` verificações aprovadas: `38/38` de consistência científica e `17/17` de formatação e integridade. Uma terceira revisão independente contém `26/26` verificações aprovadas, incluindo paginação, páginas vazias, títulos órfãos, referências indivisíveis, figuras, sumário e igualdade de páginas entre DOCX e PDF. Os relatórios completos estão em `reports/tcc_document_review_report.txt` e `reports/tcc_document_final_integrity_report.txt`.
 
 ## Estado de Versionamento
 

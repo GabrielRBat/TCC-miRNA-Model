@@ -48,10 +48,10 @@ OK	1-cientifica	estrutura possui 297 paragrafos	297
 OK	1-cientifica	documento possui duas figuras incorporadas	2
 OK	2-formatacao	PDF possui assinatura valida	%PDF-
 OK	2-formatacao	PDF possui marcador de encerramento
-OK	2-formatacao	DOCX atualizado possui tamanho plausivel	469886
-OK	2-formatacao	PDF atualizado possui tamanho plausivel	691926
+OK	2-formatacao	DOCX atualizado possui tamanho plausivel	469855
+OK	2-formatacao	PDF atualizado possui tamanho plausivel	691970
 OK	2-formatacao	original e atualizado sao arquivos distintos
-OK	2-formatacao	mapa de atualizacao contem 108 paragrafos	108
+OK	2-formatacao	mapa de atualizacao contem 109 paragrafos	109
 OK	2-formatacao	quantidade de paragrafos preservada	297/297
 OK	2-formatacao	quantidade de secoes preservada	2/2
 OK	2-formatacao	quantidade de figuras preservada
