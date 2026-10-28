@@ -2068,3 +2068,15 @@ A proveniencia foi ampliada para a matriz oficial completa. Ela possui 4.113 amo
 A preparacao foi repetida e preservou byte a byte a matriz TS e o mapa GSM. As analises primaria, de deslocamento global e centrada foram executadas novamente; os oito artefatos resultantes mantiveram exatamente os mesmos hashes. Quinze testes unitarios independentes cobriram o parser CSV, normalizacao de nomes, mapeamento, AUC com empates e direcoes, IC, p unilateral, FDR BH, Hedges g, IC da diferenca media e Spearman.
 
 Foram adicionados os entregaveis `reports/metricas_coorte_externa_gse73002.csv` e `docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`, ambos gerados por `scripts/generate_gse73002_cohort_deliverables.js`. O primeiro consolida valores, unidade, tipo de analise e interpretacao; o segundo explica fluxo, proveniencia, criterios, resultados, hierarquia de evidencia, limitacoes e afirmacoes permitidas.
+
+## Fontes dos Dados e Referências (28/10/2026)
+
+O `README.md` ganhou a seção "Fontes dos Dados e Referências", com a tabela de papel de cada base no pipeline e as referências ABNT dos datasets: miRBase (Kozomara et al., 2019), GTEx (GTEx Consortium, 2020), NCBI GEO GSE73002 (2016), Shimomura et al. (2016), RNAcentral e GDC. As seções `data/raw/...` e a da coorte GSE73002 passaram a apontar para essa tabela.
+
+Fatos conferidos no repositório nesta data:
+
+- `data/external/mirbase_mature.fa`: 48.885 sequências, 2.656 humanas.
+- `data/raw/dataset_mirna_raw (doentes).csv`: 1.209 IDs com sufixo `mirbase21` e 130 com `mirnaseq`.
+
+Pendências registradas: confirmar o projeto de origem da classe 1 pela API do GDC antes de chamá-la de `TCGA-BRCA`, e confirmar se o miRBase baixado é a release 22 ou 22.1.
+
