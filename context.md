@@ -2076,3 +2076,14 @@ O documento original `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` foi pr
 Foram substituidos 109 paragrafos de conteudo, mantendo os 297 paragrafos estruturais, duas secoes, sumario automatico, estilos, tipografia, alinhamentos, recuos, margens e dimensoes das duas figuras. O titulo, resumo, abstract, objetivos, metodologia, resultados, algoritmos, consideracoes finais, contribuicoes, trabalhos futuros, referencias e diagramas foram atualizados para o fluxo Modelo 1 -> Modelo 2 -> avaliacao externa GSE73002. Os estilos de titulo receberam a propriedade de manter com o proximo paragrafo para impedir subtitulos isolados no fim de pagina, e cada referencia bibliografica foi configurada para permanecer inteira na mesma pagina.
 
 Os scripts `scripts/update_tcc_document.ps1`, `scripts/audit_tcc_document.ps1` e `scripts/audit_tcc_final_integrity.ps1` tornam a geracao e as revisoes reproduziveis. A revisao cientifica e de formatacao foi aprovada em 55/55 verificacoes: 38/38 de consistencia cientifica e 17/17 de formatacao e integridade. A terceira revisao independente foi aprovada em 26/26 verificacoes de paginacao, paginas vazias, titulos orfaos, referencias indivisiveis, figuras, sumario e integridade do PDF. Os relatorios estao em `reports/tcc_document_update_report.txt`, `reports/tcc_document_review_report.txt` e `reports/tcc_document_final_integrity_report.txt`.
+
+## Fontes dos Dados e Referências (28/10/2026)
+
+O `README.md` ganhou a seção "Fontes dos Dados e Referências", com a tabela de papel de cada base no pipeline e as referências ABNT dos datasets: miRBase (Kozomara et al., 2019), GTEx (GTEx Consortium, 2020), NCBI GEO GSE73002 (2016), Shimomura et al. (2016), RNAcentral e GDC. As seções `data/raw/...` e a da coorte GSE73002 passaram a apontar para essa tabela.
+
+Fatos conferidos no repositório nesta data:
+
+- `data/external/mirbase_mature.fa`: 48.885 sequências, 2.656 humanas.
+- `data/raw/dataset_mirna_raw (doentes).csv`: 1.209 IDs com sufixo `mirbase21` e 130 com `mirnaseq`.
+
+Pendências registradas: confirmar o projeto de origem da classe 1 pela API do GDC antes de chamá-la de `TCGA-BRCA`, e confirmar se o miRBase baixado é a release 22 ou 22.1.

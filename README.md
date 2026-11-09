@@ -28,6 +28,35 @@ Validacao cruzada, AUC, FDR e mais amostras da mesma montagem nao resolvem esse 
 
 O repositorio nao possui um manifesto clinico versionado que comprove amostra por amostra a origem `TCGA-BRCA` dos UUIDs do CSV de doentes. Ate esse manifesto existir, a procedencia deve ser descrita como `CSV original de doentes com IDs UUID de quantificacao`. A explicacao completa, incluindo o que pode e nao pode ser afirmado, esta em [`docs/LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md`](docs/LIMITACAO_CONFUNDIMENTO_BASE_INTERNA.md).
 
+## Fontes dos Dados e Referências
+
+Todos os dados são secundários e públicos; não houve coleta com participantes. A tabela resume o papel de cada base no fluxo vigente, e as referências completas seguem o padrão ABNT usado no TCC.
+
+| Papel no pipeline | Base | Arquivo no repositório | Conteúdo usado |
+| --- | --- | --- | --- |
+| Modelo 1 (sequência madura) | miRBase (KOZOMARA; BIRGAOANU; GRIFFITHS-JONES, 2019) | `data/external/mirbase_mature.fa` | 48.885 sequências maduras, das quais 2.656 humanas (`hsa-`); 43 positivos curados e 2.613 não rotulados |
+| Positivos do Modelo 1 | Literatura curada | `data/external/breast_cancer_mirna_positive_markers.csv` | 43 miRNAs maduros em 32 famílias de seed, com fonte e peso de recorrência |
+| Modelo 2, classe 1 | Arquivos de quantificação de miRNA no padrão do pipeline harmonizado do GDC | `data/raw/dataset_mirna_raw (doentes).csv` | 1.339 amostras (1.209 `*.mirbase21.mirnas.quantification` e 130 `*.mirnaseq.mirnas.quantification`), RPM, nível de precursor (miRBase 21) |
+| Modelo 2, classe 0 | GTEx Portal (GTEX CONSORTIUM, 2020) | `data/raw/miRNA_TPM_matrix_PORTAL_2025_03_17 (saudaveis).txt` | 1.339 amostras usadas, de 82 doadores e múltiplos tecidos; TPM, nível de miRNA maduro, agregado por nome-base |
+| Mapeamento de IDs | RNAcentral / EMBL-EBI | `data/external/rnacentral_mirbase_mapping.tsv` | Conversão dos IDs `URS...` do GTEx para nomes miRBase |
+| Avaliação externa | NCBI GEO, série GSE73002 (SHIMOMURA et al., 2016) | ZIP recebido + matriz oficial (auditoria) | Soro; contraste `TS_B` × `TS_N` com 1.206 câncer de mama e 1.343 controles sem câncer; 2.540 miRNAs, plataforma 3D-Gene (Toray), log2 normalizado por quantis |
+
+Observações de procedência:
+
+- Os sufixos dos nomes de arquivo da classe 1 indicam o pipeline harmonizado de miRNA do GDC, mas não identificam o projeto de origem. Como não há manifesto versionado, a classe 1 não deve ser descrita como `TCGA-BRCA` até a confirmação pela API do GDC (ver [Limitação central da base interna](#limitacao-central-da-base-interna)).
+- Os controles GTEx incluem várias amostras por doador e de tecidos diferentes; as observações não são independentes.
+- Cinco dos 43 positivos (miR-1246, miR-1307-3p, miR-4634, miR-6861-5p e miR-6875-5p) vêm de Shimomura et al. (2016), a publicação ligada à GSE73002.
+- A release do miRBase registrada no TCC é a 22; confirmar se o download foi a 22 ou a 22.1.
+
+Referências:
+
+- GTEX CONSORTIUM. The GTEx Consortium atlas of genetic regulatory effects across human tissues. **Science**, v. 369, n. 6509, p. 1318–1330, 2020. DOI: [10.1126/science.aaz1776](https://doi.org/10.1126/science.aaz1776). Portal: <https://gtexportal.org>.
+- KOZOMARA, A.; BIRGAOANU, M.; GRIFFITHS-JONES, S. miRBase: from microRNA sequences to function. **Nucleic Acids Research**, v. 47, n. D1, p. D155–D162, 2019. DOI: [10.1093/nar/gky1141](https://doi.org/10.1093/nar/gky1141). Portal: <https://www.mirbase.org>.
+- NATIONAL CENTER FOR BIOTECHNOLOGY INFORMATION (Estados Unidos). **Gene Expression Omnibus**: série GSE73002. Bethesda: NCBI, 2016. Disponível em: <https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE73002>. Acesso em: 12 out. 2026.
+- SHIMOMURA, A. et al. Novel combination of serum microRNA for detecting breast cancer in the early stage. **Cancer Science**, v. 107, n. 3, p. 326–334, 2016. DOI: [10.1111/cas.12880](https://doi.org/10.1111/cas.12880).
+- RNAcentral / EMBL-EBI. Mapeamentos de identificadores. Disponível em: <https://ftp.ebi.ac.uk/pub/databases/RNAcentral/current_release/id_mapping/database_mappings/>.
+- NATIONAL CANCER INSTITUTE. **Genomic Data Commons (GDC) Data Portal**. Disponível em: <https://portal.gdc.cancer.gov>.
+
 ## Estrutura do Projeto
 
 ```text
@@ -176,9 +205,13 @@ Resumo:
 - cada linha representa uma amostra
 - cada coluna depois de `classe` representa um miRNA
 
+Fonte: arquivos de quantificação de miRNA no padrão do pipeline harmonizado do GDC (1.209 `mirbase21` e 130 `mirnaseq`), em RPM. Projeto de origem ainda não confirmado; ver [Fontes dos Dados e Referências](#fontes-dos-dados-e-referências).
+
 ### `data/raw/miRNA_TPM_matrix_PORTAL_2025_03_17 (saudaveis).txt`
 
 TXT com pacientes saudáveis em formato de matriz.
+
+Fonte: matriz de miRNA em TPM do GTEx Portal (GTEX CONSORTIUM, 2020); ver [Fontes dos Dados e Referências](#fontes-dos-dados-e-referências).
 
 Observação importante: para permitir publicação no GitHub, o arquivo versionado nesta pasta não é mais o raw completo de 144 MB. Ele foi substituído por um subset com 1500 amostras saudáveis que não foram usadas no dataset balanceado inicial.
 
@@ -1403,6 +1436,8 @@ O validador exige que a escala seja declarada (`linear` ou `log2`), rejeita sobr
 A analise principal usou somente a divisao de teste original (`TS`), formada por 1.206 amostras de soro de cancer de mama e 1.343 controles sem cancer. A matriz possui 2.540 miRNAs em escala log2 normalizada, e nenhuma transformacao logaritmica adicional foi aplicada.
 
 A auditoria ampliada comparou o material recebido com a matriz oficial. A fonte oficial contem 4.113 amostras; o ZIP recebido contem 3.966. As 147 amostras nao incluidas sao 93 de doenca prostatica (`TR_PR`) e 54 de doenca benigna da mama (`TS_G`). Isso nao altera o contraste principal predefinido `TS_B` versus `TS_N`, mas significa que este projeto **nao avaliou especificidade contra doenca mamaria benigna**. Todos os 3.966 metadados locais e 144 celulas numericas distribuidas foram conferidos contra a fonte oficial; a maior diferenca foi `0,000049071`, compativel com o arredondamento local a quatro casas.
+
+Fonte: NCBI GEO, série GSE73002, associada a Shimomura et al. (2016); plataforma 3D-Gene (Toray). Referências completas em [Fontes dos Dados e Referências](#fontes-dos-dados-e-referências).
 
 Nao houve coincidencia literal entre os acessos GSM externos e os IDs da base interna. Como os dois conjuntos usam identificadores de naturezas diferentes, esse teste exclui reutilizacao literal de IDs, mas nao prova sozinho independencia no nivel de pessoa. A comprovacao individual exigiria uma chave comum, inexistente no repositorio.
 
