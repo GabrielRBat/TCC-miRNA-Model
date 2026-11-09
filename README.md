@@ -1,11 +1,17 @@
-# Projeto miRNA - Descoberta e Validacao Computacional de Candidatos
+# Projeto miRNA - Geracao e Priorizacao de Hipoteses de Pesquisa
 
-Este projeto organiza dados de sequencia e expressao de miRNAs. O fluxo principal atual prioriza candidatos ao cancer de mama em dois modelos; os classificadores binarios e experimentos estruturais anteriores permanecem como historico:
+Este projeto e uma pesquisa computacional exploratoria para aprender padroes de miRNAs maduros ja associados ao cancer de mama e gerar novas hipoteses de candidatos para investigacao. Seu produto e uma lista ordenada de hipoteses, nao uma classificacao de pessoas, um diagnostico, um pre-diagnostico, uma estimativa individual de risco ou uma recomendacao clinica.
+
+> **Escopo obrigatorio:** o Modelo 1 aprende padroes de sequencia dos positivos conhecidos e prioriza miRNAs ainda nao rotulados. O Modelo 2 nao diagnostica pacientes e nao confirma biomarcadores; ele examina, na base interna, se os candidatos com dados disponiveis apresentam diferenca/associacao de expressao entre os rotulos observados. Essa evidencia interna apenas ajuda a priorizar hipoteses para estudos independentes posteriores.
+
+Na base interna usada para examinar associacao de expressao, os rotulos tecnicos sao:
 
 - `classe = 0`: paciente saudável
 - `classe = 1`: paciente doente
 
-> **Fluxo científico vigente:** Modelo 1 PU de sequência madura → Modelo 2 de associação interna → validação externa congelada GSE73002. Os classificadores com 99–100% de desempenho, o ranking sequencial antigo e o integrador antigo permanecem apenas para rastreabilidade histórica. Suas métricas podem estar fortemente infladas por fonte/lote e não devem ser usadas como resultado principal, comparação clínica ou evidência de diagnóstico.
+Esses rotulos permitem comparar expressao dentro da base, mas nao transformam o fluxo vigente em um classificador diagnostico.
+
+> **Fluxo científico vigente:** Modelo 1 PU de sequência madura → Modelo 2 de associação interna de expressão → avaliação externa congelada GSE73002. Os classificadores com 99–100% de desempenho, o ranking sequencial antigo e o integrador antigo permanecem apenas para rastreabilidade histórica. Suas métricas podem estar fortemente infladas por fonte/lote e não devem ser usadas como resultado principal, comparação clínica ou evidência de diagnóstico.
 
 ## Regra de Manutenção
 
@@ -18,7 +24,7 @@ context.md
 
 Isso vale para novos scripts, datasets, modelos, métricas, comandos, fluxos de predição, limitações ou mudanças na recomendação de uso.
 
-O projeto comecou transformando uma matriz TXT de saudaveis para a estrutura do CSV de doentes, balanceando as classes em `1339 x 1339` e treinando classificadores de pacientes. O objetivo principal atual e descobrir e priorizar novos miRNAs candidatos ao cancer de mama: o Modelo 1 usa ensemble PU com k-mers, seed e composicao da sequencia madura; o Modelo 2 usa validacao cruzada de expressao nos pacientes. Hairpin e estrutura secundaria nao participam do fluxo vigente. Consulte [`docs/METODOLOGIA_MODELOS_MIRNA.md`](docs/METODOLOGIA_MODELOS_MIRNA.md).
+O projeto comecou transformando uma matriz TXT de saudaveis para a estrutura do CSV de doentes, balanceando as classes em `1339 x 1339` e treinando classificadores de pacientes. Esses classificadores sao historicos. O objetivo principal atual e aprender com miRNAs positivos conhecidos para gerar e priorizar novas hipoteses potencialmente associadas ao cancer de mama: o Modelo 1 usa ensemble PU com k-mers, seed e composicao da sequencia madura; o Modelo 2 usa validacao cruzada apenas para estimar associacao/diferenca de expressao na base interna e acrescentar evidencia aos candidatos avaliaveis. Hairpin e estrutura secundaria nao participam do fluxo vigente. Consulte [`docs/METODOLOGIA_MODELOS_MIRNA.md`](docs/METODOLOGIA_MODELOS_MIRNA.md).
 
 ## Limitacao central da base interna
 
@@ -140,14 +146,16 @@ miRNA/
 
 ## Documento Acadêmico do TCC
 
-O arquivo `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` é a versão original recebida e foi preservado sem alterações. A versão alinhada ao pipeline científico vigente está disponível nos formatos:
+O arquivo `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` é a versão original recebida e foi preservado sem alterações. A versão canônica alinhada ao pipeline científico vigente e aprovada após revisão tripla está disponível nos formatos:
 
 - `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx` — versão editável com a formatação original preservada;
 - `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf` — versão pronta para leitura e apresentação.
 
-A atualização substitui o pipeline histórico pelo fluxo vigente Modelo 1 → Modelo 2 → avaliação externa GSE73002, corrige a interpretação das métricas, documenta confundimento e deslocamento global, inclui o núcleo conservador de 22 candidatos e atualiza as duas figuras do apêndice. Foram preservados estilos, tipografia, alinhamentos, recuos, margens, seções, sumário e dimensões das figuras. A seção final foi explicitada como `CONSIDERAÇÕES FINAIS E CONTRIBUIÇÕES`; os títulos permanecem com o primeiro parágrafo subsequente e cada referência bibliográfica permanece inteira na mesma página.
+A atualização substitui o pipeline histórico pelo fluxo vigente Modelo 1 → Modelo 2 → avaliação externa GSE73002, corrige a interpretação das métricas, documenta confundimento e deslocamento global, inclui o núcleo conservador de 22 candidatos e atualiza as duas figuras do apêndice. A revisão final também explicita, no resumo, na introdução, nos objetivos, na metodologia, nos resultados e nas considerações finais, que o produto é um **gerador e priorizador de hipóteses científicas**: o Modelo 1 aprende padrões de sequência e o Modelo 2 examina associação/diferença de expressão. Nenhuma das etapas realiza diagnóstico, pré-diagnóstico, estimativa individual de risco ou confirmação de biomarcadores.
 
-Para reproduzir e auditar o documento:
+Foram preservados estilos, tipografia, alinhamentos, recuos, margens, seções, sumário e dimensões das figuras. A seção final foi explicitada como `CONSIDERAÇÕES FINAIS E CONTRIBUIÇÕES`; os títulos permanecem com o primeiro parágrafo subsequente e cada referência bibliográfica permanece inteira na mesma página. A revisão tripla conferiu 47 itens sem falhas e manteve as 40 páginas nos formatos DOCX e PDF.
+
+Para reconstruir a base da atualização e auditar a integridade do documento:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\update_tcc_document.ps1
@@ -1146,9 +1154,9 @@ evidencia externa/literatura
 
 Essa combinacao deve continuar sendo descrita como hipotese computacional ate passar por validacao biologica/laboratorial.
 
-## Atualizacao: Dois Modelos para Descoberta de Novos Marcadores
+## Atualizacao: Dois Modelos para Geracao e Priorizacao de Hipoteses
 
-> Versao vigente em 10/10/2026. A descricao metodologica completa, incluindo validacao, baselines, incerteza e limitacoes, esta em [`docs/METODOLOGIA_MODELOS_MIRNA.md`](docs/METODOLOGIA_MODELOS_MIRNA.md). Hairpin e estrutura secundaria foram removidos do pipeline ativo.
+> Versao vigente em 10/10/2026. A descricao metodologica completa, incluindo avaliacao, baselines, incerteza e limitacoes, esta em [`docs/METODOLOGIA_MODELOS_MIRNA.md`](docs/METODOLOGIA_MODELOS_MIRNA.md). Hairpin e estrutura secundaria foram removidos do pipeline ativo.
 
 O foco principal do projeto foi ajustado. Os modelos antigos de classificacao de pacientes (`modelo_mirna_logistic.json` e `modelo_mirna_painel.json`) continuam no repositorio como historico, comparacao e suporte exploratorio, mas nao sao mais o fluxo principal do TCC.
 
@@ -1157,10 +1165,11 @@ O objetivo principal agora e:
 ```text
 aprender padroes de k-mers, seed e composicao em sequencias maduras de miRNAs associados ao cancer de mama
 -> encontrar novos miRNAs candidatos dentro do universo humano maduro do miRBase
--> validar computacionalmente se esses candidatos aparecem/separam pacientes doentes e saudaveis no dataset atual
+-> examinar se os candidatos com dados disponiveis apresentam diferenca/associacao de expressao entre os rotulos da base interna
+-> integrar as duas evidencias para priorizar novas hipoteses, sem diagnosticar pessoas ou confirmar biomarcadores
 ```
 
-Essa formulacao evita chamar miRNAs nao estudados de "nao cancerigenos", porque isso exigiria validacao biologica/laboratorial. O projeto trabalha com candidatos hipoteticos, nao com classificacao definitiva de cancerigeno vs nao cancerigeno.
+Essa formulacao evita chamar miRNAs nao estudados de "nao cancerigenos", porque isso exigiria validacao biologica/laboratorial. O projeto trabalha com candidatos hipoteticos, nao com classificacao definitiva de cancerigeno vs nao cancerigeno. Em uma frase: o sistema aprende com positivos conhecidos para gerar novas hipoteses de pesquisa sobre miRNAs potencialmente associados ao cancer de mama.
 
 ### Modelo 1: Descoberta por Sequencia Madura
 
@@ -1205,7 +1214,7 @@ Como funciona:
 - calcula o modelo consenso pela media dos pesos e do vies de 20 bags e ranqueia cada candidato apenas com predicoes out-of-bag;
 - registra estabilidade por candidato: mediana, quartis, IQR e frequencia nos top 1/5/10/20% entre bags OOB;
 - ranqueia candidatos pela semelhanca aprendida com o perfil dos positivos;
-- marca quais candidatos tem expressao disponivel no dataset para a validacao posterior.
+- marca quais candidatos tem expressao disponivel no dataset para a triagem interna de associacao de expressao.
 
 A validacao e aninhada por familia de seed: 5 folds externos medem recuperacao e 3 folds internos escolhem a configuracao. Familias externas nao participam nem do treino nem da escolha de hiperparametros. A avaliacao usa todo o background nao rotulado elegivel e reporta Recall@1/5/10/20%, bootstrap por familia, teste nulo de ranking e quatro baselines.
 
@@ -1217,7 +1226,7 @@ Execucao validada:
 Marcadores positivos: 43
 Familias de seed: 32
 Candidatos ranqueados no universo miRBase: 2613
-Candidatos com expressao disponivel para validacao em pacientes: 611
+Candidatos com expressao disponivel para triagem interna: 611
 Configuracao final: k234_positional_mature_l2_003_u050
 Vocabulario final: 783 features
 Percentil medio externo por familia: 0.6460 (IC95% 0.5585 a 0.7285; p nulo=0.0008)
@@ -1245,7 +1254,7 @@ Interpretacao dos resultados: o percentil medio apresenta sinal acima do nulo, m
 
 O mapeamento de nomes remove apenas sufixos que representam locus (`-1`, `-2` etc.) quando o nome realmente possui uma familia antes desse sufixo. Assim, nomes validos como `hsa-mir-574` nao sao truncados para `hsa-mir`; bracos com locus explicito, como `mir-16-1-3p`, tambem sao associados a familia precursora correta. Os caminhos gravados nos modelos e relatorios sao relativos a raiz do projeto, permitindo reproduzir a execucao em outra maquina.
 
-### Modelo 2: Validacao Computacional em Pacientes
+### Modelo 2: Triagem Interna de Associacao de Expressao
 
 Script:
 
@@ -1276,21 +1285,24 @@ Esse modelo e do tipo:
 patient_candidate_validation_models_per_candidate
 ```
 
+Os nomes do script, dos arquivos e de campos como `score_validacao_pacientes` foram preservados por compatibilidade historica. Neste README, "validacao" nesses identificadores significa somente avaliacao estatistica interna da associacao de expressao; nao significa diagnostico, validacao clinica ou confirmacao biologica.
+
 Como funciona:
 
 - recebe os candidatos gerados pelo Modelo 1;
-- localiza as features correspondentes no dataset de pacientes;
+- localiza as features correspondentes na base interna de expressao;
 - para cada candidato, executa regressao logistica univariada usando `log1p(expressao)`;
 - usa validacao cruzada estratificada deterministica de 5 folds, com distribuicao estavel por hash de `sample_id` dentro de cada classe;
 - cada amostra recebe uma predicao out-of-fold de um modelo que nao a utilizou no treino;
 - agrega as predicoes out-of-fold para calcular AUC, accuracy, precision, recall, specificity e F1;
 - calcula IC95% aproximado da AUC por Hanley-McNeil com estabilizacao de fronteira, p unilateral para `AUC > 0,5`, FDR Benjamini-Hochberg por hipotese de expressao unica, Cliff's delta, Hedges g e diferenca media log1p;
+- seus resultados alimentam tabelas e graficos usados para visualizar a diferenca de expressao dos candidatos hipoteticos entre os rotulos observados;
 - identifica explicitamente quando diferentes bracos maduros compartilham a mesma feature de expressao;
-- ajusta depois um modelo final em todas as amostras apenas para serializacao e uso futuro;
+- ajusta depois um modelo final em todas as amostras apenas para serializacao e reprodutibilidade da analise, nao para predicao diagnostica em pacientes;
 - calcula tambem log2 fold-change e presenca maior que zero;
-- gera um `score_validacao_pacientes`;
-- gera um ranking puro de validacao em pacientes;
-- combina suporte da sequencia madura e suporte em pacientes em um ranking integrado por `score_final_descoberta`.
+- gera o campo legado `score_validacao_pacientes`, que representa forca relativa de associacao interna;
+- gera um ranking interno por associacao de expressao;
+- combina suporte da sequencia madura e suporte interno de expressao em um ranking integrado por `score_final_descoberta`.
 - produz cenarios 75/25 e 25/75 e uma fronteira de Pareto, reduzindo dependencia da escolha 50/50.
 
 Formula:
@@ -1306,12 +1318,12 @@ score_final_descoberta =
 + 0.50 * score_validacao_pacientes
 ```
 
-A regressao univariada usa otimizacao Newton-Raphson com regularizacao L2. A validacao cruzada substituiu o antigo corte unico 80/20 e reduz a dependencia de uma divisao especifica dos pacientes.
+A regressao univariada usa otimizacao Newton-Raphson com regularizacao L2. A validacao cruzada substituiu o antigo corte unico 80/20 e reduz a dependencia de uma divisao especifica das amostras. Ela nao transforma o Modelo 2 em teste diagnostico e nao resolve o confundimento entre classe e fonte.
 
 Execucao validada:
 
 ```text
-Candidatos validados: 611
+Candidatos avaliados na triagem interna: 611
 Candidatos recebidos do ranking sequencial global: 2613
 Candidatos ignorados por falta de expressao no dataset: 2002
 Hipoteses de expressao unicas: 325
@@ -1321,7 +1333,7 @@ Candidatos com ambiguidade de braco por feature compartilhada: 552
 Candidatos na fronteira de Pareto: 4
 ```
 
-Top 5 por validacao em pacientes:
+Top 5 por associacao interna de expressao:
 
 ```text
 mir-182-5p   validacao=1.0000  rank_integrado=13
@@ -1345,13 +1357,13 @@ Arquivos de ranking:
 
 ```text
 data/processed/mirna_patient_candidate_validation.csv
-ranking puro do Modelo 2, ordenado por score_validacao_pacientes
+ranking interno do Modelo 2, ordenado pelo campo legado score_validacao_pacientes
 
 data/processed/mirna_patient_candidate_integrated_ranking.csv
 ranking integrado, ordenado por score_final_descoberta
 ```
 
-Observacao cientifica importante: o dataset de expressao usa varias colunas em nivel de precursor/familia, como `hsa-mir-106b`, enquanto o ranking sequencial trabalha com miRNAs maduros, como `mir-106b-5p` e `mir-106b-3p`. Por isso, alguns candidatos maduros podem compartilhar a mesma feature de expressao e receber metricas identicas no Modelo 2. Nesses casos, o Modelo 2 valida a associacao da feature disponivel no dataset, nao distingue experimentalmente o braco maduro 5p vs 3p.
+Observacao cientifica importante: o dataset de expressao usa varias colunas em nivel de precursor/familia, como `hsa-mir-106b`, enquanto o ranking sequencial trabalha com miRNAs maduros, como `mir-106b-5p` e `mir-106b-3p`. Por isso, alguns candidatos maduros podem compartilhar a mesma feature de expressao e receber metricas identicas no Modelo 2. Nesses casos, o Modelo 2 estima a associacao da feature disponivel na base interna e nao distingue experimentalmente o braco maduro 5p vs 3p.
 
 Interpretacao correta:
 
@@ -1360,20 +1372,20 @@ Modelo 1 pergunta:
 quais miRNAs recebem maior suporte dos padroes da sequencia madura aprendidos com os marcadores positivos conhecidos?
 
 Modelo 2 pergunta:
-desses candidatos, quais tambem mostram associacao computacional com pacientes doentes no dataset atual?
+desses candidatos, quais apresentam diferenca/associacao de expressao entre os rotulos observados na base interna?
 ```
 
-Essa segunda etapa funciona como uma validacao computacional, nao laboratorial. Se um candidato aparece no dataset e sua expressao separa doentes e saudaveis, ele ganha prioridade como hipotese biologica. Ainda assim, isso nao prova causalidade nem valida o biomarcador clinicamente.
+Essa segunda etapa funciona como triagem computacional de associacao de expressao, nao como diagnostico ou validacao laboratorial. Se um candidato aparece na base interna e sua expressao mostra associacao com os rotulos observados, ele recebe evidencia adicional e ganha prioridade como hipotese de pesquisa. Isso nao prova causalidade, nao confirma o biomarcador e nao permite classificar um novo paciente.
 
 A validacao cruzada melhora a estimativa interna, mas nao elimina dois limites: o ranking ainda e selecionado no mesmo dataset e as classes foram montadas a partir de fontes distintas, deixando classe e origem estruturalmente confundidas. Logo, as metricas internas do Modelo 2 medem associacao dentro dessa base, nao desempenho biologico independente. Os 278 resultados com FDR interno referem-se a 325 hipoteses de expressao unicas, nao a 611 testes independentes. Valores-p no piso numerico devem ser apresentados como `p<1e-16`, sem alegar precisao adicional. Por isso, o ranking foi posteriormente testado na coorte externa GSE73002 descrita abaixo.
 
 ### Versao Congelada e Proximo Passo Cientifico
 
-Esta versao deve ser tratada como o pipeline **congelado antes da validacao externa**. O codigo, os hiperparametros, o ranking dos candidatos, as direcoes esperadas de expressao e os criterios estatisticos devem permanecer inalterados quando a nova coorte for analisada. No Git, o ponto congelado e identificado pela tag `pre-validacao-externa-v1`.
+Esta versao deve ser tratada como o pipeline **congelado antes da avaliacao externa**. O codigo, os hiperparametros, o ranking dos candidatos, as direcoes esperadas de expressao e os criterios estatisticos devem permanecer inalterados quando a nova coorte for analisada. No Git, o ponto congelado e identificado pela tag `pre-validacao-externa-v1`.
 
-Isso evita ajustar o metodo depois de observar os resultados externos e reduz o risco de vazamento de informacao. Se futuramente houver uma mudanca metodologica, ela deve gerar uma nova versao claramente identificada; a coorte usada para avaliar a versao anterior nao deve ser reaproveitada como se ainda fosse uma validacao independente.
+Isso evita ajustar o metodo depois de observar os resultados externos e reduz o risco de vazamento de informacao. Se futuramente houver uma mudanca metodologica, ela deve gerar uma nova versao claramente identificada; a coorte usada para avaliar a versao anterior nao deve ser reaproveitada como se ainda fosse uma avaliacao independente.
 
-O repositorio pode ser publicado e apresentado como estudo computacional exploratorio com validacao externa. Os resultados nao devem ser descritos como validacao clinica ou confirmacao definitiva de novos biomarcadores. O pipeline congelado foi aplicado sem retreinamento a GSE73002; o plano e o codigo imediatamente anteriores aos resultados estao na tag `pre-resultados-gse73002-v1`.
+O repositorio pode ser publicado e apresentado como estudo computacional exploratorio com avaliacao externa. Os resultados nao devem ser descritos como validacao clinica ou confirmacao definitiva de novos biomarcadores. O pipeline congelado foi aplicado sem retreinamento a GSE73002; o plano e o codigo imediatamente anteriores aos resultados estao na tag `pre-resultados-gse73002-v1`.
 
 A coorte externa ideal deve conter:
 
@@ -1382,7 +1394,7 @@ A coorte externa ideal deve conter:
 - expressao de miRNAs maduros, preferencialmente incluindo os candidatos priorizados;
 - o mesmo tipo de material biologico da coorte atual, sempre que possivel (por exemplo, tecido com tecido ou sangue com sangue);
 - plataforma e processamento comparaveis, ou metadados suficientes para avaliar diferencas tecnicas;
-- classe diagnostica clara e, se disponiveis, idade, subtipo tumoral, estagio, tratamento e lote experimental.
+- rotulos clinicos de caso e controle claramente documentados e, se disponiveis, idade, subtipo tumoral, estagio, tratamento e lote experimental.
 
 O minimo de 10 amostras por classe implementado no validador e apenas um piso tecnico, nao uma recomendacao de tamanho amostral. Como referencia operacional para o TCC, `30 + 30` permite uma avaliacao exploratoria mais defensavel, `50 + 50` ou mais e preferivel, e o tamanho final deve ser justificado por analise de poder quando os dados e o efeito esperado estiverem definidos. Independencia e compatibilidade da coorte sao tao importantes quanto o numero de amostras.
 
@@ -1427,9 +1439,9 @@ A conferencia ampliada contra a fonte oficial e opcional na reproducao local por
 powershell -ExecutionPolicy Bypass -File scripts\audit_gse73002_official_provenance.ps1 -OfficialMatrixGz caminho\GSE73002_series_matrix.txt.gz
 ```
 
-O validador exige que a escala seja declarada (`linear` ou `log2`), rejeita sobreposicao de `sample_id` e valores invalidos, prefere miRNAs maduros exatos, marca separadamente proxies e aplica ranking/direcoes congelados. O criterio de reproducao exige direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR abaixo de 0,05. AUC direcional de pelo menos 0,60 aparece apenas como filtro descritivo de magnitude, nao como limiar clinico.
+O script de avaliacao exige que a escala seja declarada (`linear` ou `log2`), rejeita sobreposicao de `sample_id` e valores invalidos, prefere miRNAs maduros exatos, marca separadamente proxies e aplica ranking/direcoes congelados. O criterio de reproducao exige direcao concordante, limite inferior aproximado do IC95% da AUC acima de 0,5 e FDR abaixo de 0,05. AUC direcional de pelo menos 0,60 aparece apenas como filtro descritivo de magnitude, nao como limiar clinico.
 
-### Resultado da Coorte Externa de Validacao em Soro — GEO GSE73002
+### Resultado da Avaliacao Externa em Soro — GEO GSE73002
 
 `GSE73002` e o identificador oficial da serie no NCBI GEO, nao o nome de um terceiro modelo. O aprendizado termina no Modelo 2; esta etapa apenas avalia o ranking congelado, sem retreinamento. A explicacao didatica completa esta em [`docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`](docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md), e todas as metricas consolidadas e interpretadas estao em [`reports/metricas_coorte_externa_gse73002.csv`](reports/metricas_coorte_externa_gse73002.csv).
 
@@ -1467,7 +1479,7 @@ A conferencia com a matriz processada oficial mostrou que `PACIENTE_0001 / hsa-l
 
 #### Sensibilidade centrada por amostra
 
-Como diagnostico pos-resultado, foi subtraida a media dos 2.540 miRNAs de cada amostra e o mesmo ranking foi reaplicado sem retreino. Houve 271 replicacoes maduras exatas; 211 coincidiram com as 255 do resultado principal e 203 mantiveram AUC de pelo menos 0,60 nas duas analises. Nos 20 primeiros do ranking, os mesmos 13 sinais permaneceram robustos.
+Como analise de sensibilidade pos-resultado, foi subtraida a media dos 2.540 miRNAs de cada amostra e o mesmo ranking foi reaplicado sem retreino. Houve 271 replicacoes maduras exatas; 211 coincidiram com as 255 do resultado principal e 203 mantiveram AUC de pelo menos 0,60 nas duas analises. Nos 20 primeiros do ranking, os mesmos 13 sinais permaneceram robustos.
 
 Como 552/611 candidatos do Modelo 2 interno usam features que nao distinguem completamente os bracos maduros, os 211 nao possuem todos o mesmo nivel de evidencia. Ao exigir simultaneamente correspondencia madura externa exata, reproducao nas duas analises e ausencia de ambiguidade interna 5p/3p, restam **22 candidatos**. Desses, **21** mantem AUC direcional de pelo menos 0,60 nas duas analises. Esse e o nucleo mais rigoroso para afirmacoes especificamente sobre miRNA maduro.
 
@@ -1530,7 +1542,7 @@ O dashboard contem:
 - metricas do Modelo 2 calculadas a partir das predicoes out-of-fold da validacao cruzada;
 - grafico `score_modelo_sequencial` vs `score_validacao_pacientes`;
 - grafico do top 20 do ranking integrado;
-- abas para ranking integrado, validacao em pacientes e Modelo 1 PU/sequencia madura;
+- abas historicamente nomeadas para ranking integrado, associacao interna de expressao (identificada no artefato como `validacao em pacientes`) e Modelo 1 PU/sequencia madura;
 - busca textual, paginacao e ordenacao por coluna.
 
 Os graficos usam Plotly via CDN. Se o HTML for aberto sem internet, as tabelas continuam funcionando e os graficos podem ficar indisponiveis.
