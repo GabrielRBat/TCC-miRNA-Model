@@ -4,6 +4,7 @@ base_mirna_mama_GSE73002.zip
 nova_base.csv
 data/processed/gse73002_external_validation_ts.csv
 tmp/
+tmp_sensibilidade/
 .codex/
 .claude/
 claude/
