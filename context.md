@@ -123,6 +123,9 @@ miRNA/
 │   ├── modelo_mirna_candidate_discovery_report.txt
 │   ├── modelo_mirna_patient_candidate_validation_report.txt
 │   ├── auditoria_pipeline_descoberta_mirna.txt
+│   ├── analise_sensibilidade_pos_hoc.txt
+│   ├── analise_sensibilidade_pos_hoc.csv
+│   ├── analise_sensibilidade_pos_hoc.json
 │   └── mirna_rankings_dashboard.html
 ├── docs/
 │   ├── METODOLOGIA_MODELOS_MIRNA.md
@@ -140,6 +143,7 @@ miRNA/
 │   ├── train_mirna_candidate_discovery_model.js
 │   ├── validate_mirna_candidates_in_patients_model.js
 │   ├── generate_mirna_rankings_html.js
+│   ├── run_sensitivity_analyses.js
 │   └── audit_mirna_discovery_pipeline.js
 ├── README.md
 ├── context.md
@@ -2088,3 +2092,6 @@ Fatos conferidos no repositório nesta data:
 - `data/raw/dataset_mirna_raw (doentes).csv`: 1.209 IDs com sufixo `mirbase21` e 130 com `mirnaseq`.
 
 Pendências registradas: confirmar o projeto de origem da classe 1 pela API do GDC antes de chamá-la de `TCGA-BRCA`, e confirmar se o miRBase baixado é a release 22 ou 22.1.
+## Análises de sensibilidade pós-hoc GSE73002
+
+O script `scripts/run_sensitivity_analyses.js` executa análises de sensibilidade após a avaliação externa e grava os resultados versionáveis em `reports/analise_sensibilidade_pos_hoc.{txt,csv,json}`. As execuções intermediárias ficam em `tmp_sensibilidade/`, ignorado pelo Git. Para executar na raiz do repositório, use `node scripts/run_sensitivity_analyses.js`. Esses resultados são pós-hoc e não alteram modelos, rankings ou conclusões congelados; consulte `docs/ANALISE_SENSIBILIDADE_GSE73002.md` para o contexto metodológico.

@@ -100,6 +100,9 @@ miRNA/
 │   ├── metricas_coorte_externa_gse73002.csv
 │   ├── gse73002_provenance_check.txt
 │   ├── gse73002_statistics_test.txt
+│   ├── analise_sensibilidade_pos_hoc.txt
+│   ├── analise_sensibilidade_pos_hoc.csv
+│   ├── analise_sensibilidade_pos_hoc.json
 │   └── mirna_rankings_dashboard.html
 ├── docs/
 │   ├── figures/
@@ -129,6 +132,7 @@ miRNA/
 │   ├── test_gse73002_statistics.js
 │   ├── generate_gse73002_cohort_deliverables.js
 │   ├── generate_mirna_rankings_html.js
+│   ├── run_sensitivity_analyses.js
 │   └── audit_mirna_discovery_pipeline.js
 ├── README.md
 └── context.md
@@ -1547,3 +1551,6 @@ models/modelo_mirna_painel.json
 ```
 
 Eles classificam amostras/pacientes como saudavel ou doente, mas nao sao mais o objetivo principal do projeto. Agora eles devem ser tratados como historico, comparacao ou apoio exploratorio, porque o objetivo cientifico principal passou a ser descoberta e priorizacao de novos miRNAs candidatos.
+## Análises de sensibilidade pós-hoc GSE73002
+
+O script `scripts/run_sensitivity_analyses.js` executa análises de sensibilidade após a avaliação externa e grava os resultados versionáveis em `reports/analise_sensibilidade_pos_hoc.{txt,csv,json}`. As execuções intermediárias ficam em `tmp_sensibilidade/`, ignorado pelo Git. Para executar na raiz do repositório, use `node scripts/run_sensitivity_analyses.js`. Esses resultados são pós-hoc e não alteram modelos, rankings ou conclusões congelados; consulte `docs/ANALISE_SENSIBILIDADE_GSE73002.md` para o contexto metodológico.
