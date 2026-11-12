@@ -126,6 +126,8 @@ miRNA/
 │   └── mirna_rankings_dashboard.html
 ├── docs/
 │   ├── METODOLOGIA_MODELOS_MIRNA.md
+│   ├── PLANO_VALIDACAO_EXTERNA_GSE73002.md
+│   ├── EXPLICACAO_COORTE_EXTERNA_GSE73002.md
 │   ├── GUIA_DIDATICO_PIPELINE_MIRNA.html
 │   └── GUIA_DIDATICO_PIPELINE_MIRNA.pdf
 ├── scripts/
@@ -140,8 +142,11 @@ miRNA/
 │   ├── generate_mirna_rankings_html.js
 │   └── audit_mirna_discovery_pipeline.js
 ├── README.md
-└── context.md
+├── context.md
+└── tmp/ (temporários locais, ignorados pelo Git)
 ```
+
+Os dados ficam separados por origem (`data/raw`, `data/external`) e por etapa (`data/processed`). Os artefatos treinados permanecem em `models/`; não mover nem renomear esses arquivos sem atualizar os caminhos nos scripts. `reports/` reúne métricas e auditorias reproduzíveis. `tmp/` é reservado a arquivos intermediários e não deve ser versionado. O documento final de entrega do TCC é enviado separadamente e não é armazenado neste repositório. Os arquivos de entrada externos que alguns scripts esperam na raiz permanecem ali para compatibilidade.
 
 ## Estado de Versionamento e GitHub
 
@@ -2069,13 +2074,9 @@ A preparacao foi repetida e preservou byte a byte a matriz TS e o mapa GSM. As a
 
 Foram adicionados os entregaveis `reports/metricas_coorte_externa_gse73002.csv` e `docs/EXPLICACAO_COORTE_EXTERNA_GSE73002.md`, ambos gerados por `scripts/generate_gse73002_cohort_deliverables.js`. O primeiro consolida valores, unidade, tipo de analise e interpretacao; o segundo explica fluxo, proveniencia, criterios, resultados, hierarquia de evidencia, limitacoes e afirmacoes permitidas.
 
-## Documento Academico Atualizado (12/10/2026)
+## Arquivo de Entrega do TCC
 
-O documento original `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` foi preservado. A versao cientificamente alinhada ao pipeline vigente foi gerada como `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx` e `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf`.
-
-Foram substituidos 109 paragrafos de conteudo, mantendo os 297 paragrafos estruturais, duas secoes, sumario automatico, estilos, tipografia, alinhamentos, recuos, margens e dimensoes das duas figuras. O titulo, resumo, abstract, objetivos, metodologia, resultados, algoritmos, consideracoes finais, contribuicoes, trabalhos futuros, referencias e diagramas foram atualizados para o fluxo Modelo 1 -> Modelo 2 -> avaliacao externa GSE73002. Os estilos de titulo receberam a propriedade de manter com o proximo paragrafo para impedir subtitulos isolados no fim de pagina, e cada referencia bibliografica foi configurada para permanecer inteira na mesma pagina.
-
-Os scripts `scripts/update_tcc_document.ps1`, `scripts/audit_tcc_document.ps1` e `scripts/audit_tcc_final_integrity.ps1` tornam a geracao e as revisoes reproduziveis. A revisao cientifica e de formatacao foi aprovada em 55/55 verificacoes: 38/38 de consistencia cientifica e 17/17 de formatacao e integridade. A terceira revisao independente foi aprovada em 26/26 verificacoes de paginacao, paginas vazias, titulos orfaos, referencias indivisiveis, figuras, sumario e integridade do PDF. Os relatorios estao em `reports/tcc_document_update_report.txt`, `reports/tcc_document_review_report.txt` e `reports/tcc_document_final_integrity_report.txt`.
+O arquivo final de entrega é enviado separadamente junto com o link do repositório. O DOCX, o PDF e o relatório específico de revisão desse documento não são armazenados no repo. O guia didático do pipeline permanece em `docs/GUIA_DIDATICO_PIPELINE_MIRNA.pdf`.
 
 ## Fontes dos Dados e Referências (28/10/2026)
 

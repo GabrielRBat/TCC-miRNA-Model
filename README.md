@@ -52,7 +52,6 @@ Observações de procedência:
 - Os sufixos dos nomes de arquivo da classe 1 indicam o pipeline harmonizado de miRNA do GDC, mas não identificam o projeto de origem. Como não há manifesto versionado, a classe 1 não deve ser descrita como `TCGA-BRCA` até a confirmação pela API do GDC (ver [Limitação central da base interna](#limitacao-central-da-base-interna)).
 - Os controles GTEx incluem várias amostras por doador e de tecidos diferentes; as observações não são independentes.
 - Cinco dos 43 positivos (miR-1246, miR-1307-3p, miR-4634, miR-6861-5p e miR-6875-5p) vêm de Shimomura et al. (2016), a publicação ligada à GSE73002.
-- A release do miRBase registrada no TCC é a 22; confirmar se o download foi a 22 ou a 22.1.
 
 Referências:
 
@@ -101,9 +100,6 @@ miRNA/
 │   ├── metricas_coorte_externa_gse73002.csv
 │   ├── gse73002_provenance_check.txt
 │   ├── gse73002_statistics_test.txt
-│   ├── tcc_document_update_report.txt
-│   ├── tcc_document_review_report.txt
-│   ├── tcc_document_final_integrity_report.txt
 │   └── mirna_rankings_dashboard.html
 ├── docs/
 │   ├── figures/
@@ -133,37 +129,12 @@ miRNA/
 │   ├── test_gse73002_statistics.js
 │   ├── generate_gse73002_cohort_deliverables.js
 │   ├── generate_mirna_rankings_html.js
-│   ├── update_tcc_document.ps1
-│   ├── audit_tcc_document.ps1
-│   ├── audit_tcc_final_integrity.ps1
 │   └── audit_mirna_discovery_pipeline.js
-├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx
-├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx
-├── TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf
 ├── README.md
 └── context.md
 ```
 
-## Documento Acadêmico do TCC
-
-O arquivo `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama.docx` é a versão original recebida e foi preservado sem alterações. A versão canônica alinhada ao pipeline científico vigente e aprovada após revisão tripla está disponível nos formatos:
-
-- `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.docx` — versão editável com a formatação original preservada;
-- `TCC_Predicao_Marcadores_Geneticos_Cancer_Mama_ATUALIZADO.pdf` — versão pronta para leitura e apresentação.
-
-A atualização substitui o pipeline histórico pelo fluxo vigente Modelo 1 → Modelo 2 → avaliação externa GSE73002, corrige a interpretação das métricas, documenta confundimento e deslocamento global, inclui o núcleo conservador de 22 candidatos e atualiza as duas figuras do apêndice. A revisão final também explicita, no resumo, na introdução, nos objetivos, na metodologia, nos resultados e nas considerações finais, que o produto é um **gerador e priorizador de hipóteses científicas**: o Modelo 1 aprende padrões de sequência e o Modelo 2 examina associação/diferença de expressão. Nenhuma das etapas realiza diagnóstico, pré-diagnóstico, estimativa individual de risco ou confirmação de biomarcadores.
-
-Foram preservados estilos, tipografia, alinhamentos, recuos, margens, seções, sumário e dimensões das figuras. A seção final foi explicitada como `CONSIDERAÇÕES FINAIS E CONTRIBUIÇÕES`; os títulos permanecem com o primeiro parágrafo subsequente e cada referência bibliográfica permanece inteira na mesma página. A revisão tripla conferiu 47 itens sem falhas e manteve as 40 páginas nos formatos DOCX e PDF.
-
-Para reconstruir a base da atualização e auditar a integridade do documento:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\update_tcc_document.ps1
-powershell -ExecutionPolicy Bypass -File scripts\audit_tcc_document.ps1
-powershell -ExecutionPolicy Bypass -File scripts\audit_tcc_final_integrity.ps1
-```
-
-A revisão científica e de formatação contém `55/55` verificações aprovadas: `38/38` de consistência científica e `17/17` de formatação e integridade. Uma terceira revisão independente contém `26/26` verificações aprovadas, incluindo paginação, páginas vazias, títulos órfãos, referências indivisíveis, figuras, sumário e igualdade de páginas entre DOCX e PDF. Os relatórios completos estão em `reports/tcc_document_review_report.txt` e `reports/tcc_document_final_integrity_report.txt`.
+Os dados ficam separados por origem (`data/raw`, `data/external`) e etapa (`data/processed`). Os modelos treinados permanecem em `models/`; renomear ou mover esses arquivos exige atualizar os caminhos dos scripts. `reports/` contém métricas e auditorias do pipeline. `tmp/` é reservado para saídas intermediárias e é ignorado pelo Git. O documento final de entrega é enviado separadamente e não é armazenado neste repositório. Os arquivos de entrada externos esperados por alguns scripts permanecem na raiz para manter a compatibilidade.
 
 ## Estado de Versionamento
 
