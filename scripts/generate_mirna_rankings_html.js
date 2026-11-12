@@ -213,34 +213,34 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
   const metrics = [
     renderMetric("Modelo 1 candidatos", sequenceRows.length, "miRBase maduro humano"),
     renderMetric("Com expressão", sequenceWithExpression, "seguem para Modelo 2"),
-    renderMetric("Modelo 2 validados", validationRows.length, "candidatos com feature no dataset"),
+    renderMetric("Modelo 2 avaliados", validationRows.length, "candidatos com expressão na base interna"),
     renderMetric("Precisão CV média", round(mean(precisions)), "predições out-of-fold"),
     renderMetric("AUC CV média", round(mean(aucs)), "predições out-of-fold"),
     renderMetric("Acurácia CV média", round(mean(accuracies)), "predições out-of-fold"),
-    renderMetric("Precisão >= 0.90", countWhere(precisions, (value) => value >= 0.9), "candidatos"),
-    renderMetric("AUC >= 0.90", countWhere(aucs, (value) => value >= 0.9), "candidatos"),
-    renderMetric("Hipoteses FDR < 0.05", fdrSignificant, `de ${uniqueHypothesisCount} expressoes unicas`),
-    renderMetric("Fronteira de Pareto", paretoCount, "fortes sem peso 50/50"),
+    renderMetric("Precisão ≥ 0,90", countWhere(precisions, (value) => value >= 0.9), "candidatos"),
+    renderMetric("AUC ≥ 0,90", countWhere(aucs, (value) => value >= 0.9), "candidatos"),
+    renderMetric("Hipóteses FDR < 0,05", fdrSignificant, `de ${uniqueHypothesisCount} hipóteses de expressão únicas`),
+    renderMetric("Fronteira de Pareto", paretoCount, "não dependem do peso 50/50"),
     renderMetric("Coorte externa", externalSummary.samples.total, `${externalSummary.samples.breastCancer} casos + ${externalSummary.samples.nonCancerControls} controles`),
-    renderMetric("Replicados externos", externalSummary.replication.statisticallyReplicatedMatureExact, "mapeamento maduro exato; analise primaria"),
-    renderMetric("Robustos nas 2 analises", robustReplicated, "replicados antes e depois da centralizacao"),
-    renderMetric("Nucleo maduro estrito", robustUnambiguous, "sem ambiguidade interna de braco"),
-    renderMetric("Nucleo estrito AUC >= 0,60", robustUnambiguousPractical, "magnitude mantida nas 2 analises"),
+    renderMetric("Reproduzidos externamente", externalSummary.replication.statisticallyReplicatedMatureExact, "correspondência madura exata; análise principal"),
+    renderMetric("Convergentes nas 2 análises", robustReplicated, "reproduzidos na análise principal e na centrada"),
+    renderMetric("Núcleo maduro estrito", robustUnambiguous, "sem ambiguidade interna de braço"),
+    renderMetric("Núcleo estrito com AUC ≥ 0,60", robustUnambiguousPractical, "magnitude mantida nas 2 análises"),
     renderMetric("AUC do sinal global", round(globalShift.globalSampleMean.aucCancerHigher), "alerta de deslocamento de intensidade"),
   ].join("\n");
 
   const metricDefinitions = [
     renderDefinition(
       "Modelo 1 candidatos",
-      "Total de miRNAs maduros humanos ranqueados pelo ensemble PU com k-mers, seed e composicao da sequencia madura."
+      "Total de miRNAs maduros humanos ranqueados pelo ensemble PU com k-mers, região-semente e composição da sequência madura."
     ),
     renderDefinition(
       "Com expressão",
-      "Subconjunto do ranking sequencial que possui feature correspondente no dataset de pacientes e pode ser avaliado pelo Modelo 2."
+      "Subconjunto do ranking sequencial que possui feature correspondente na base interna e pode ser avaliado pelo Modelo 2."
     ),
     renderDefinition(
-      "Modelo 2 validados",
-      "Quantidade de candidatos testados em doentes contra saudáveis usando a expressão disponível no dataset."
+      "Modelo 2 avaliados",
+      "Quantidade de candidatos avaliados na triagem interna, comparando classe 1 e controles com a expressão disponível na base interna. Classe e fonte estão confundidas nessa base."
     ),
     renderDefinition(
       "Precisão CV média",
@@ -255,32 +255,32 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
       "Proporção média de amostras corretamente classificadas na validação cruzada estratificada de 5 folds do Modelo 2."
     ),
     renderDefinition(
-      "Precisão >= 0.90 / AUC >= 0.90",
-      "Contagem de candidatos com desempenho alto nas predições out-of-fold. Esses números continuam sendo validação computacional, não clínica."
+      "Precisão ≥ 0,90 / AUC ≥ 0,90",
+      "Contagem de candidatos com desempenho alto nas predições out-of-fold. Esses números são triagem computacional, não diagnóstico nem validação clínica."
     ),
     renderDefinition(
-      "Hipoteses FDR < 0.05",
-      "Contagem de expressoes unicas apos correcao Benjamini-Hochberg e teste unilateral AUC > 0,5. Bracos que compartilham a mesma feature nao sao contados como testes independentes."
+      "Hipóteses FDR < 0,05",
+      "Contagem de hipóteses de expressão únicas após correção de Benjamini-Hochberg e teste unilateral AUC > 0,5. Braços que compartilham a mesma feature não são contados como testes independentes."
     ),
     renderDefinition(
       "Fronteira de Pareto",
-      "Candidatos para os quais nenhum outro possui simultaneamente score maior nos Modelos 1 e 2. Nao depende de escolher o peso 50/50."
+      "Candidatos para os quais nenhum outro possui simultaneamente escore maior nos Modelos 1 e 2. Não depende de escolher o peso 50/50."
     ),
     renderDefinition(
-      "Replicados externos",
-      "miRNAs com mapeamento maduro exato, direcao concordante com a base interna, IC95% direcional acima de 0,5 e FDR < 0,05 na coorte GSE73002 TS."
+      "Reproduzidos externamente",
+      "miRNAs com correspondência madura exata, direção concordante com a base interna, IC95% direcional acima de 0,5 e FDR < 0,05 na coorte GSE73002 TS."
     ),
     renderDefinition(
-      "Robustos nas 2 analises",
-      "Intersecao entre a analise primaria e a sensibilidade pos-hoc. Inclui candidatos cujo Modelo 2 interno usou uma feature compartilhada entre bracos."
+      "Convergentes nas 2 análises",
+      "Interseção entre a análise principal e a análise centrada pós-hoc. Inclui candidatos cujo Modelo 2 interno usou uma feature compartilhada entre braços."
     ),
     renderDefinition(
-      "Nucleo maduro estrito",
-      "Subconjunto reproduzido nas duas analises com correspondencia madura externa exata e sem ambiguidade 5p/3p na evidencia interna. E a evidencia mais rigorosa para o foco em miRNA maduro."
+      "Núcleo maduro estrito",
+      "Subconjunto reproduzido nas duas análises com correspondência madura externa exata e sem ambiguidade 5p/3p na evidência interna. É a evidência mais rigorosa para o foco em miRNA maduro."
     ),
     renderDefinition(
       "AUC do sinal global",
-      "Quanto a media de todos os 2.540 miRNAs separa casos e controles. Um valor muito alto alerta que parte do desempenho pode refletir intensidade global, lote ou composicao da coorte."
+      "Quanto a média de todos os 2.540 miRNAs separa casos e controles. Um valor muito alto alerta que parte do desempenho pode refletir intensidade global, lote ou composição da coorte."
     ),
   ].join("\n");
 
@@ -544,7 +544,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
 <body>
   <header>
     <h1>miRNA Rankings Dashboard</h1>
-    <p>Visualização dos rankings gerados pelo Modelo 1 PU de sequência madura, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
+    <p>Visualização dos rankings gerados pelo Modelo 1 PU de sequência madura, pelo Modelo 2 de triagem interna de expressão e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
   </header>
 
   <main>
@@ -564,11 +564,11 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
       <div class="grid-2">
         <div>
           <div id="scatter" class="chart"></div>
-          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte da sequência madura no Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito combinam as duas fontes de evidência computacional.</p>
+          <p class="chart-caption">Cada ponto é um miRNA candidato com expressão disponível na base interna. No eixo X fica o suporte da sequência madura no Modelo 1; no eixo Y fica o escore de triagem interna do Modelo 2. Pontos no canto superior direito combinam as duas fontes de evidência computacional.</p>
         </div>
         <div>
           <div id="bar" class="chart"></div>
-          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do score de validação em pacientes, servindo como lista priorizada para discussão científica.</p>
+          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do escore de triagem interna do Modelo 2, servindo como lista priorizada para discussão científica.</p>
         </div>
       </div>
       <p class="status" id="plot-status"></p>
@@ -576,13 +576,13 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
 
     <section class="panel">
       <h2>Rankings</h2>
-      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba de validação mostra apenas a força no dataset de pacientes. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressão disponível para validação.</p>
+      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba do Modelo 2 mostra apenas a associação de expressão na base interna, que é confundida com a fonte dos dados. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressão disponível para validação.</p>
       <div class="tabs">
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
-        <button type="button" class="tab" data-view="validation">Validação em pacientes</button>
+        <button type="button" class="tab" data-view="validation">Triagem interna (Modelo 2)</button>
         <button type="button" class="tab" data-view="sequence">Modelo 1 PU/sequência madura</button>
-        <button type="button" class="tab" data-view="external">GSE73002 primaria</button>
-        <button type="button" class="tab" data-view="centered">GSE73002 sensibilidade</button>
+        <button type="button" class="tab" data-view="external">GSE73002 principal</button>
+        <button type="button" class="tab" data-view="centered">GSE73002 centrada</button>
       </div>
       <div class="toolbar">
         <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direção, referência ou k-mer">
@@ -605,7 +605,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
       O Modelo 2 compara expressão em doentes contra saudáveis. Quando o dataset tem uma feature em nível de precursor/família, candidatos maduros 5p e 3p podem compartilhar a mesma métrica de validação. Nesses casos, a evidência é da feature disponível no dataset, não uma distinção experimental entre braços maduros.
     </section>
     <section class="note">
-      <strong>Alerta da validacao externa:</strong> a media global das 2.540 features separa casos e controles com AUC ${round(globalShift.globalSampleMean.aucCancerHigher)} e ${round(globalShift.featureMeanDirection.proportionHigherInCancer * 100, 2)}% das features aumentam em casos. Por isso, os ${externalSummary.replication.statisticallyReplicatedMatureExact} sinais primarios nao devem ser chamados isoladamente de biomarcadores especificos. A analise centrada e pos-hoc. Dos ${robustReplicated} candidatos reproduzidos nas duas analises, ${robustUnambiguous} tambem nao possuem ambiguidade interna de braco e formam o nucleo maduro mais rigoroso (${robustUnambiguousPractical} com AUC >= 0,60 nas duas). A concordancia entre o score interno e a AUC externa foi baixa (rho = ${round(externalSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}; centrada = ${round(centeredSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}).
+      <strong>Alerta da avaliação externa:</strong> a média global das 2.540 features separa casos e controles com AUC ${round(globalShift.globalSampleMean.aucCancerHigher)} e ${round(globalShift.featureMeanDirection.proportionHigherInCancer * 100, 2)}% das features aumentam em casos. Por isso, os ${externalSummary.replication.statisticallyReplicatedMatureExact} sinais da análise principal não devem ser chamados isoladamente de biomarcadores específicos. A análise centrada é pós-hoc. Dos ${robustReplicated} candidatos reproduzidos nas duas análises, ${robustUnambiguous} também não possuem ambiguidade interna de braço e formam o núcleo maduro mais rigoroso (${robustUnambiguousPractical} com AUC ≥ 0,60 nas duas). A concordância entre o escore interno e a AUC externa foi baixa (rho = ${round(externalSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}; centrada = ${round(centeredSummary.rankingEvaluation.spearmanInternalScoreVsExternalDirectionalAucMatureExact)}).
     </section>
   </main>
 
@@ -617,10 +617,10 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
         rows: DATA.integratedRows,
         columns: [
           ["rank_integrado", "Rank integrado"],
-          ["rank_validacao", "Rank validação"],
+          ["rank_validacao", "Rank Modelo 2"],
           ["mirna", "miRNA"],
           ["score_final", "Score final"],
-          ["validacao", "Validação"],
+          ["validacao", "Score Modelo 2"],
           ["score_seq", "Score seq."],
           ["auc", "AUC"],
           ["auc_ic_inf", "AUC IC95% inf."],
@@ -639,10 +639,10 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
       validation: {
         rows: DATA.validationRows,
         columns: [
-          ["rank_validacao", "Rank validação"],
+          ["rank_validacao", "Rank Modelo 2"],
           ["rank_integrado", "Rank integrado"],
           ["mirna", "miRNA"],
-          ["validacao", "Validação"],
+          ["validacao", "Score Modelo 2"],
           ["auc", "AUC"],
           ["auc_ic_inf", "AUC IC95% inf."],
           ["auc_ic_sup", "AUC IC95% sup."],
@@ -708,8 +708,13 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
     let sortDirection = 1;
     let page = 0;
 
-    function formatValue(value) {
-      if (typeof value === "number" && Number.isFinite(value)) return value.toFixed(Math.abs(value) >= 10 ? 2 : 4);
+    function formatValue(value, key) {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        if (key && key.startsWith("rank")) return String(Math.round(value));
+        return value.toFixed(Math.abs(value) >= 10 ? 2 : 4);
+      }
+      if (key === "mirna" && typeof value === "string") return value.replace(/^mir-/, "miR-");
+      if (value === "nao") return "não";
       return value ?? "";
     }
 
@@ -742,7 +747,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
       table.innerHTML = "<thead><tr>" + columns.map(([key, label]) => '<th data-key="' + key + '">' + label + "</th>").join("") + "</tr></thead>" +
         "<tbody>" + slice.map((row) => "<tr>" + columns.map(([key]) => {
           const wrap = ["features", "referencias", "kmers", "direcao"].includes(key) ? " class=\\"wrap\\"" : "";
-          return "<td" + wrap + ">" + String(formatValue(row[key])).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") + "</td>";
+          return "<td" + wrap + ">" + String(formatValue(row[key], key)).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") + "</td>";
         }).join("") + "</tr>").join("") + "</tbody>";
 
       table.querySelectorAll("th").forEach((th) => {
@@ -782,7 +787,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
         mode: "markers",
         x: DATA.validationRows.map((row) => row.score_seq),
         y: DATA.validationRows.map((row) => row.validacao),
-        text: DATA.validationRows.map((row) => row.mirna),
+        text: DATA.validationRows.map((row) => row.mirna.replace(/^mir-/, "miR-")),
         marker: {
           size: DATA.validationRows.map((row) => 7 + Math.max(0, row.score_final || 0) * 10),
           color: DATA.validationRows.map((row) => row.score_final),
@@ -791,7 +796,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
         },
         hovertemplate: "%{text}<br>seq=%{x:.3f}<br>validação=%{y:.3f}<extra></extra>"
       }], {
-        title: "Sequência vs validação em pacientes",
+        title: "Modelo 1 (sequência) × Modelo 2 (triagem interna)",
         xaxis: { title: "Score Modelo 1" },
         yaxis: { title: "Score Modelo 2" },
         margin: { t: 48, r: 18, b: 52, l: 58 }
@@ -800,7 +805,7 @@ function buildHtml({ sequenceRows, validationRows, integratedRows, patientModel,
       Plotly.newPlot("bar", [{
         type: "bar",
         orientation: "h",
-        y: integrated.slice(0, 20).map((row) => row.mirna).reverse(),
+        y: integrated.slice(0, 20).map((row) => row.mirna.replace(/^mir-/, "miR-")).reverse(),
         x: integrated.slice(0, 20).map((row) => row.score_final).reverse(),
         marker: { color: "#0f766e" },
         hovertemplate: "%{y}<br>score final=%{x:.3f}<extra></extra>"

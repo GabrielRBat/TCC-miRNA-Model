@@ -1,0 +1,52 @@
+ANALISES DE SENSIBILIDADE POS-HOC — FLUXO DE DESCOBERTA DE miRNAs
+Executadas depois dos resultados da coorte externa; nao alteram os artefatos congelados.
+Reproducao da referencia: percentil do Modelo 1 identico=true; lista integrada identica=true
+Positivos de fonte unica (10): hsa-let-7b-5p, hsa-miR-106a-5p, hsa-miR-19b-3p, hsa-miR-20a-5p, hsa-miR-223-3p, hsa-miR-25-3p, hsa-miR-425-5p, hsa-miR-451a, hsa-miR-92a-3p, hsa-miR-93-5p
+Fonte desses positivos: Zou et al. (2021), Cancer Biomarkers 30(1):41-53, DOI 10.3233/CBM-201547. No CSV de positivos eles aparecem com fonte=painel_inicial_do_projeto.
+
+1. Modelo 1 com conjuntos positivos alternativos (validacao aninhada por familia de regiao-semente)
+referencia_43	positivos=43	familias=32	percentil_medio=64.60%	IC95%=55.85% a 72.85%	p=0.0008	recall@10%=12.50% (4/32)	recall@20%=40.63% (13/32)
+sem_shimomura_38	positivos=38	familias=27	percentil_medio=73.59%	IC95%=66.32% a 80.11%	p=0.0001	recall@10%=22.22% (6/27)	recall@20%=48.15% (13/27)
+sem_fonte_unica_zou_33	positivos=33	familias=28	percentil_medio=58.47%	IC95%=49.17% a 67.52%	p=0.0549	recall@10%=14.29% (4/28)	recall@20%=28.57% (8/28)
+fonte_unica_zou_peso_1	positivos=43	familias=32	percentil_medio=65.24%	IC95%=56.38% a 73.42%	p=0.0007	recall@10%=12.50% (4/32)	recall@20%=40.63% (13/32)
+
+2. Modelo 1 menos linha de base, pareado por familia (pontos percentuais de percentil)
+referencia_43	similaridade_seed	linha_de_base=53.08%	diferenca=+11.53	IC95%=-1.54 a +23.88	p=0.0847	familias_melhor/pior=22/10
+referencia_43	centroide_kmer_maduro	linha_de_base=51.35%	diferenca=+13.26	IC95%=+4.01 a +22.69	p=0.0101	familias_melhor/pior=21/10
+referencia_43	similaridade_composicao_madura	linha_de_base=63.54%	diferenca=+1.06	IC95%=-8.60 a +11.07	p=0.8350	familias_melhor/pior=16/16
+referencia_43	ranking_aleatorio_deterministico	linha_de_base=54.34%	diferenca=+10.26	IC95%=-3.06 a +22.73	p=0.1339	familias_melhor/pior=23/9
+sem_shimomura_38	similaridade_seed	linha_de_base=53.07%	diferenca=+20.52	IC95%=+8.77 a +32.58	p=0.0024	familias_melhor/pior=19/8
+sem_shimomura_38	centroide_kmer_maduro	linha_de_base=60.10%	diferenca=+13.49	IC95%=+4.23 a +23.11	p=0.0108	familias_melhor/pior=19/8
+sem_shimomura_38	similaridade_composicao_madura	linha_de_base=72.33%	diferenca=+1.26	IC95%=-7.79 a +10.32	p=0.7949	familias_melhor/pior=11/16
+sem_shimomura_38	ranking_aleatorio_deterministico	linha_de_base=58.78%	diferenca=+14.81	IC95%=+2.60 a +26.70	p=0.0231	familias_melhor/pior=19/8
+sem_fonte_unica_zou_33	similaridade_seed	linha_de_base=47.11%	diferenca=+11.36	IC95%=-2.18 a +23.83	p=0.1033	familias_melhor/pior=19/9
+sem_fonte_unica_zou_33	centroide_kmer_maduro	linha_de_base=47.71%	diferenca=+10.76	IC95%=-2.03 a +23.49	p=0.1101	familias_melhor/pior=16/12
+sem_fonte_unica_zou_33	similaridade_composicao_madura	linha_de_base=61.22%	diferenca=-2.75	IC95%=-15.10 a +9.37	p=0.6777	familias_melhor/pior=14/14
+sem_fonte_unica_zou_33	ranking_aleatorio_deterministico	linha_de_base=56.33%	diferenca=+2.13	IC95%=-12.62 a +16.53	p=0.7732	familias_melhor/pior=16/12
+fonte_unica_zou_peso_1	similaridade_seed	linha_de_base=53.08%	diferenca=+12.16	IC95%=-0.48 a +24.80	p=0.0736	familias_melhor/pior=22/10
+fonte_unica_zou_peso_1	centroide_kmer_maduro	linha_de_base=51.35%	diferenca=+13.89	IC95%=+4.42 a +23.21	p=0.0078	familias_melhor/pior=21/10
+fonte_unica_zou_peso_1	similaridade_composicao_madura	linha_de_base=63.54%	diferenca=+1.70	IC95%=-8.29 a +11.91	p=0.7500	familias_melhor/pior=16/16
+fonte_unica_zou_peso_1	ranking_aleatorio_deterministico	linha_de_base=54.34%	diferenca=+10.90	IC95%=-1.79 a +23.50	p=0.1215	familias_melhor/pior=23/9
+
+3. Ablacao de atributos na referencia (mesmos folds externos e hiperparametros)
+core	percentil_medio=60.63%	IC95%=51.94% a 69.11%	recall@10%=9.38%	recall@20%=31.25%
+composition	percentil_medio=55.79%	IC95%=47.25% a 64.29%	recall@10%=6.25%	recall@20%=18.75%
+positional	percentil_medio=61.00%	IC95%=52.08% a 69.56%	recall@10%=6.25%	recall@20%=28.13%
+terminals	percentil_medio=68.29%	IC95%=58.72% a 77.33%	recall@10%=28.13%	recall@20%=43.75%
+full	percentil_medio=64.08%	IC95%=54.21% a 73.42%	recall@10%=18.75%	recall@20%=40.63%
+
+4. Reproducao externa por ordenacao, nos mesmos 611 candidatos (reproduzidos/avaliaveis na analise principal; entre colchetes, reproduzidos nas duas analises)
+referencia_43	modelo_1	top10=3/9 [3]	top50=14/46 [14]	top100=33/94 [33]	rho_principal=-0.0327	rho_centrada=-0.1266
+referencia_43	integrado_50_50	top10=7/10 [7]	top50=34/47 [34]	top100=60/96 [59]	rho_principal=0.0852	rho_centrada=-0.0055
+referencia_43	modelo_2	top10=10/10 [10]	top50=46/48 [38]	top100=69/96 [58]	rho_principal=0.1537	rho_centrada=0.1170
+sem_shimomura_38	modelo_1	top10=3/10 [3]	top50=17/47 [16]	top100=37/95 [36]	rho_principal=-0.0555	rho_centrada=-0.1367
+sem_shimomura_38	integrado_50_50	top10=9/10 [9]	top50=30/49 [30]	top100=56/96 [53]	rho_principal=0.0659	rho_centrada=-0.0165
+sem_shimomura_38	modelo_2	top10=10/10 [10]	top50=46/48 [37]	top100=69/96 [58]	rho_principal=0.1537	rho_centrada=0.1170
+sem_fonte_unica_zou_33	modelo_1	top10=3/10 [3]	top50=19/46 [17]	top100=43/95 [38]	rho_principal=-0.0656	rho_centrada=-0.1294
+sem_fonte_unica_zou_33	integrado_50_50	top10=10/10 [9]	top50=33/48 [31]	top100=56/96 [51]	rho_principal=0.0531	rho_centrada=-0.0166
+sem_fonte_unica_zou_33	modelo_2	top10=10/10 [10]	top50=46/48 [37]	top100=69/96 [58]	rho_principal=0.1537	rho_centrada=0.1170
+fonte_unica_zou_peso_1	modelo_1	top10=2/9 [2]	top50=14/46 [14]	top100=34/94 [34]	rho_principal=-0.0327	rho_centrada=-0.1271
+fonte_unica_zou_peso_1	integrado_50_50	top10=7/10 [7]	top50=34/47 [34]	top100=61/96 [60]	rho_principal=0.0849	rho_centrada=-0.0062
+fonte_unica_zou_peso_1	modelo_2	top10=10/10 [10]	top50=46/48 [38]	top100=69/96 [58]	rho_principal=0.1537	rho_centrada=0.1170
+
+Observacao: a taxa global de reproducao (255 de 579 na analise principal) nao depende do Modelo 1, porque a direcao esperada de cada candidato vem do Modelo 2 e o teste externo e feito por candidato. As variantes mudam apenas a ordem dos candidatos.
