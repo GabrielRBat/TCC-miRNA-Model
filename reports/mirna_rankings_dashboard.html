@@ -258,45 +258,45 @@
 <body>
   <header>
     <h1>miRNA Rankings Dashboard</h1>
-    <p>Visualização dos rankings gerados pelo Modelo 1 PU de sequência madura, pelo Modelo 2 de validação em pacientes e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
+    <p>Visualização dos rankings gerados pelo Modelo 1 PU de sequência madura, pelo Modelo 2 de triagem interna de expressão e pelo ranking integrado. Os scores são computacionais e não substituem validação laboratorial.</p>
   </header>
 
   <main>
     <section class="metrics">
       <article class="metric"><span>Modelo 1 candidatos</span><strong>2613</strong><small>miRBase maduro humano</small></article>
 <article class="metric"><span>Com expressão</span><strong>611</strong><small>seguem para Modelo 2</small></article>
-<article class="metric"><span>Modelo 2 validados</span><strong>611</strong><small>candidatos com feature no dataset</small></article>
+<article class="metric"><span>Modelo 2 avaliados</span><strong>611</strong><small>candidatos com expressão na base interna</small></article>
 <article class="metric"><span>Precisão CV média</span><strong>0.7291</strong><small>predições out-of-fold</small></article>
 <article class="metric"><span>AUC CV média</span><strong>0.7435</strong><small>predições out-of-fold</small></article>
 <article class="metric"><span>Acurácia CV média</span><strong>0.7264</strong><small>predições out-of-fold</small></article>
-<article class="metric"><span>Precisão &gt;= 0.90</span><strong>146</strong><small>candidatos</small></article>
-<article class="metric"><span>AUC &gt;= 0.90</span><strong>177</strong><small>candidatos</small></article>
-<article class="metric"><span>Hipoteses FDR &lt; 0.05</span><strong>278</strong><small>de 325 expressoes unicas</small></article>
-<article class="metric"><span>Fronteira de Pareto</span><strong>4</strong><small>fortes sem peso 50/50</small></article>
+<article class="metric"><span>Precisão ≥ 0,90</span><strong>146</strong><small>candidatos</small></article>
+<article class="metric"><span>AUC ≥ 0,90</span><strong>177</strong><small>candidatos</small></article>
+<article class="metric"><span>Hipóteses FDR &lt; 0,05</span><strong>278</strong><small>de 325 hipóteses de expressão únicas</small></article>
+<article class="metric"><span>Fronteira de Pareto</span><strong>4</strong><small>não dependem do peso 50/50</small></article>
 <article class="metric"><span>Coorte externa</span><strong>2549</strong><small>1206 casos + 1343 controles</small></article>
-<article class="metric"><span>Replicados externos</span><strong>255</strong><small>mapeamento maduro exato; analise primaria</small></article>
-<article class="metric"><span>Robustos nas 2 analises</span><strong>211</strong><small>replicados antes e depois da centralizacao</small></article>
-<article class="metric"><span>Nucleo maduro estrito</span><strong>22</strong><small>sem ambiguidade interna de braco</small></article>
-<article class="metric"><span>Nucleo estrito AUC &gt;= 0,60</span><strong>21</strong><small>magnitude mantida nas 2 analises</small></article>
+<article class="metric"><span>Reproduzidos externamente</span><strong>255</strong><small>correspondência madura exata; análise principal</small></article>
+<article class="metric"><span>Convergentes nas 2 análises</span><strong>211</strong><small>reproduzidos na análise principal e na centrada</small></article>
+<article class="metric"><span>Núcleo maduro estrito</span><strong>22</strong><small>sem ambiguidade interna de braço</small></article>
+<article class="metric"><span>Núcleo estrito com AUC ≥ 0,60</span><strong>21</strong><small>magnitude mantida nas 2 análises</small></article>
 <article class="metric"><span>AUC do sinal global</span><strong>0.9713</strong><small>alerta de deslocamento de intensidade</small></article>
     </section>
 
     <section class="panel">
       <h2>O que cada métrica resume</h2>
       <div class="explain-grid">
-        <article class="definition"><strong>Modelo 1 candidatos</strong><span>Total de miRNAs maduros humanos ranqueados pelo ensemble PU com k-mers, seed e composicao da sequencia madura.</span></article>
-<article class="definition"><strong>Com expressão</strong><span>Subconjunto do ranking sequencial que possui feature correspondente no dataset de pacientes e pode ser avaliado pelo Modelo 2.</span></article>
-<article class="definition"><strong>Modelo 2 validados</strong><span>Quantidade de candidatos testados em doentes contra saudáveis usando a expressão disponível no dataset.</span></article>
+        <article class="definition"><strong>Modelo 1 candidatos</strong><span>Total de miRNAs maduros humanos ranqueados pelo ensemble PU com k-mers, região-semente e composição da sequência madura.</span></article>
+<article class="definition"><strong>Com expressão</strong><span>Subconjunto do ranking sequencial que possui feature correspondente na base interna e pode ser avaliado pelo Modelo 2.</span></article>
+<article class="definition"><strong>Modelo 2 avaliados</strong><span>Quantidade de candidatos avaliados na triagem interna, comparando classe 1 e controles com a expressão disponível na base interna. Classe e fonte estão confundidas nessa base.</span></article>
 <article class="definition"><strong>Precisão CV média</strong><span>Nas predições out-of-fold, mede a proporção de classe 1 entre os casos classificados como doentes pelo mini-modelo de cada candidato.</span></article>
 <article class="definition"><strong>AUC CV média</strong><span>Capacidade média de separar doentes e saudáveis nas predições out-of-fold; 0.5 equivale a acaso e 1.0 indica separação perfeita.</span></article>
 <article class="definition"><strong>Acurácia CV média</strong><span>Proporção média de amostras corretamente classificadas na validação cruzada estratificada de 5 folds do Modelo 2.</span></article>
-<article class="definition"><strong>Precisão &gt;= 0.90 / AUC &gt;= 0.90</strong><span>Contagem de candidatos com desempenho alto nas predições out-of-fold. Esses números continuam sendo validação computacional, não clínica.</span></article>
-<article class="definition"><strong>Hipoteses FDR &lt; 0.05</strong><span>Contagem de expressoes unicas apos correcao Benjamini-Hochberg e teste unilateral AUC &gt; 0,5. Bracos que compartilham a mesma feature nao sao contados como testes independentes.</span></article>
-<article class="definition"><strong>Fronteira de Pareto</strong><span>Candidatos para os quais nenhum outro possui simultaneamente score maior nos Modelos 1 e 2. Nao depende de escolher o peso 50/50.</span></article>
-<article class="definition"><strong>Replicados externos</strong><span>miRNAs com mapeamento maduro exato, direcao concordante com a base interna, IC95% direcional acima de 0,5 e FDR &lt; 0,05 na coorte GSE73002 TS.</span></article>
-<article class="definition"><strong>Robustos nas 2 analises</strong><span>Intersecao entre a analise primaria e a sensibilidade pos-hoc. Inclui candidatos cujo Modelo 2 interno usou uma feature compartilhada entre bracos.</span></article>
-<article class="definition"><strong>Nucleo maduro estrito</strong><span>Subconjunto reproduzido nas duas analises com correspondencia madura externa exata e sem ambiguidade 5p/3p na evidencia interna. E a evidencia mais rigorosa para o foco em miRNA maduro.</span></article>
-<article class="definition"><strong>AUC do sinal global</strong><span>Quanto a media de todos os 2.540 miRNAs separa casos e controles. Um valor muito alto alerta que parte do desempenho pode refletir intensidade global, lote ou composicao da coorte.</span></article>
+<article class="definition"><strong>Precisão ≥ 0,90 / AUC ≥ 0,90</strong><span>Contagem de candidatos com desempenho alto nas predições out-of-fold. Esses números são triagem computacional, não diagnóstico nem validação clínica.</span></article>
+<article class="definition"><strong>Hipóteses FDR &lt; 0,05</strong><span>Contagem de hipóteses de expressão únicas após correção de Benjamini-Hochberg e teste unilateral AUC &gt; 0,5. Braços que compartilham a mesma feature não são contados como testes independentes.</span></article>
+<article class="definition"><strong>Fronteira de Pareto</strong><span>Candidatos para os quais nenhum outro possui simultaneamente escore maior nos Modelos 1 e 2. Não depende de escolher o peso 50/50.</span></article>
+<article class="definition"><strong>Reproduzidos externamente</strong><span>miRNAs com correspondência madura exata, direção concordante com a base interna, IC95% direcional acima de 0,5 e FDR &lt; 0,05 na coorte GSE73002 TS.</span></article>
+<article class="definition"><strong>Convergentes nas 2 análises</strong><span>Interseção entre a análise principal e a análise centrada pós-hoc. Inclui candidatos cujo Modelo 2 interno usou uma feature compartilhada entre braços.</span></article>
+<article class="definition"><strong>Núcleo maduro estrito</strong><span>Subconjunto reproduzido nas duas análises com correspondência madura externa exata e sem ambiguidade 5p/3p na evidência interna. É a evidência mais rigorosa para o foco em miRNA maduro.</span></article>
+<article class="definition"><strong>AUC do sinal global</strong><span>Quanto a média de todos os 2.540 miRNAs separa casos e controles. Um valor muito alto alerta que parte do desempenho pode refletir intensidade global, lote ou composição da coorte.</span></article>
       </div>
     </section>
 
@@ -305,11 +305,11 @@
       <div class="grid-2">
         <div>
           <div id="scatter" class="chart"></div>
-          <p class="chart-caption">Cada ponto é um miRNA candidato validado no dataset. No eixo X fica o suporte da sequência madura no Modelo 1; no eixo Y fica a validação em pacientes do Modelo 2. Pontos no canto superior direito combinam as duas fontes de evidência computacional.</p>
+          <p class="chart-caption">Cada ponto é um miRNA candidato com expressão disponível na base interna. No eixo X fica o suporte da sequência madura no Modelo 1; no eixo Y fica o escore de triagem interna do Modelo 2. Pontos no canto superior direito combinam as duas fontes de evidência computacional.</p>
         </div>
         <div>
           <div id="bar" class="chart"></div>
-          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do score de validação em pacientes, servindo como lista priorizada para discussão científica.</p>
+          <p class="chart-caption">Mostra os 20 primeiros candidatos do ranking integrado. Esse ranking mistura metade do score sequencial e metade do escore de triagem interna do Modelo 2, servindo como lista priorizada para discussão científica.</p>
         </div>
       </div>
       <p class="status" id="plot-status"></p>
@@ -317,13 +317,13 @@
 
     <section class="panel">
       <h2>Rankings</h2>
-      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba de validação mostra apenas a força no dataset de pacientes. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressão disponível para validação.</p>
+      <p class="chart-caption">O ranking integrado prioriza candidatos com bom suporte nos dois modelos. A aba do Modelo 2 mostra apenas a associação de expressão na base interna, que é confundida com a fonte dos dados. A aba sequencial mostra o ranking bruto do Modelo 1, incluindo candidatos sem expressão disponível para validação.</p>
       <div class="tabs">
         <button type="button" class="tab active" data-view="integrated">Ranking integrado</button>
-        <button type="button" class="tab" data-view="validation">Validação em pacientes</button>
+        <button type="button" class="tab" data-view="validation">Triagem interna (Modelo 2)</button>
         <button type="button" class="tab" data-view="sequence">Modelo 1 PU/sequência madura</button>
-        <button type="button" class="tab" data-view="external">GSE73002 primaria</button>
-        <button type="button" class="tab" data-view="centered">GSE73002 sensibilidade</button>
+        <button type="button" class="tab" data-view="external">GSE73002 principal</button>
+        <button type="button" class="tab" data-view="centered">GSE73002 centrada</button>
       </div>
       <div class="toolbar">
         <input id="search" type="search" placeholder="Filtrar por miRNA, feature, direção, referência ou k-mer">
@@ -346,7 +346,7 @@
       O Modelo 2 compara expressão em doentes contra saudáveis. Quando o dataset tem uma feature em nível de precursor/família, candidatos maduros 5p e 3p podem compartilhar a mesma métrica de validação. Nesses casos, a evidência é da feature disponível no dataset, não uma distinção experimental entre braços maduros.
     </section>
     <section class="note">
-      <strong>Alerta da validacao externa:</strong> a media global das 2.540 features separa casos e controles com AUC 0.9713 e 95.67% das features aumentam em casos. Por isso, os 255 sinais primarios nao devem ser chamados isoladamente de biomarcadores especificos. A analise centrada e pos-hoc. Dos 211 candidatos reproduzidos nas duas analises, 22 tambem nao possuem ambiguidade interna de braco e formam o nucleo maduro mais rigoroso (21 com AUC >= 0,60 nas duas). A concordancia entre o score interno e a AUC externa foi baixa (rho = 0.0852; centrada = -0.0055).
+      <strong>Alerta da avaliação externa:</strong> a média global das 2.540 features separa casos e controles com AUC 0.9713 e 95.67% das features aumentam em casos. Por isso, os 255 sinais da análise principal não devem ser chamados isoladamente de biomarcadores específicos. A análise centrada é pós-hoc. Dos 211 candidatos reproduzidos nas duas análises, 22 também não possuem ambiguidade interna de braço e formam o núcleo maduro mais rigoroso (21 com AUC ≥ 0,60 nas duas). A concordância entre o escore interno e a AUC externa foi baixa (rho = 0.0852; centrada = -0.0055).
     </section>
   </main>
 
@@ -358,10 +358,10 @@
         rows: DATA.integratedRows,
         columns: [
           ["rank_integrado", "Rank integrado"],
-          ["rank_validacao", "Rank validação"],
+          ["rank_validacao", "Rank Modelo 2"],
           ["mirna", "miRNA"],
           ["score_final", "Score final"],
-          ["validacao", "Validação"],
+          ["validacao", "Score Modelo 2"],
           ["score_seq", "Score seq."],
           ["auc", "AUC"],
           ["auc_ic_inf", "AUC IC95% inf."],
@@ -380,10 +380,10 @@
       validation: {
         rows: DATA.validationRows,
         columns: [
-          ["rank_validacao", "Rank validação"],
+          ["rank_validacao", "Rank Modelo 2"],
           ["rank_integrado", "Rank integrado"],
           ["mirna", "miRNA"],
-          ["validacao", "Validação"],
+          ["validacao", "Score Modelo 2"],
           ["auc", "AUC"],
           ["auc_ic_inf", "AUC IC95% inf."],
           ["auc_ic_sup", "AUC IC95% sup."],
@@ -449,8 +449,13 @@
     let sortDirection = 1;
     let page = 0;
 
-    function formatValue(value) {
-      if (typeof value === "number" && Number.isFinite(value)) return value.toFixed(Math.abs(value) >= 10 ? 2 : 4);
+    function formatValue(value, key) {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        if (key && key.startsWith("rank")) return String(Math.round(value));
+        return value.toFixed(Math.abs(value) >= 10 ? 2 : 4);
+      }
+      if (key === "mirna" && typeof value === "string") return value.replace(/^mir-/, "miR-");
+      if (value === "nao") return "não";
       return value ?? "";
     }
 
@@ -483,7 +488,7 @@
       table.innerHTML = "<thead><tr>" + columns.map(([key, label]) => '<th data-key="' + key + '">' + label + "</th>").join("") + "</tr></thead>" +
         "<tbody>" + slice.map((row) => "<tr>" + columns.map(([key]) => {
           const wrap = ["features", "referencias", "kmers", "direcao"].includes(key) ? " class=\"wrap\"" : "";
-          return "<td" + wrap + ">" + String(formatValue(row[key])).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") + "</td>";
+          return "<td" + wrap + ">" + String(formatValue(row[key], key)).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") + "</td>";
         }).join("") + "</tr>").join("") + "</tbody>";
 
       table.querySelectorAll("th").forEach((th) => {
@@ -523,7 +528,7 @@
         mode: "markers",
         x: DATA.validationRows.map((row) => row.score_seq),
         y: DATA.validationRows.map((row) => row.validacao),
-        text: DATA.validationRows.map((row) => row.mirna),
+        text: DATA.validationRows.map((row) => row.mirna.replace(/^mir-/, "miR-")),
         marker: {
           size: DATA.validationRows.map((row) => 7 + Math.max(0, row.score_final || 0) * 10),
           color: DATA.validationRows.map((row) => row.score_final),
@@ -532,7 +537,7 @@
         },
         hovertemplate: "%{text}<br>seq=%{x:.3f}<br>validação=%{y:.3f}<extra></extra>"
       }], {
-        title: "Sequência vs validação em pacientes",
+        title: "Modelo 1 (sequência) × Modelo 2 (triagem interna)",
         xaxis: { title: "Score Modelo 1" },
         yaxis: { title: "Score Modelo 2" },
         margin: { t: 48, r: 18, b: 52, l: 58 }
@@ -541,7 +546,7 @@
       Plotly.newPlot("bar", [{
         type: "bar",
         orientation: "h",
-        y: integrated.slice(0, 20).map((row) => row.mirna).reverse(),
+        y: integrated.slice(0, 20).map((row) => row.mirna.replace(/^mir-/, "miR-")).reverse(),
         x: integrated.slice(0, 20).map((row) => row.score_final).reverse(),
         marker: { color: "#0f766e" },
         hovertemplate: "%{y}<br>score final=%{x:.3f}<extra></extra>"
